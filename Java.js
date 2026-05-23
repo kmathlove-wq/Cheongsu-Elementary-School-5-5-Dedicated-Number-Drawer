@@ -11,6 +11,9 @@ const bigOverlay = document.getElementById('bigOverlay');
 const bigNumber = document.getElementById('bigNumber');
 
 let audioContext = null;
+let tensionOscillator = null;
+let tensionLFO = null;
+let tensionGain = null;
 
 function getAudioContext() {
   if (!audioContext) {
@@ -47,6 +50,61 @@ function playSuccessSound() {
   harmonyOsc.start(now);
   baseOsc.stop(now + 0.6);
   harmonyOsc.stop(now + 0.6);
+}
+
+function playTensionSound() {
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
+
+  stopTensionSound();
+
+  tensionGain = ctx.createGain();
+  tensionGain.gain.setValueAtTime(0.02, now);
+  tensionGain.connect(ctx.destination);
+
+  tensionOscillator = ctx.createOscillator();
+  tensionOscillator.type = 'sawtooth';
+  tensionOscillator.frequency.setValueAtTime(220, now);
+
+  tensionLFO = ctx.createOscillator();
+  tensionLFO.type = 'sine';
+  tensionLFO.frequency.setValueAtTime(2.2, now);
+
+  const lfoGain = ctx.createGain();
+  lfoGain.gain.setValueAtTime(45, now);
+
+  tensionLFO.connect(lfoGain);
+  lfoGain.connect(tensionOscillator.frequency);
+
+  tensionOscillator.connect(tensionGain);
+
+  tensionLFO.start(now);
+  tensionOscillator.start(now);
+}
+
+function stopTensionSound() {
+  if (tensionOscillator) {
+    try {
+      tensionOscillator.stop();
+    } catch (error) {
+      // ignore if already stopped
+    }
+    tensionOscillator.disconnect();
+    tensionOscillator = null;
+  }
+  if (tensionLFO) {
+    try {
+      tensionLFO.stop();
+    } catch (error) {
+      // ignore if already stopped
+    }
+    tensionLFO.disconnect();
+    tensionLFO = null;
+  }
+  if (tensionGain) {
+    tensionGain.disconnect();
+    tensionGain = null;
+  }
 }
 
 // Render number grid
@@ -88,6 +146,10 @@ function drawNumber() {
 
   const cells = Array.from(document.querySelectorAll('.number-cell'));
 
+  // disable the button while the suspense animation plays
+  drawButton.disabled = true;
+  playTensionSound();
+
   // Spark animation: rapidly highlight random cells
   let prev = null;
   const totalDuration = 4000; // ms
@@ -105,6 +167,7 @@ function drawNumber() {
     i++;
     if (i >= iterations) {
       clearInterval(iv);
+      stopTensionSound();
       if (prev) prev.classList.remove('spark');
       // find the cell for finalValue and highlight
       const finalCell = cells.find((c) => Number(c.dataset.num) === finalValue);
@@ -126,6 +189,7 @@ function drawNumber() {
         // play celebration sound after draw completes
         playSuccessSound();
       }
+      drawButton.disabled = false;
     }
   }, step);
 }
