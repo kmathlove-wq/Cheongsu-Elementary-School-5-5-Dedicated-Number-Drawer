@@ -142,6 +142,80 @@ button:active {
   box-shadow: inset 0 0 0 1px rgba(90, 92, 255, 0.08);
 }
 
+/* Number grid */
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.number-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 800;
+  color: var(--text);
+  box-shadow: 0 6px 18px rgba(32,40,70,0.06);
+  border: 2px solid transparent;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.number-cell.spark {
+  border-image-slice: 1;
+  border-width: 3px;
+  border-style: solid;
+  border-image-source: linear-gradient(90deg, rgba(255,215,0,0.95), rgba(255,255,255,0.5));
+  box-shadow: 0 8px 30px rgba(255,200,50,0.12), 0 0 18px rgba(255,215,0,0.18) inset;
+  transform: translateY(-4px) scale(1.03);
+}
+
+.number-cell.dimmed {
+  opacity: 0.45;
+  filter: grayscale(20%);
+}
+
+/* Big overlay for selected number */
+.big-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(6px) saturate(1.1);
+  background: rgba(0,0,0,0.25);
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.big-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.big-number {
+  min-width: 180px;
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  font-size: 6rem;
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, #7b2ff7, #ff6b6b);
+  box-shadow: 0 40px 80px rgba(120,40,200,0.18);
+  transform: scale(0.96);
+  transition: transform 260ms cubic-bezier(.2,.9,.3,1);
+}
+
+.big-overlay.show .big-number {
+  transform: scale(1);
+}
+
 @media (max-width: 480px) {
   .number-display {
     font-size: 2.4rem;

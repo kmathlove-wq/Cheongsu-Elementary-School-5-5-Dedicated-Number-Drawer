@@ -13,6 +13,7 @@
 
     <div class="card">
       <div class="number-display placeholder" id="numberDisplay">뽑기 버튼을 눌러주세요</div>
+      <div id="numberGrid" class="number-grid" aria-hidden="false"></div>
       <button id="drawButton">번호 뽑기</button>
       <button id="resetButton" class="secondary">다시 시작</button>
     </div>
@@ -21,6 +22,9 @@
       <h2>뽑은 번호</h2>
       <div id="pickedNumbers" class="picked-numbers">아직 뽑은 번호가 없습니다.</div>
     </div>
+      <div id="bigOverlay" class="big-overlay" aria-hidden="true">
+        <div class="big-number" id="bigNumber" role="status" aria-live="polite"></div>
+      </div>
   </main>
 
   <script src="Java.js"></script>

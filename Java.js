@@ -6,6 +6,23 @@ const pickedNumbersContainer = document.getElementById('pickedNumbers');
 const validNumbers = Array.from({ length: 25 }, (_, i) => i + 1).filter((num) => num !== 19);
 let remainingNumbers = [...validNumbers];
 let pickedNumbers = [];
+const numberGrid = document.getElementById('numberGrid');
+const bigOverlay = document.getElementById('bigOverlay');
+const bigNumber = document.getElementById('bigNumber');
+
+// Render number grid
+function renderNumberGrid() {
+  numberGrid.innerHTML = '';
+  validNumbers.forEach((num) => {
+    const cell = document.createElement('div');
+    cell.className = 'number-cell';
+    cell.dataset.num = num;
+    cell.textContent = num;
+    numberGrid.appendChild(cell);
+  });
+}
+
+renderNumberGrid();
 
 function updatePickedNumbers() {
   if (pickedNumbers.length === 0) {
@@ -21,18 +38,56 @@ function updatePickedNumbers() {
 function drawNumber() {
   if (remainingNumbers.length === 0) {
     numberDisplay.textContent = '모든 번호를 이미 뽑았습니다!';
-      numberDisplay.classList.remove('placeholder');
-      numberDisplay.classList.add('notice');
-      return;
+    numberDisplay.classList.remove('placeholder');
+    numberDisplay.classList.add('notice');
+    return;
   }
 
-  const index = Math.floor(Math.random() * remainingNumbers.length);
-  const picked = remainingNumbers.splice(index, 1)[0];
-  pickedNumbers.push(picked);
+  // Pick final index ahead of time (from remainingNumbers)
+  const finalIdx = Math.floor(Math.random() * remainingNumbers.length);
+  const finalValue = remainingNumbers[finalIdx];
 
-  numberDisplay.textContent = picked;
-    numberDisplay.classList.remove('placeholder', 'notice');
-  updatePickedNumbers();
+  const cells = Array.from(document.querySelectorAll('.number-cell'));
+
+  // Spark animation: rapidly highlight random cells
+  let prev = null;
+  const totalDuration = 1400; // ms
+  const step = 80; // ms
+  const iterations = Math.floor(totalDuration / step);
+  let i = 0;
+
+  const iv = setInterval(() => {
+    if (prev) prev.classList.remove('spark');
+    // choose a random cell to spark; bias towards remaining numbers
+    const candidates = cells.filter((c) => remainingNumbers.includes(Number(c.dataset.num)));
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    if (pick) pick.classList.add('spark');
+    prev = pick;
+    i++;
+    if (i >= iterations) {
+      clearInterval(iv);
+      if (prev) prev.classList.remove('spark');
+      // find the cell for finalValue and highlight
+      const finalCell = cells.find((c) => Number(c.dataset.num) === finalValue);
+      if (finalCell) {
+        // dim others
+        cells.forEach((c) => c.classList.add('dimmed'));
+        finalCell.classList.remove('dimmed');
+        finalCell.classList.add('spark');
+        // remove from remaining and record
+        const picked = remainingNumbers.splice(finalIdx, 1)[0];
+        pickedNumbers.push(picked);
+        numberDisplay.textContent = picked;
+        numberDisplay.classList.remove('placeholder', 'notice');
+        updatePickedNumbers();
+
+        // show big overlay
+        bigNumber.textContent = picked;
+        bigOverlay.classList.add('show');
+        bigOverlay.setAttribute('aria-hidden', 'false');
+      }
+    }
+  }, step);
 }
 
 function resetDraw() {
@@ -41,10 +96,22 @@ function resetDraw() {
   numberDisplay.textContent = '뽑기 버튼을 눌러주세요';
   numberDisplay.classList.add('placeholder');
     numberDisplay.classList.remove('notice');
+  // reset grid visuals
+  document.querySelectorAll('.number-cell').forEach((c) => c.classList.remove('spark', 'dimmed'));
+  bigOverlay.classList.remove('show');
+  bigOverlay.setAttribute('aria-hidden', 'true');
   updatePickedNumbers();
 }
 
 drawButton.addEventListener('click', drawNumber);
 resetButton.addEventListener('click', resetDraw);
+
+// Close overlay on click
+bigOverlay.addEventListener('click', () => {
+  bigOverlay.classList.remove('show');
+  bigOverlay.setAttribute('aria-hidden', 'true');
+  // remove spark class from final cell
+  document.querySelectorAll('.number-cell').forEach((c) => c.classList.remove('spark'));
+});
 
 updatePickedNumbers();
