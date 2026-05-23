@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>우리반 전용 번호 뽑기</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>우리반 전용 번호 뽑기</h1>
+    <p class="description">1번부터 25번까지 중에서 랜덤으로 번호를 뽑습니다. 19번은 제외됩니다.</p>
+
+    <div class="card">
+      <div class="number-display" id="numberDisplay">뽑기 버튼을 눌러주세요</div>
+      <button id="drawButton">번호 뽑기</button>
+      <button id="resetButton" class="secondary">다시 시작</button>
+    </div>
+
+    <div class="history-card">
+      <h2>뽑은 번호</h2>
+      <div id="pickedNumbers" class="picked-numbers">아직 뽑은 번호가 없습니다.</div>
+    </div>
+  </main>
+
+  <script src="Java.js"></script>
+</body>
+</html>
