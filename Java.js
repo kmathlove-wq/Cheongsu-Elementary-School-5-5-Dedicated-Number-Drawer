@@ -22,11 +22,12 @@ const bigOverlay =
 const bigNumber =
   document.getElementById('bigNumber');
 
+// 1~25 전체 포함
 const validNumbers =
   Array.from(
     { length: 25 },
     (_, i) => i + 1
-  ).filter((num) => num !== 19);
+  );
 
 let remainingNumbers = [...validNumbers];
 
@@ -91,6 +92,30 @@ function playSound() {
   audio.volume = 0.4;
 
   audio.play();
+}
+
+// 숫자 개수에 따라 자동 글자 크기 조절
+function adjustFontSize(text) {
+
+  const length = text.length;
+
+  if (length <= 10) {
+    return '5rem';
+  }
+
+  if (length <= 20) {
+    return '4rem';
+  }
+
+  if (length <= 35) {
+    return '3rem';
+  }
+
+  if (length <= 50) {
+    return '2.2rem';
+  }
+
+  return '1.6rem';
 }
 
 function drawNumbers() {
@@ -195,9 +220,15 @@ function drawNumbers() {
 
       selected.sort((a, b) => a - b);
 
+      const resultText =
+        selected.join(', ');
+
       // 가운데 표시
       numberDisplay.textContent =
-        selected.join(', ');
+        resultText;
+
+      numberDisplay.style.fontSize =
+        adjustFontSize(resultText);
 
       numberDisplay.classList.remove(
         'placeholder',
@@ -206,7 +237,10 @@ function drawNumbers() {
 
       // 큰 화면 표시
       bigNumber.textContent =
-        selected.join(', ');
+        resultText;
+
+      bigNumber.style.fontSize =
+        adjustFontSize(resultText);
 
       bigOverlay.classList.add('show');
 
@@ -228,6 +262,10 @@ function resetDraw() {
 
   numberDisplay.textContent =
     '뽑기 버튼을 눌러주세요';
+
+  numberDisplay.style.fontSize = '';
+
+  bigNumber.style.fontSize = '';
 
   numberDisplay.classList.add('placeholder');
 
