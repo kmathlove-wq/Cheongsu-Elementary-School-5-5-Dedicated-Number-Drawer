@@ -14,8 +14,8 @@
 
 <body>
   <main class="container">
+
     <div class="site-header">
-      <img id="siteLogo" src="logo.png?v=2" alt="사이트 로고" />
       <h1>우리반 전용 번호 뽑기</h1>
     </div>
 
@@ -36,14 +36,21 @@
 
     <div class="history-card">
       <h2>뽑은 번호</h2>
+
       <div id="pickedNumbers" class="picked-numbers">
         아직 뽑은 번호가 없습니다.
       </div>
     </div>
 
     <div id="bigOverlay" class="big-overlay" aria-hidden="true">
-      <div class="big-number" id="bigNumber" role="status" aria-live="polite"></div>
+      <div
+        class="big-number"
+        id="bigNumber"
+        role="status"
+        aria-live="polite"
+      ></div>
     </div>
+
   </main>
 
   <script src="Java.js"></script>
