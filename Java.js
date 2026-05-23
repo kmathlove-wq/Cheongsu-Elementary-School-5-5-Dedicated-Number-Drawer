@@ -29,6 +29,7 @@ function drawNumber() {
   pickedNumbers.push(picked);
 
   numberDisplay.textContent = picked;
+  numberDisplay.classList.remove('placeholder');
   updatePickedNumbers();
 }
 
@@ -36,6 +37,7 @@ function resetDraw() {
   remainingNumbers = [...validNumbers];
   pickedNumbers = [];
   numberDisplay.textContent = '뽑기 버튼을 눌러주세요';
+  numberDisplay.classList.add('placeholder');
   updatePickedNumbers();
 }
 
