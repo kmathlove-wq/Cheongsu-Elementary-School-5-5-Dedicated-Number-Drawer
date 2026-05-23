@@ -3,31 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>우리반 전용 번호 뽑기</title>
+
+  <!-- 브라우저 탭 로고(favicon) -->
+  <link rel="icon" type="image/png" href="logo.png" />
+
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <main class="container">
     <div class="site-header">
       <img id="siteLogo" src="logo.png?v=2" alt="사이트 로고" />
       <h1>우리반 전용 번호 뽑기</h1>
     </div>
-    <p class="description">1번부터 25번까지 중에서 랜덤으로 번호를 뽑습니다. 19번은 제외됩니다.</p>
+
+    <p class="description">
+      1번부터 25번까지 중에서 랜덤으로 번호를 뽑습니다. 19번은 제외됩니다.
+    </p>
 
     <div class="card">
-      <div class="number-display placeholder" id="numberDisplay">뽑기 버튼을 눌러주세요</div>
+      <div class="number-display placeholder" id="numberDisplay">
+        뽑기 버튼을 눌러주세요
+      </div>
+
       <div id="numberGrid" class="number-grid" aria-hidden="false"></div>
+
       <button id="drawButton">번호 뽑기</button>
       <button id="resetButton" class="secondary">다시 시작</button>
     </div>
 
     <div class="history-card">
       <h2>뽑은 번호</h2>
-      <div id="pickedNumbers" class="picked-numbers">아직 뽑은 번호가 없습니다.</div>
-    </div>
-      <div id="bigOverlay" class="big-overlay" aria-hidden="true">
-        <div class="big-number" id="bigNumber" role="status" aria-live="polite"></div>
+      <div id="pickedNumbers" class="picked-numbers">
+        아직 뽑은 번호가 없습니다.
       </div>
+    </div>
+
+    <div id="bigOverlay" class="big-overlay" aria-hidden="true">
+      <div class="big-number" id="bigNumber" role="status" aria-live="polite"></div>
+    </div>
   </main>
 
   <script src="Java.js"></script>
