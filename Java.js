@@ -10,6 +10,45 @@ const numberGrid = document.getElementById('numberGrid');
 const bigOverlay = document.getElementById('bigOverlay');
 const bigNumber = document.getElementById('bigNumber');
 
+let audioContext = null;
+
+function getAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+  return audioContext;
+}
+
+function playSuccessSound() {
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+  gain.connect(ctx.destination);
+
+  const baseOsc = ctx.createOscillator();
+  baseOsc.type = 'triangle';
+  baseOsc.frequency.setValueAtTime(440, now);
+
+  const harmonyOsc = ctx.createOscillator();
+  harmonyOsc.type = 'sine';
+  harmonyOsc.frequency.setValueAtTime(660, now);
+
+  baseOsc.connect(gain);
+  harmonyOsc.connect(gain);
+
+  baseOsc.start(now);
+  harmonyOsc.start(now);
+  baseOsc.stop(now + 0.6);
+  harmonyOsc.stop(now + 0.6);
+}
+
 // Render number grid
 function renderNumberGrid() {
   numberGrid.innerHTML = '';
@@ -83,6 +122,9 @@ function drawNumber() {
         bigNumber.textContent = picked;
         bigOverlay.classList.add('show');
         bigOverlay.setAttribute('aria-hidden', 'false');
+
+        // play celebration sound after draw completes
+        playSuccessSound();
       }
     }
   }, step);
