@@ -181,7 +181,7 @@ button:active {
   transform: translateY(-4px) scale(1.035);
   position: relative;
   z-index: 12;
-  animation: sparkFlash 420ms ease-in-out 1;
+  animation: sparkFlash 700ms ease-in-out 1;
 }
 
 @keyframes sparkFlash {

@@ -51,8 +51,8 @@ function drawNumber() {
 
   // Spark animation: rapidly highlight random cells
   let prev = null;
-  const totalDuration = 1400; // ms
-  const step = 80; // ms
+  const totalDuration = 1800; // ms
+  const step = 100; // ms
   const iterations = Math.floor(totalDuration / step);
   let i = 0;
 
