@@ -14,6 +14,7 @@ let audioContext = null;
 let tensionOscillator = null;
 let tensionLFO = null;
 let tensionGain = null;
+let tensionPulse = null;
 
 function getAudioContext() {
   if (!audioContext) {
@@ -30,26 +31,31 @@ function playSuccessSound() {
   const now = ctx.currentTime;
 
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.exponentialRampToValueAtTime(0.18, now + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
   gain.connect(ctx.destination);
 
-  const baseOsc = ctx.createOscillator();
-  baseOsc.type = 'triangle';
-  baseOsc.frequency.setValueAtTime(440, now);
+  const melody = [660, 880, 990, 880];
+  melody.forEach((freq, index) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, now + index * 0.14);
+    osc.connect(gain);
+    osc.start(now + index * 0.14);
+    osc.stop(now + index * 0.14 + 0.24);
+  });
 
-  const harmonyOsc = ctx.createOscillator();
-  harmonyOsc.type = 'sine';
-  harmonyOsc.frequency.setValueAtTime(660, now);
-
-  baseOsc.connect(gain);
-  harmonyOsc.connect(gain);
-
-  baseOsc.start(now);
-  harmonyOsc.start(now);
-  baseOsc.stop(now + 0.6);
-  harmonyOsc.stop(now + 0.6);
+  const sparkle = ctx.createOscillator();
+  sparkle.type = 'sine';
+  sparkle.frequency.setValueAtTime(1320, now + 0.35);
+  const sparkleGain = ctx.createGain();
+  sparkleGain.gain.setValueAtTime(0, now + 0.35);
+  sparkleGain.gain.linearRampToValueAtTime(0.05, now + 0.38);
+  sparkleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+  sparkle.connect(sparkleGain).connect(ctx.destination);
+  sparkle.start(now + 0.35);
+  sparkle.stop(now + 0.75);
 }
 
 function playTensionSound() {
@@ -63,23 +69,31 @@ function playTensionSound() {
   tensionGain.connect(ctx.destination);
 
   tensionOscillator = ctx.createOscillator();
-  tensionOscillator.type = 'sawtooth';
-  tensionOscillator.frequency.setValueAtTime(220, now);
+  tensionOscillator.type = 'triangle';
+  tensionOscillator.frequency.setValueAtTime(240, now);
+  tensionOscillator.frequency.linearRampToValueAtTime(340, now + 4.0);
 
   tensionLFO = ctx.createOscillator();
   tensionLFO.type = 'sine';
-  tensionLFO.frequency.setValueAtTime(2.2, now);
+  tensionLFO.frequency.setValueAtTime(5.5, now);
 
   const lfoGain = ctx.createGain();
-  lfoGain.gain.setValueAtTime(45, now);
+  lfoGain.gain.setValueAtTime(22, now);
 
   tensionLFO.connect(lfoGain);
   lfoGain.connect(tensionOscillator.frequency);
 
   tensionOscillator.connect(tensionGain);
-
-  tensionLFO.start(now);
   tensionOscillator.start(now);
+  tensionLFO.start(now);
+
+  tensionPulse = ctx.createOscillator();
+  tensionPulse.type = 'square';
+  tensionPulse.frequency.setValueAtTime(6, now);
+  const pulseGain = ctx.createGain();
+  pulseGain.gain.setValueAtTime(0.018, now);
+  tensionPulse.connect(pulseGain).connect(tensionGain);
+  tensionPulse.start(now);
 }
 
 function stopTensionSound() {
@@ -100,6 +114,15 @@ function stopTensionSound() {
     }
     tensionLFO.disconnect();
     tensionLFO = null;
+  }
+  if (tensionPulse) {
+    try {
+      tensionPulse.stop();
+    } catch (error) {
+      // ignore if already stopped
+    }
+    tensionPulse.disconnect();
+    tensionPulse = null;
   }
   if (tensionGain) {
     tensionGain.disconnect();
