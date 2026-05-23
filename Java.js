@@ -70,9 +70,7 @@ function drawNumber() {
       // find the cell for finalValue and highlight
       const finalCell = cells.find((c) => Number(c.dataset.num) === finalValue);
       if (finalCell) {
-        // dim others
-        cells.forEach((c) => c.classList.add('dimmed'));
-        finalCell.classList.remove('dimmed');
+        // emphasize final cell without dimming others
         finalCell.classList.add('spark', 'picked');
         // remove from remaining and record
         const picked = remainingNumbers.splice(finalIdx, 1)[0];
