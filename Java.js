@@ -21,7 +21,9 @@ function updatePickedNumbers() {
 function drawNumber() {
   if (remainingNumbers.length === 0) {
     numberDisplay.textContent = '모든 번호를 이미 뽑았습니다!';
-    return;
+      numberDisplay.classList.remove('placeholder');
+      numberDisplay.classList.add('notice');
+      return;
   }
 
   const index = Math.floor(Math.random() * remainingNumbers.length);
@@ -29,7 +31,7 @@ function drawNumber() {
   pickedNumbers.push(picked);
 
   numberDisplay.textContent = picked;
-  numberDisplay.classList.remove('placeholder');
+    numberDisplay.classList.remove('placeholder', 'notice');
   updatePickedNumbers();
 }
 
@@ -38,6 +40,7 @@ function resetDraw() {
   pickedNumbers = [];
   numberDisplay.textContent = '뽑기 버튼을 눌러주세요';
   numberDisplay.classList.add('placeholder');
+    numberDisplay.classList.remove('notice');
   updatePickedNumbers();
 }
 
