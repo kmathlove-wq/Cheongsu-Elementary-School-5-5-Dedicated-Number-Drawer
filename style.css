@@ -68,6 +68,9 @@ h1 {
   font-weight: 700;
   color: var(--muted);
   letter-spacing: 0.01em;
+  /* subtle gradient background even before drawing */
+  background: linear-gradient(135deg, rgba(122, 76, 255, 0.08), rgba(109,114,255,0.06));
+  border: 1px solid rgba(90,92,255,0.08);
 }
 
 /* Notice style for 'all picked' message: smaller but highly visible */
@@ -198,18 +201,19 @@ button:active {
 }
 
 .big-number {
-  min-width: 180px;
-  min-height: 180px;
+  /* expand to occupy most of the viewport for dramatic effect */
+  width: min(92vw, 980px);
+  height: min(72vh, 920px);
   display: grid;
   place-items: center;
   border-radius: 28px;
-  font-size: 6rem;
+  font-size: clamp(5.5rem, 18vw, 14rem);
   font-weight: 900;
   color: white;
-  background: linear-gradient(135deg, #7b2ff7, #ff6b6b);
-  box-shadow: 0 40px 80px rgba(120,40,200,0.18);
+  background: linear-gradient(135deg, #7b2ff7 0%, #ff6b6b 60%);
+  box-shadow: 0 60px 120px rgba(120,40,200,0.22);
   transform: scale(0.96);
-  transition: transform 260ms cubic-bezier(.2,.9,.3,1);
+  transition: transform 260ms cubic-bezier(.2,.9,.3,1), opacity 220ms ease;
 }
 
 .big-overlay.show .big-number {
