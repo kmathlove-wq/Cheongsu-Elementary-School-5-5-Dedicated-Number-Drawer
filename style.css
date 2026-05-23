@@ -33,6 +33,27 @@ h1 {
   font-size: clamp(2rem, 3vw, 2.8rem);
 }
 
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+#siteLogo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(30,40,90,0.12);
+  border: 2px solid rgba(255,255,255,0.35);
+}
+
+@media (max-width: 480px) {
+  #siteLogo { width: 44px; height: 44px; }
+}
+
 .description {
   margin: 0 0 24px;
   color: var(--muted);
