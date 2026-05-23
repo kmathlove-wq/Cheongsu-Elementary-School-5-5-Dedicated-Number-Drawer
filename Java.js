@@ -195,6 +195,7 @@ function drawNumbers() {
 
       selected.sort((a, b) => a - b);
 
+      // 가운데 표시
       numberDisplay.textContent =
         selected.join(', ');
 
@@ -203,8 +204,9 @@ function drawNumbers() {
         'notice'
       );
 
+      // 큰 화면 표시
       bigNumber.textContent =
-        selected.join('  ');
+        selected.join(', ');
 
       bigOverlay.classList.add('show');
 
