@@ -73,7 +73,7 @@ function drawNumber() {
         // dim others
         cells.forEach((c) => c.classList.add('dimmed'));
         finalCell.classList.remove('dimmed');
-        finalCell.classList.add('spark');
+        finalCell.classList.add('spark', 'picked');
         // remove from remaining and record
         const picked = remainingNumbers.splice(finalIdx, 1)[0];
         pickedNumbers.push(picked);
@@ -97,7 +97,7 @@ function resetDraw() {
   numberDisplay.classList.add('placeholder');
     numberDisplay.classList.remove('notice');
   // reset grid visuals
-  document.querySelectorAll('.number-cell').forEach((c) => c.classList.remove('spark', 'dimmed'));
+  document.querySelectorAll('.number-cell').forEach((c) => c.classList.remove('spark', 'dimmed', 'picked'));
   bigOverlay.classList.remove('show');
   bigOverlay.setAttribute('aria-hidden', 'true');
   updatePickedNumbers();
