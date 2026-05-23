@@ -22,19 +22,19 @@ const bigOverlay =
 const bigNumber =
   document.getElementById('bigNumber');
 
-// 1~25 전체 포함
+// 1~25 중 19 제외
 const validNumbers =
   Array.from(
     { length: 25 },
     (_, i) => i + 1
-  );
+  ).filter((num) => num !== 19);
 
 let remainingNumbers = [...validNumbers];
 
 let pickedNumbers = [];
 
-// 1~25명 선택 생성
-for (let i = 1; i <= 25; i++) {
+// 선택 인원 수 생성 (최대 24명)
+for (let i = 1; i <= validNumbers.length; i++) {
 
   const option =
     document.createElement('option');
@@ -94,7 +94,7 @@ function playSound() {
   audio.play();
 }
 
-// 숫자 개수에 따라 자동 글자 크기 조절
+// 글자 길이에 따라 자동 크기 조절
 function adjustFontSize(text) {
 
   const length = text.length;
@@ -111,11 +111,11 @@ function adjustFontSize(text) {
     return '3rem';
   }
 
-  if (length <= 50) {
+  if (length <= 55) {
     return '2.2rem';
   }
 
-  return '1.6rem';
+  return '1.5rem';
 }
 
 function drawNumbers() {
@@ -125,7 +125,9 @@ function drawNumbers() {
     numberDisplay.textContent =
       '모든 번호를 이미 뽑았습니다!';
 
-    numberDisplay.classList.remove('placeholder');
+    numberDisplay.classList.remove(
+      'placeholder'
+    );
 
     numberDisplay.classList.add('notice');
 
@@ -214,6 +216,7 @@ function drawNumbers() {
           );
 
         if (pickedCell) {
+
           pickedCell.classList.add('picked');
         }
       }
@@ -223,7 +226,7 @@ function drawNumbers() {
       const resultText =
         selected.join(', ');
 
-      // 가운데 표시
+      // 메인 표시
       numberDisplay.textContent =
         resultText;
 
@@ -267,9 +270,13 @@ function resetDraw() {
 
   bigNumber.style.fontSize = '';
 
-  numberDisplay.classList.add('placeholder');
+  numberDisplay.classList.add(
+    'placeholder'
+  );
 
-  numberDisplay.classList.remove('notice');
+  numberDisplay.classList.remove(
+    'notice'
+  );
 
   document
     .querySelectorAll('.number-cell')
