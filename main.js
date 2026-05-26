@@ -977,8 +977,10 @@ function drawNumbersPinball() {
     const hasRight = (W - PLAY_X2) >= 110;
     const listX = hasRight ? PLAY_X2 + 18 : 14;
     const listY0 = hasRight ? H * 0.22 : H * 0.06;
-    const lineH = Math.max(28, H * 0.055);
-    const rfsz = Math.max(13, Math.floor(W * 0.017));
+    const availH = H - listY0 - 20;
+    const maxLineH = Math.max(28, H * 0.055);
+    const lineH = Math.min(maxLineH, availH / count);
+    const rfsz = Math.max(9, Math.min(Math.floor(W * 0.017), Math.floor(lineH * 0.62)));
 
     for (let i = 0; i < winners.length; i++) {
 
