@@ -465,7 +465,7 @@ function drawNumbersPinball() {
   const balls = remainingNumbers.map((num, i) => ({
     num,
     x: PLAY_X + PLAY_W / 2
-      + (Math.random() - 0.5) * PLAY_W * 0.28,
+      + (Math.random() - 0.5) * PLAY_W * 0.70,
     y: PLAY_TOP - BALL_R * 2.5 - i * (BALL_R * 2.6),
     vx: (Math.random() - 0.5) * 1.5,
     vy: 0,
@@ -544,40 +544,40 @@ function drawNumbersPinball() {
   }
 
   // ── 원형 범퍼 (추가 장애물) ──
-  const BUMPER_R = Math.max(22, Math.floor(PLAY_W / 16));
+  const BUMPER_R = Math.max(16, Math.floor(PLAY_W / 22));
 
   const bumpers = [
     {
       x: PLAY_X + PLAY_W * 0.22,
-      y: H * 0.33,
+      y: H * 0.46,
       r: BUMPER_R,
       lit: 0,
       color: '#ff4d6d',
     },
     {
       x: PLAY_X + PLAY_W * 0.78,
-      y: H * 0.33,
+      y: H * 0.46,
       r: BUMPER_R,
       lit: 0,
       color: '#ff4d6d',
     },
     {
       x: PLAY_X + PLAY_W * 0.50,
-      y: H * 0.50,
-      r: Math.floor(BUMPER_R * 1.3),
+      y: H * 0.62,
+      r: Math.floor(BUMPER_R * 1.2),
       lit: 0,
       color: '#ffe066',
     },
     {
       x: PLAY_X + PLAY_W * 0.22,
-      y: H * 0.68,
+      y: H * 0.76,
       r: BUMPER_R,
       lit: 0,
       color: '#6bffff',
     },
     {
       x: PLAY_X + PLAY_W * 0.78,
-      y: H * 0.68,
+      y: H * 0.76,
       r: BUMPER_R,
       lit: 0,
       color: '#6bffff',
@@ -700,7 +700,7 @@ function drawNumbersPinball() {
 
   const startTime = Date.now();
 
-  const RELEASE_MS = 280;
+  const RELEASE_MS = 500;
 
   function update() {
 
