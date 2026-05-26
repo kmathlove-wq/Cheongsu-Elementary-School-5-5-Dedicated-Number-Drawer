@@ -236,9 +236,11 @@ button:hover {
 
   justify-content: center;
 
-  width: 46px;
+  min-width: 46px;
 
   height: 46px;
+
+  padding: 0 10px;
 
   border-radius: 14px;
 
@@ -386,6 +388,88 @@ button:hover {
     0 60px 120px
     rgba(120,40,200,0.22);
 }
+
+.mode-selector {
+
+  display: flex;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+.mode-btn {
+
+  width: auto;
+
+  padding: 10px 28px;
+
+  border-radius: 50px;
+
+  border: 2px solid var(--border);
+
+  background: white;
+
+  color: var(--muted);
+
+  font-size: 1rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.mode-btn:hover {
+
+  transform: translateY(-2px);
+
+  border-color: var(--accent);
+
+  color: var(--accent);
+}
+
+.mode-btn.active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #5a5cff,
+      #6d72ff
+    );
+
+  color: white;
+
+  border-color: transparent;
+}
+
+.mode-btn[data-mode="mystery"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #1a1a2e,
+      #3d0000
+    );
+}
+
+.number-cell.teacher-cell {
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffe066 0%,
+      #ffb347 100%
+    );
+
+  color: #3d2000;
+
+  font-size: clamp(0.75rem, 1.8vw, 1.1rem);
+}
+
 
 @media (max-width: 600px) {
 

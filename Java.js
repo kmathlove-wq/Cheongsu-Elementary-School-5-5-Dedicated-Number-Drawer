@@ -22,50 +22,114 @@ const bigOverlay =
 const bigNumber =
   document.getElementById('bigNumber');
 
-// 1~25 중 19 제외
-const validNumbers =
-  Array.from(
-    { length: 25 },
-    (_, i) => i + 1
-  ).filter((num) => num !== 19);
 
-let remainingNumbers = [...validNumbers];
+const descriptionEl =
+  document.getElementById('description');
+
+let currentMode = 'basic';
+
+// 모드별 풀 생성 (모두 문자열로 통일)
+function getValidItems() {
+
+  const nums =
+    Array.from(
+      { length: 25 },
+      (_, i) => String(i + 1)
+    ).filter((n) => n !== '19');
+
+  if (currentMode === 'teacher') {
+    return ['선생님', ...nums];
+  }
+
+  return nums;
+}
+
+let validItems = getValidItems();
+
+let remainingNumbers = [...validItems];
 
 let pickedNumbers = [];
 
-// 선택 인원 수 생성 (최대 24명)
-for (let i = 1; i <= validNumbers.length; i++) {
+function buildDrawCountOptions() {
 
-  const option =
-    document.createElement('option');
+  drawCountSelect.innerHTML = '';
 
-  option.value = i;
+  for (let i = 1; i <= validItems.length; i++) {
 
-  option.textContent = `${i}명`;
+    const option =
+      document.createElement('option');
 
-  drawCountSelect.appendChild(option);
+    option.value = i;
+
+    option.textContent = `${i}명`;
+
+    drawCountSelect.appendChild(option);
+  }
 }
+
+buildDrawCountOptions();
 
 function renderGrid() {
 
   numberGrid.innerHTML = '';
 
-  validNumbers.forEach((num) => {
+  validItems.forEach((item) => {
 
     const cell =
       document.createElement('div');
 
     cell.className = 'number-cell';
 
-    cell.dataset.num = num;
+    if (item === '선생님') {
+      cell.classList.add('teacher-cell');
+    }
 
-    cell.textContent = num;
+    cell.dataset.num = item;
+
+    cell.textContent = item;
 
     numberGrid.appendChild(cell);
   });
 }
 
 renderGrid();
+
+function updateDescription() {
+
+  if (currentMode === 'basic') {
+
+    descriptionEl.textContent =
+      '1번부터 25번까지 중 랜덤 번호를 뽑습니다. 19번은 제외됩니다.';
+
+  } else if (currentMode === 'teacher') {
+
+    descriptionEl.textContent =
+      '선생님 + 1번~25번 중 랜덤으로 뽑습니다. 19번은 제외됩니다.';
+
+  } else {
+
+    descriptionEl.textContent =
+      '1번~25번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, 5번이 나오면...?';
+  }
+}
+
+function switchMode(mode) {
+
+  currentMode = mode;
+
+  document
+    .querySelectorAll('.mode-btn')
+    .forEach((btn) => {
+      btn.classList.toggle(
+        'active',
+        btn.dataset.mode === mode
+      );
+    });
+
+  updateDescription();
+
+  resetDraw();
+}
 
 function updatePickedNumbers() {
 
@@ -118,6 +182,16 @@ function adjustFontSize(text) {
   return '1.5rem';
 }
 
+function terminateProgram() {
+
+  window.close();
+
+  // 브라우저가 window.close()를 차단한 경우 폴백
+  setTimeout(() => {
+    document.body.innerHTML = '';
+  }, 300);
+}
+
 function drawNumbers() {
 
   if (remainingNumbers.length === 0) {
@@ -157,11 +231,10 @@ function drawNumbers() {
       prev.classList.remove('spark');
     }
 
+    // dataset.num은 항상 문자열이므로 문자열로 비교
     const availableCells =
       cells.filter((cell) =>
-        remainingNumbers.includes(
-          Number(cell.dataset.num)
-        )
+        remainingNumbers.includes(cell.dataset.num)
       );
 
     const randomCell =
@@ -211,8 +284,7 @@ function drawNumbers() {
 
         const pickedCell =
           cells.find(
-            (cell) =>
-              Number(cell.dataset.num) === picked
+            (cell) => cell.dataset.num === picked
           );
 
         if (pickedCell) {
@@ -221,14 +293,20 @@ function drawNumbers() {
         }
       }
 
-      selected.sort((a, b) => a - b);
+      // 선생님은 항상 앞에, 나머지는 숫자 오름차순
+      selected.sort((a, b) => {
 
-      const resultText =
-        selected.join(', ');
+        if (a === '선생님') return -1;
+
+        if (b === '선생님') return 1;
+
+        return Number(a) - Number(b);
+      });
+
+      const resultText = selected.join(', ');
 
       // 메인 표시
-      numberDisplay.textContent =
-        resultText;
+      numberDisplay.textContent = resultText;
 
       numberDisplay.style.fontSize =
         adjustFontSize(resultText);
@@ -239,8 +317,7 @@ function drawNumbers() {
       );
 
       // 큰 화면 표시
-      bigNumber.textContent =
-        resultText;
+      bigNumber.textContent = resultText;
 
       bigNumber.style.fontSize =
         adjustFontSize(resultText);
@@ -251,7 +328,21 @@ function drawNumbers() {
 
       playSound();
 
-      drawButton.disabled = false;
+      // ??? 모드: 5번이 뽑히면 종료
+      if (currentMode === 'mystery' && selected.includes('5')) {
+
+        setTimeout(() => {
+
+          bigOverlay.classList.remove('show');
+
+          terminateProgram();
+
+        }, 1500);
+
+      } else {
+
+        drawButton.disabled = false;
+      }
     }
 
   }, 140);
@@ -259,9 +350,15 @@ function drawNumbers() {
 
 function resetDraw() {
 
-  remainingNumbers = [...validNumbers];
+  validItems = getValidItems();
+
+  remainingNumbers = [...validItems];
 
   pickedNumbers = [];
+
+  buildDrawCountOptions();
+
+  renderGrid();
 
   numberDisplay.textContent =
     '뽑기 버튼을 눌러주세요';
@@ -270,29 +367,24 @@ function resetDraw() {
 
   bigNumber.style.fontSize = '';
 
-  numberDisplay.classList.add(
-    'placeholder'
-  );
+  numberDisplay.classList.add('placeholder');
 
-  numberDisplay.classList.remove(
-    'notice'
-  );
-
-  document
-    .querySelectorAll('.number-cell')
-    .forEach((cell) => {
-
-      cell.classList.remove(
-        'spark',
-        'picked'
-      );
-
-    });
+  numberDisplay.classList.remove('notice');
 
   bigOverlay.classList.remove('show');
 
+  drawButton.disabled = false;
+
   updatePickedNumbers();
 }
+
+document
+  .querySelectorAll('.mode-btn')
+  .forEach((btn) => {
+    btn.addEventListener('click', () =>
+      switchMode(btn.dataset.mode)
+    );
+  });
 
 drawButton.addEventListener(
   'click',
@@ -304,13 +396,14 @@ resetButton.addEventListener(
   resetDraw
 );
 
+
 bigOverlay.addEventListener(
   'click',
   () => {
-
     bigOverlay.classList.remove('show');
-
   }
 );
 
 updatePickedNumbers();
+
+updateDescription();

@@ -17,10 +17,16 @@
 
     <h1>우리반 전용 번호 뽑기</h1>
 
-    <p class="description">
+    <p class="description" id="description">
       1번부터 25번까지 중 랜덤 번호를 뽑습니다.
       19번은 제외됩니다.
     </p>
+
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="basic">기본</button>
+      <button class="mode-btn" data-mode="teacher">선생님</button>
+      <button class="mode-btn" data-mode="mystery">???</button>
+    </div>
 
     <div class="card">
 
@@ -86,7 +92,7 @@
 
   </div>
 
-  <script src="Java.js"></script>
+<script src="Java.js"></script>
 
 </body>
 </html>
