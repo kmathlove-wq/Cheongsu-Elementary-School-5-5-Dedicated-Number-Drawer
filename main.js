@@ -416,8 +416,10 @@ function drawNumbersPinball() {
     return;
   }
 
-  // 핀볼: 항상 1명 (먼저 통과한 1개)
-  const count = 1;
+  const count = Math.min(
+    Number(drawCountSelect.value),
+    remainingNumbers.length
+  );
 
   drawButton.disabled = true;
 
@@ -963,7 +965,7 @@ function drawNumbersPinball() {
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.fillText(
-      winners.length === 0 ? '1등 대기중...' : '당첨!',
+      `${winners.length} / ${count}`,
       W - 20, 16
     );
     ctx.restore();
