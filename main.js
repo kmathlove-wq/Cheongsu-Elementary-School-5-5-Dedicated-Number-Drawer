@@ -137,14 +137,6 @@ function switchMode(mode) {
       );
     });
 
-  const drawSettings =
-    document.getElementById('drawSettings');
-
-  if (drawSettings) {
-    drawSettings.style.display =
-      mode === 'pinball' ? 'none' : '';
-  }
-
   updateDescription();
 
   resetDraw();
@@ -424,6 +416,11 @@ function drawNumbersPinball() {
     return;
   }
 
+  const count = Math.min(
+    Number(drawCountSelect.value),
+    remainingNumbers.length
+  );
+
   drawButton.disabled = true;
 
   stopPinball = false;
@@ -446,276 +443,435 @@ function drawNumbersPinball() {
 
   overlay.classList.add('show');
 
+  // ── 플레이 영역 ──
+  const PLAY_W = Math.min(W * 0.62, 720);
+
+  const PLAY_X = (W - PLAY_W) / 2;
+
+  const PLAY_X2 = PLAY_X + PLAY_W;
+
+  const PLAY_TOP = H * 0.04;
+
+  const PLAY_BOT = H * 0.90;
+
+  // ── 공 ──
   const BALL_R =
-    Math.max(8, Math.min(11, Math.floor(W / 120)));
+    Math.max(13, Math.min(21, PLAY_W / 27));
 
-  const BUMPER_R =
-    Math.max(18, Math.min(32, Math.floor(W / 20)));
+  const PALETTE = [
+    '#ff6b6b', '#ffd56b', '#6bffb0', '#6bffff',
+    '#b06bff', '#ff6bff', '#ff9f6b', '#b0ff6b',
+    '#6bb0ff', '#ff6baa', '#6bff6b', '#ffb06b',
+  ];
 
-  const COLS = 5;
+  const balls = remainingNumbers.map((num, i) => ({
+    num,
+    x: PLAY_X + PLAY_W / 2
+      + (Math.random() - 0.5) * PLAY_W * 0.28,
+    y: PLAY_TOP - BALL_R * 2.5 - i * (BALL_R * 2.6),
+    vx: (Math.random() - 0.5) * 1.5,
+    vy: 0,
+    r: BALL_R,
+    color: PALETTE[i % PALETTE.length],
+    active: false,
+    exited: false,
+  }));
 
-  const ball = {
-    x: W / 2 + (Math.random() - 0.5) * 60,
-    y: H * 0.82,
-    vx: (Math.random() - 0.5) * 8,
-    vy: -(15 + Math.random() * 3),
-  };
+  // ── 핀(대각선 바) ──
+  const PEG_LEN = PLAY_W / 7.2;
 
-  const rowCount =
-    Math.ceil(remainingNumbers.length / COLS);
+  const PEG_THICK = Math.max(6, Math.floor(BALL_R * 0.38));
 
-  const horizPad = W * 0.1;
+  const PEG_R = PEG_THICK / 2;
 
-  const colW = (W - horizPad * 2) / COLS;
+  const NUM_ROWS = 5;
 
-  const topY = H * 0.12;
+  const PEGS_PER_ROW = 7;
 
-  const rowH = (H * 0.55) / rowCount;
+  const pegTop = H * 0.22;
 
-  const bumpers = remainingNumbers.map((num, i) => {
+  const pegBot = H * 0.82;
 
-    const row = Math.floor(i / COLS);
+  const rowH = (pegBot - pegTop) / NUM_ROWS;
 
-    const col = i % COLS;
+  const colW = PLAY_W / PEGS_PER_ROW;
 
-    const stagger = (row % 2) * (colW * 0.5);
+  const pegs = [];
 
-    const x =
-      horizPad + colW * col + colW * 0.5 + stagger;
+  for (let row = 0; row < NUM_ROWS; row++) {
 
-    const y = topY + rowH * row + rowH * 0.5;
+    const cy = pegTop + rowH * (row + 0.5);
 
-    return { num, x, y, r: BUMPER_R, lit: 0 };
-  });
+    // 홀짝 행마다 각도 교차 (/ 와 \)
+    const ang =
+      row % 2 === 0
+        ? Math.PI / 5
+        : -Math.PI / 5;
 
-  const scoreTexts = [];
+    const isOdd = row % 2 === 1;
 
-  let frameCount = 0;
+    const cnt = isOdd
+      ? PEGS_PER_ROW + 1
+      : PEGS_PER_ROW;
 
-  let slowFrames = 0;
+    for (let col = 0; col < cnt; col++) {
 
-  let phase = 'playing';
+      const cx =
+        PLAY_X
+        + (isOdd ? -colW * 0.5 : 0)
+        + colW * col + colW * 0.5;
 
-  let winner = null;
+      if (
+        cx < PLAY_X + PEG_LEN * 0.4 ||
+        cx > PLAY_X2 - PEG_LEN * 0.4
+      ) continue;
 
-  let doneHandled = false;
+      const cos = Math.cos(ang);
 
-  function update() {
+      const sin = Math.sin(ang);
 
-    ball.vy += 0.3;
+      const h = PEG_LEN / 2;
 
-    if (phase === 'slowing') {
-      ball.vx *= 0.97;
-      ball.vy *= 0.97;
-      slowFrames++;
+      pegs.push({
+        x1: cx - cos * h,
+        y1: cy - sin * h,
+        x2: cx + cos * h,
+        y2: cy + sin * h,
+        cx, cy, ang,
+        len: PEG_LEN,
+        thick: PEG_THICK,
+        lit: 0,
+      });
     }
+  }
 
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+  // ── 충돌 함수들 ──
 
-    if (ball.x - BALL_R < 0) {
-      ball.x = BALL_R;
-      ball.vx = Math.abs(ball.vx) * 0.8;
-    }
-    if (ball.x + BALL_R > W) {
-      ball.x = W - BALL_R;
-      ball.vx = -Math.abs(ball.vx) * 0.8;
-    }
-    if (ball.y - BALL_R < 0) {
-      ball.y = BALL_R;
-      ball.vy = Math.abs(ball.vy) * 0.8;
-    }
-    if (ball.y + BALL_R > H) {
-      ball.y = H - BALL_R;
-      ball.vy = -Math.abs(ball.vy) * 0.7;
-    }
+  function hitPeg(ball, peg) {
 
-    for (const b of bumpers) {
+    const dx = peg.x2 - peg.x1;
+    const dy = peg.y2 - peg.y1;
+    const segLen = Math.sqrt(dx * dx + dy * dy);
 
-      const dx = ball.x - b.x;
+    if (segLen < 0.01) return;
 
-      const dy = ball.y - b.y;
+    const ux = dx / segLen;
+    const uy = dy / segLen;
 
-      const dist =
-        Math.sqrt(dx * dx + dy * dy);
+    const proj =
+      (ball.x - peg.x1) * ux +
+      (ball.y - peg.y1) * uy;
 
-      const minDist = BALL_R + b.r;
+    const t = Math.max(0, Math.min(segLen, proj));
 
-      if (dist < minDist && dist > 0.01) {
+    const nearX = peg.x1 + t * ux;
+    const nearY = peg.y1 + t * uy;
 
-        const nx = dx / dist;
+    const distX = ball.x - nearX;
+    const distY = ball.y - nearY;
+    const dist =
+      Math.sqrt(distX * distX + distY * distY);
 
-        const ny = dy / dist;
+    const minD = ball.r + PEG_R;
 
-        const dot =
-          ball.vx * nx + ball.vy * ny;
+    if (dist < minD && dist > 0.01) {
 
-        ball.vx =
-          (ball.vx - 2 * dot * nx) * 1.15;
+      const nx = distX / dist;
+      const ny = distY / dist;
 
-        ball.vy =
-          (ball.vy - 2 * dot * ny) * 1.15;
+      ball.x += nx * (minD - dist);
+      ball.y += ny * (minD - dist);
 
-        ball.x = b.x + nx * (minDist + 1);
+      const dot = ball.vx * nx + ball.vy * ny;
 
-        ball.y = b.y + ny * (minDist + 1);
-
-        if (b.lit === 0) {
-          playBumperBeep();
-          scoreTexts.push({
-            x: b.x,
-            y: b.y - b.r - 8,
-            life: 30,
-          });
-        }
-
-        b.lit = 20;
-      }
-
-      if (b.lit > 0) b.lit--;
-    }
-
-    for (let i = scoreTexts.length - 1; i >= 0; i--) {
-      scoreTexts[i].life--;
-      if (scoreTexts[i].life <= 0) {
-        scoreTexts.splice(i, 1);
-      }
-    }
-
-    if (winner) winner.lit = 20;
-
-    frameCount++;
-
-    if (frameCount > 360 && phase === 'playing') {
-      phase = 'slowing';
-    }
-
-    if (phase === 'slowing') {
-
-      const speed =
-        Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
-
-      if (speed < 0.8 || slowFrames > 200) {
-
-        phase = 'done';
-
-        let minD = Infinity;
-
-        for (const b of bumpers) {
-          const dx = ball.x - b.x;
-          const dy = ball.y - b.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < minD) { minD = d; winner = b; }
-        }
+      if (dot < 0) {
+        const R = 0.6;
+        ball.vx -= (1 + R) * dot * nx;
+        ball.vy -= (1 + R) * dot * ny;
+        if (peg.lit === 0) playBumperBeep();
+        peg.lit = 10;
       }
     }
   }
 
-  function drawScene() {
+  function hitBall(a, b) {
 
-    ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, W, H);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const minD = a.r + b.r;
 
-    ctx.save();
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = '#7b2ff7';
-    ctx.strokeStyle = '#7b2ff7';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(6, 6, W - 12, H - 12);
-    ctx.restore();
+    if (dist < minD && dist > 0.01) {
 
-    const flipY = H * 0.91;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const ov = (minD - dist) * 0.5;
 
-    ctx.save();
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#5a5cff';
-    ctx.fillStyle = '#5a5cff';
-    ctx.beginPath();
-    ctx.moveTo(W * 0.08, flipY + H * 0.03);
-    ctx.lineTo(W * 0.31, flipY);
-    ctx.lineTo(W * 0.31, flipY + H * 0.03);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(W * 0.92, flipY + H * 0.03);
-    ctx.lineTo(W * 0.69, flipY);
-    ctx.lineTo(W * 0.69, flipY + H * 0.03);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+      a.x -= nx * ov;
+      a.y -= ny * ov;
+      b.x += nx * ov;
+      b.y += ny * ov;
 
-    for (const b of bumpers) {
+      const rvx = b.vx - a.vx;
+      const rvy = b.vy - a.vy;
+      const dot = rvx * nx + rvy * ny;
 
-      const isWinner = b === winner;
+      if (dot < 0) {
+        const imp = -(1 + 0.45) * dot * 0.5;
+        a.vx -= imp * nx;
+        a.vy -= imp * ny;
+        b.vx += imp * nx;
+        b.vy += imp * ny;
+      }
+    }
+  }
 
-      ctx.save();
+  // ── 게임 상태 ──
 
-      if (isWinner) {
-        ctx.shadowBlur = 50;
-        ctx.shadowColor = '#ff6b6b';
-        ctx.fillStyle = '#ff4444';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
-      } else if (b.lit > 0) {
-        const t = b.lit / 20;
-        ctx.shadowBlur = 28 * t;
-        ctx.shadowColor = '#ffd56b';
-        ctx.fillStyle =
-          `rgba(255, 205, 60, ${0.5 + 0.5 * t})`;
-        ctx.strokeStyle = '#ffd56b';
-        ctx.lineWidth = 2;
-      } else {
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#7b2ff7';
-        ctx.fillStyle = '#1e1e40';
-        ctx.strokeStyle = '#8b5cf6';
-        ctx.lineWidth = 2;
+  const winners = [];
+
+  let doneHandled = false;
+
+  const startTime = Date.now();
+
+  const RELEASE_MS = 280;
+
+  function update() {
+
+    const elapsed = Date.now() - startTime;
+
+    const toRelease =
+      Math.floor(elapsed / RELEASE_MS);
+
+    for (let i = 0;
+         i < Math.min(toRelease, balls.length);
+         i++) {
+      balls[i].active = true;
+    }
+
+    const active =
+      balls.filter(b => b.active && !b.exited);
+
+    for (const ball of active) {
+
+      ball.vy += 0.42;
+
+      const spd =
+        Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+
+      if (spd > 16) {
+        ball.vx = ball.vx / spd * 16;
+        ball.vy = ball.vy / spd * 16;
       }
 
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+
+      if (ball.x - ball.r < PLAY_X) {
+        ball.x = PLAY_X + ball.r;
+        ball.vx = Math.abs(ball.vx) * 0.65;
+      }
+
+      if (ball.x + ball.r > PLAY_X2) {
+        ball.x = PLAY_X2 - ball.r;
+        ball.vx = -Math.abs(ball.vx) * 0.65;
+      }
+
+      for (const peg of pegs) hitPeg(ball, peg);
+
+      if (ball.y - ball.r > PLAY_BOT) {
+
+        ball.exited = true;
+
+        if (winners.length < count) {
+
+          winners.push(ball);
+
+          if (
+            winners.length === count &&
+            !doneHandled
+          ) {
+            doneHandled = true;
+            setTimeout(finalize, 1600);
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < active.length; i++) {
+      for (let j = i + 1; j < active.length; j++) {
+        hitBall(active[i], active[j]);
+      }
+    }
+
+    for (const peg of pegs) {
+      if (peg.lit > 0) peg.lit--;
+    }
+
+    // 30초 타임아웃 안전장치
+    if (!doneHandled && elapsed > 30000) {
+
+      doneHandled = true;
+
+      const rem = balls.filter(
+        b => !b.exited && !winners.includes(b)
+      );
+
+      rem.sort(() => Math.random() - 0.5);
+
+      while (winners.length < count && rem.length) {
+        winners.push(rem.shift());
+      }
+
+      setTimeout(finalize, 400);
+    }
+  }
+
+  // ── 그리기 ──
+
+  const RANK_COLORS = [
+    '#ff6b6b', '#6bff9a', '#6bffff',
+    '#ffd56b', '#ff6bff', '#b06bff',
+  ];
+
+  function drawBar(cx, cy, len, thick, ang) {
+
+    const r = thick / 2;
+    const h = len / 2;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(-h + r, -r);
+    ctx.lineTo(h - r, -r);
+    ctx.arc(h - r, 0, r, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(-h + r, r);
+    ctx.arc(-h + r, 0, r, Math.PI / 2, -Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawScene() {
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // 플레이 영역 테두리 (흰 네온)
+    ctx.save();
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(255,255,255,0.7)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      PLAY_X, PLAY_TOP,
+      PLAY_W, PLAY_BOT - PLAY_TOP
+    );
+    ctx.restore();
+
+    // 양쪽 V 장식
+    const vMid = H * 0.46;
+    const vSz = H * 0.07;
+    const vOff = Math.min(24, PLAY_X * 0.5);
+
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(255,255,255,0.5)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(PLAY_X, vMid - vSz);
+    ctx.lineTo(PLAY_X - vOff, vMid);
+    ctx.lineTo(PLAY_X, vMid + vSz);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(PLAY_X2, vMid - vSz);
+    ctx.lineTo(PLAY_X2 + vOff, vMid);
+    ctx.lineTo(PLAY_X2, vMid + vSz);
+    ctx.stroke();
+    ctx.restore();
+
+    // 핀 (시안 네온 바)
+    for (const peg of pegs) {
+
+      const lit = peg.lit > 0;
+
+      ctx.save();
+      ctx.shadowBlur = lit ? 22 : 10;
+      ctx.shadowColor = lit ? '#ffffff' : '#00e5ff';
+      ctx.fillStyle = lit ? '#ffffff' : '#00e5ff';
+      drawBar(peg.cx, peg.cy, peg.len, peg.thick, peg.ang);
+      ctx.restore();
+    }
+
+    // 공
+    for (const ball of balls) {
+
+      if (!ball.active || ball.exited) continue;
+
+      ctx.save();
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = ball.color;
+      ctx.fillStyle = ball.color;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.restore();
 
       ctx.save();
-      ctx.fillStyle =
-        isWinner
-          ? '#ffffff'
-          : b.lit > 0
-          ? '#1a1a1a'
-          : '#c084fc';
+      ctx.fillStyle = '#000';
       ctx.font =
-        `bold ${Math.floor(b.r * (isWinner ? 0.85 : 0.75))}px ` +
+        `bold ${Math.floor(ball.r * 0.88)}px ` +
         `Noto Sans KR, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(b.num, b.x, b.y);
+      ctx.fillText(ball.num, ball.x, ball.y);
       ctx.restore();
     }
 
-    for (const st of scoreTexts) {
+    // 카운터 (우상단)
+    const cfsz = Math.max(18, Math.floor(W * 0.022));
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(180,180,180,0.85)';
+    ctx.font = `bold ${cfsz}px sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`${winners.length} / ${count}`, W - 20, 16);
+    ctx.restore();
+
+    // 당첨 순위 목록
+    const hasRight = (W - PLAY_X2) >= 110;
+    const listX = hasRight ? PLAY_X2 + 18 : 14;
+    const listY0 = hasRight ? H * 0.22 : H * 0.06;
+    const lineH = Math.max(28, H * 0.055);
+    const rfsz = Math.max(13, Math.floor(W * 0.017));
+
+    for (let i = 0; i < winners.length; i++) {
+
+      const y = listY0 + i * lineH;
+      const c = RANK_COLORS[i % RANK_COLORS.length];
+
       ctx.save();
-      ctx.globalAlpha = st.life / 30;
-      ctx.fillStyle = '#ffd56b';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.textAlign = 'center';
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = c;
+      ctx.fillStyle = c;
+      ctx.font =
+        `bold ${rfsz}px Noto Sans KR, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
       ctx.fillText(
-        '+100',
-        st.x,
-        st.y - (30 - st.life) * 0.8
+        `#${i + 1}  ${winners[i].num}번`,
+        listX, y
       );
       ctx.restore();
     }
-
-    ctx.save();
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = '#ffffff';
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
 
   function finalize() {
@@ -726,36 +882,45 @@ function drawNumbersPinball() {
 
     overlay.classList.remove('show');
 
-    const picked = winner.num;
+    const selected = winners.map(b => b.num);
 
-    const idx = remainingNumbers.indexOf(picked);
+    selected.sort((a, b) => {
+      if (a === '선생님') return -1;
+      if (b === '선생님') return 1;
+      return Number(a) - Number(b);
+    });
 
-    if (idx !== -1) remainingNumbers.splice(idx, 1);
-
-    pickedNumbers.push(picked);
+    for (const num of selected) {
+      const idx = remainingNumbers.indexOf(num);
+      if (idx !== -1) remainingNumbers.splice(idx, 1);
+      pickedNumbers.push(num);
+    }
 
     const cells = Array.from(
       document.querySelectorAll('.number-cell')
     );
 
-    const pickedCell =
-      cells.find((c) => c.dataset.num === picked);
+    for (const num of selected) {
+      const cell =
+        cells.find(c => c.dataset.num === num);
+      if (cell) cell.classList.add('picked');
+    }
 
-    if (pickedCell) pickedCell.classList.add('picked');
+    const resultText = selected.join(', ');
 
-    numberDisplay.textContent = picked;
+    numberDisplay.textContent = resultText;
 
     numberDisplay.style.fontSize =
-      adjustFontSize(picked);
+      adjustFontSize(resultText);
 
     numberDisplay.classList.remove(
-      'placeholder',
-      'notice'
+      'placeholder', 'notice'
     );
 
-    bigNumber.textContent = picked;
+    bigNumber.textContent = resultText;
 
-    bigNumber.style.fontSize = adjustFontSize(picked);
+    bigNumber.style.fontSize =
+      adjustFontSize(resultText);
 
     bigOverlay.classList.add('show');
 
@@ -773,11 +938,6 @@ function drawNumbersPinball() {
     update();
 
     drawScene();
-
-    if (phase === 'done' && !doneHandled) {
-      doneHandled = true;
-      setTimeout(finalize, 1200);
-    }
 
     pinballRafId = requestAnimationFrame(loop);
   }
