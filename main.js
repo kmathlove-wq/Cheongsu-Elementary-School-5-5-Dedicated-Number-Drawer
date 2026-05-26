@@ -439,9 +439,14 @@ function drawNumbersPinball() {
 
   const H = canvas.height;
 
+  // 가상 월드 (화면의 4배 높이)
+  const WORLD_H = H * 4;
+
+  let cameraY = 0;
+
   overlay.classList.add('show');
 
-  // ── 플레이 영역 ──
+  // ── 플레이 영역 (세계 좌표) ──
   const PLAY_W = Math.min(W * 0.62, 720);
 
   const PLAY_X = (W - PLAY_W) / 2;
@@ -450,7 +455,7 @@ function drawNumbersPinball() {
 
   const PLAY_TOP = H * 0.04;
 
-  const PLAY_BOT = H * 0.92;
+  const PLAY_BOT = WORLD_H * 0.95;
 
   // ── 공 ──
   const BALL_R =
@@ -476,19 +481,19 @@ function drawNumbersPinball() {
   }));
 
   // ── 핀(대각선 바) ──
-  const PEG_LEN = PLAY_W / 7.2;
+  const PEG_LEN = PLAY_W / 10;
 
   const PEG_THICK = Math.max(6, Math.floor(BALL_R * 0.38));
 
   const PEG_R = PEG_THICK / 2;
 
-  const NUM_ROWS = 8;
+  const NUM_ROWS = 14;
 
-  const PEGS_PER_ROW = 7;
+  const PEGS_PER_ROW = 4;
 
-  const pegTop = H * 0.16;
+  const pegTop = H * 0.12;
 
-  const pegBot = H * 0.87;
+  const pegBot = WORLD_H * 0.90;
 
   const rowH = (pegBot - pegTop) / NUM_ROWS;
 
@@ -548,36 +553,36 @@ function drawNumbersPinball() {
 
   const bumpers = [
     {
-      x: PLAY_X + PLAY_W * 0.22,
-      y: H * 0.46,
+      x: PLAY_X + PLAY_W * 0.25,
+      y: WORLD_H * 0.20,
       r: BUMPER_R,
       lit: 0,
       color: '#ff4d6d',
     },
     {
-      x: PLAY_X + PLAY_W * 0.78,
-      y: H * 0.46,
+      x: PLAY_X + PLAY_W * 0.75,
+      y: WORLD_H * 0.20,
       r: BUMPER_R,
       lit: 0,
       color: '#ff4d6d',
     },
     {
       x: PLAY_X + PLAY_W * 0.50,
-      y: H * 0.62,
+      y: WORLD_H * 0.42,
       r: Math.floor(BUMPER_R * 1.2),
       lit: 0,
       color: '#ffe066',
     },
     {
-      x: PLAY_X + PLAY_W * 0.22,
-      y: H * 0.76,
+      x: PLAY_X + PLAY_W * 0.25,
+      y: WORLD_H * 0.65,
       r: BUMPER_R,
       lit: 0,
       color: '#6bffff',
     },
     {
-      x: PLAY_X + PLAY_W * 0.78,
-      y: H * 0.76,
+      x: PLAY_X + PLAY_W * 0.75,
+      y: WORLD_H * 0.65,
       r: BUMPER_R,
       lit: 0,
       color: '#6bffff',
@@ -780,8 +785,18 @@ function drawNumbersPinball() {
       if (bumper.lit > 0) bumper.lit--;
     }
 
-    // 45초 타임아웃 안전장치
-    if (!doneHandled && elapsed > 45000) {
+    // 카메라: 가장 아래 활성 공을 부드럽게 추적
+    if (active.length > 0) {
+      const maxY = Math.max(...active.map(b => b.y));
+      const target = Math.max(
+        0,
+        Math.min(maxY - H * 0.55, WORLD_H - H)
+      );
+      cameraY += (target - cameraY) * 0.04;
+    }
+
+    // 60초 타임아웃 안전장치
+    if (!doneHandled && elapsed > 60000) {
 
       doneHandled = true;
 
@@ -827,10 +842,15 @@ function drawNumbersPinball() {
 
   function drawScene() {
 
+    // 배경 (화면 좌표)
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
 
-    // 플레이 영역 테두리 (흰 네온)
+    // ── 세계 좌표 렌더링 시작 ──
+    ctx.save();
+    ctx.translate(0, -cameraY);
+
+    // 플레이 영역 경계선
     ctx.save();
     ctx.shadowBlur = 20;
     ctx.shadowColor = 'rgba(255,255,255,0.7)';
@@ -842,28 +862,18 @@ function drawNumbersPinball() {
     );
     ctx.restore();
 
-    // 양쪽 V 장식
-    const vMid = H * 0.46;
-    const vSz = H * 0.07;
-    const vOff = Math.min(24, PLAY_X * 0.5);
-
+    // 결승선 (노란 점선)
     ctx.save();
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(255,255,255,0.5)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-    ctx.lineWidth = 2;
-
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = '#ffe066';
+    ctx.strokeStyle = '#ffe066';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([18, 10]);
     ctx.beginPath();
-    ctx.moveTo(PLAY_X, vMid - vSz);
-    ctx.lineTo(PLAY_X - vOff, vMid);
-    ctx.lineTo(PLAY_X, vMid + vSz);
+    ctx.moveTo(PLAY_X, PLAY_BOT);
+    ctx.lineTo(PLAY_X2, PLAY_BOT);
     ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(PLAY_X2, vMid - vSz);
-    ctx.lineTo(PLAY_X2 + vOff, vMid);
-    ctx.lineTo(PLAY_X2, vMid + vSz);
-    ctx.stroke();
+    ctx.setLineDash([]);
     ctx.restore();
 
     // 핀 (시안 네온 바)
@@ -938,6 +948,11 @@ function drawNumbersPinball() {
       ctx.fillText(ball.num, ball.x, ball.y);
       ctx.restore();
     }
+
+    // ── 세계 좌표 렌더링 끝 ──
+    ctx.restore();
+
+    // ── HUD (화면 좌표) ──
 
     // 카운터 (우상단)
     const cfsz = Math.max(18, Math.floor(W * 0.022));
