@@ -484,3 +484,46 @@ button:hover {
     font-size: 2rem;
   }
 }
+
+.pinball-overlay {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 900;
+
+  display: none;
+}
+
+.pinball-overlay.show {
+
+  display: block;
+}
+
+#pinballCanvas {
+
+  display: block;
+
+  width: 100%;
+
+  height: 100%;
+}
+
+.mode-btn[data-mode="pinball"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #0d0d2e,
+      #3d006e
+    );
+
+  color: #c084fc;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(123, 47, 247, 0.5);
+}
