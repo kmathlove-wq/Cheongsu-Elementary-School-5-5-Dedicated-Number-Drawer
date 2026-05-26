@@ -416,10 +416,8 @@ function drawNumbersPinball() {
     return;
   }
 
-  const count = Math.min(
-    Number(drawCountSelect.value),
-    remainingNumbers.length
-  );
+  // 핀볼: 항상 1명 (먼저 통과한 1개)
+  const count = 1;
 
   drawButton.disabled = true;
 
@@ -452,7 +450,7 @@ function drawNumbersPinball() {
 
   const PLAY_TOP = H * 0.04;
 
-  const PLAY_BOT = H * 0.90;
+  const PLAY_BOT = H * 0.92;
 
   // ── 공 ──
   const BALL_R =
@@ -484,13 +482,13 @@ function drawNumbersPinball() {
 
   const PEG_R = PEG_THICK / 2;
 
-  const NUM_ROWS = 5;
+  const NUM_ROWS = 8;
 
   const PEGS_PER_ROW = 7;
 
-  const pegTop = H * 0.22;
+  const pegTop = H * 0.16;
 
-  const pegBot = H * 0.82;
+  const pegBot = H * 0.87;
 
   const rowH = (pegBot - pegTop) / NUM_ROWS;
 
@@ -545,6 +543,47 @@ function drawNumbersPinball() {
     }
   }
 
+  // ── 원형 범퍼 (추가 장애물) ──
+  const BUMPER_R = Math.max(22, Math.floor(PLAY_W / 16));
+
+  const bumpers = [
+    {
+      x: PLAY_X + PLAY_W * 0.22,
+      y: H * 0.33,
+      r: BUMPER_R,
+      lit: 0,
+      color: '#ff4d6d',
+    },
+    {
+      x: PLAY_X + PLAY_W * 0.78,
+      y: H * 0.33,
+      r: BUMPER_R,
+      lit: 0,
+      color: '#ff4d6d',
+    },
+    {
+      x: PLAY_X + PLAY_W * 0.50,
+      y: H * 0.50,
+      r: Math.floor(BUMPER_R * 1.3),
+      lit: 0,
+      color: '#ffe066',
+    },
+    {
+      x: PLAY_X + PLAY_W * 0.22,
+      y: H * 0.68,
+      r: BUMPER_R,
+      lit: 0,
+      color: '#6bffff',
+    },
+    {
+      x: PLAY_X + PLAY_W * 0.78,
+      y: H * 0.68,
+      r: BUMPER_R,
+      lit: 0,
+      color: '#6bffff',
+    },
+  ];
+
   // ── 충돌 함수들 ──
 
   function hitPeg(ball, peg) {
@@ -590,6 +629,33 @@ function drawNumbersPinball() {
         ball.vy -= (1 + R) * dot * ny;
         if (peg.lit === 0) playBumperBeep();
         peg.lit = 10;
+      }
+    }
+  }
+
+  function hitBumper(ball, bumper) {
+
+    const dx = ball.x - bumper.x;
+    const dy = ball.y - bumper.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const minD = ball.r + bumper.r;
+
+    if (dist < minD && dist > 0.01) {
+
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      ball.x += nx * (minD - dist);
+      ball.y += ny * (minD - dist);
+
+      const dot = ball.vx * nx + ball.vy * ny;
+
+      if (dot < 0) {
+        const R = 0.85;
+        ball.vx -= (1 + R) * dot * nx;
+        ball.vy -= (1 + R) * dot * ny;
+        if (bumper.lit === 0) playBumperBeep();
+        bumper.lit = 22;
       }
     }
   }
@@ -654,14 +720,14 @@ function drawNumbersPinball() {
 
     for (const ball of active) {
 
-      ball.vy += 0.42;
+      ball.vy += 0.28;
 
       const spd =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
 
-      if (spd > 16) {
-        ball.vx = ball.vx / spd * 16;
-        ball.vy = ball.vy / spd * 16;
+      if (spd > 14) {
+        ball.vx = ball.vx / spd * 14;
+        ball.vy = ball.vy / spd * 14;
       }
 
       ball.x += ball.vx;
@@ -678,6 +744,8 @@ function drawNumbersPinball() {
       }
 
       for (const peg of pegs) hitPeg(ball, peg);
+
+      for (const bumper of bumpers) hitBumper(ball, bumper);
 
       if (ball.y - ball.r > PLAY_BOT) {
 
@@ -708,8 +776,12 @@ function drawNumbersPinball() {
       if (peg.lit > 0) peg.lit--;
     }
 
-    // 30초 타임아웃 안전장치
-    if (!doneHandled && elapsed > 30000) {
+    for (const bumper of bumpers) {
+      if (bumper.lit > 0) bumper.lit--;
+    }
+
+    // 45초 타임아웃 안전장치
+    if (!doneHandled && elapsed > 45000) {
 
       doneHandled = true;
 
@@ -807,6 +879,38 @@ function drawNumbersPinball() {
       ctx.restore();
     }
 
+    // 원형 범퍼
+    for (const bumper of bumpers) {
+
+      const lit = bumper.lit > 0;
+
+      ctx.save();
+      ctx.shadowBlur = lit ? 40 : 16;
+      ctx.shadowColor = lit ? '#ffffff' : bumper.color;
+
+      ctx.strokeStyle = lit ? '#ffffff' : bumper.color;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(bumper.x, bumper.y, bumper.r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = lit
+        ? 'rgba(255,255,255,0.25)'
+        : bumper.color + '28';
+      ctx.fill();
+
+      const cs = bumper.r * 0.35;
+      ctx.strokeStyle = lit ? '#ffffff' : bumper.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(bumper.x - cs, bumper.y);
+      ctx.lineTo(bumper.x + cs, bumper.y);
+      ctx.moveTo(bumper.x, bumper.y - cs);
+      ctx.lineTo(bumper.x, bumper.y + cs);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // 공
     for (const ball of balls) {
 
@@ -843,7 +947,10 @@ function drawNumbersPinball() {
     ctx.font = `bold ${cfsz}px sans-serif`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
-    ctx.fillText(`${winners.length} / ${count}`, W - 20, 16);
+    ctx.fillText(
+      winners.length === 0 ? '1등 대기중...' : '당첨!',
+      W - 20, 16
+    );
     ctx.restore();
 
     // 당첨 순위 목록
