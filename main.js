@@ -469,7 +469,10 @@ function drawNumbersPinball() {
     '#6bb0ff', '#ff6baa', '#6bff6b', '#ffb06b',
   ];
 
-  const balls = remainingNumbers.map((num, i) => ({
+  const shuffledNums =
+    [...remainingNumbers].sort(() => Math.random() - 0.5);
+
+  const balls = shuffledNums.map((num, i) => ({
     num,
     x: PLAY_X + PLAY_W / 2
       + (Math.random() - 0.5) * PLAY_W * 0.70,
