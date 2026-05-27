@@ -53,11 +53,13 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 - **가상 월드(화면 4배 높이)** 위를 공이 낙하하며 카메라가 자동 스크롤
 - **먼저 하단 결승선을 통과한 N개**가 당첨 (N = 인원수 설정값)
 - HUD에 `현재당첨수 / 목표수` 실시간 표시, 우측에 당첨 순위 목록
+- **좌측 미니맵**: 전체 월드 약도 표시, 마우스 호버 시 해당 위치로 카메라 이동
 
 ### 핀볼(선생님) (pinball-teacher)
 - 핀볼 모드와 동일하나 **선생님 공 포함** (번호 풀: 선생님 + 1~25, 19 제외)
 - 선생님 공 특별 렌더링: 금색(`#ffe066`) + 흰 테두리 + 강한 금색 글로우
 - 공 크기는 다른 공과 동일 (`BALL_R`)
+- 미니맵 포함 (핀볼 모드와 동일)
 
 ---
 
@@ -81,7 +83,9 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 
 ```
 WORLD_H = H * 4      화면 4배 높이의 가상 월드
-cameraY              카메라 Y 오프셋 (가장 아래 공을 부드럽게 추적)
+cameraY              카메라 Y 오프셋
+                     기본: 가장 아래 활성 공 추적 (lerp 0.04)
+                     미니맵 호버 중: 호버 위치 추적 (lerp 0.12)
 
 balls[]              각 번호당 1개 공, 500ms 간격으로 순차 활성화
                      초기 x 위치: PLAY_W의 ±35% 범위에서 랜덤 분산
@@ -110,6 +114,16 @@ finalize()           count개 당첨 후 1.6초 뒤 결과 표시
 - `stopPinball` — true 시 루프 즉시 중단 (resetDraw에서 사용)
 - `_pinballAudioCtx` — Web Audio Context 재사용
 
+**미니맵 상수/변수 (drawNumbersPinball 내부, PLAY_BOT 선언 이후에 위치):**
+- `MM_W` — `min(70, PLAY_X - 10)` / 20 미만이면 미니맵 비활성
+- `MM_SCALE_X` — `MM_W / PLAY_W` (세계 x → 미니맵 x 비율)
+- `MM_SCALE_Y` — `MM_H / WORLD_H` (세계 y → 미니맵 y 비율)
+- `minimapHover` — 미니맵 위에 마우스가 있는지 여부
+- `minimapTargetCamY` — 호버 위치에 대응하는 목표 cameraY
+- `onMMMove` — mousemove 핸들러 (finalize 시 removeEventListener로 제거)
+
+> ⚠️ `MM_W`는 `PLAY_X`를 참조하므로 반드시 `PLAY_BOT` 선언 **이후**에 위치해야 함 (TDZ 오류 방지)
+
 ---
 
 ## 핀볼 drawScene() 렌더링 구조
@@ -128,6 +142,18 @@ drawScene()
   HUD 렌더링 (화면 좌표)
     카운터: "당첨수 / 목표수"
     당첨 순위 목록: #1, #2, ...
+  drawMinimap()                   미니맵 렌더링 (화면 좌표)
+
+drawMinimap()
+  MM_W < 20px → skip (화면이 너무 좁으면 생략)
+  배경 반투명 rect + 테두리
+  결승선 (노란 실선, shadowBlur=4, save/restore 격리)
+  pegs (시안 작은 선분, 각도 유지)
+  spinners (주황 작은 선분)
+  bumpers (컬러 작은 원)
+  balls (활성 공만, 결승선 통과 공 제외) — 각 공 색 2px 원
+  뷰포트 박스 (흰색 반투명 rect, 현재 cameraY 위치)
+  호버 커서 라인 (minimapHover 시 빨간 점선)
 ```
 
 ---
