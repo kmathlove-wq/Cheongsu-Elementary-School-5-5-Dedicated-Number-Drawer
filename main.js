@@ -471,17 +471,6 @@ function drawNumbersPinball() {
 
   let cameraY = 0;
 
-  // ── 미니맵 ──
-  const MM_MARGIN = 5;
-  const MM_W = Math.max(0, Math.min(70, PLAY_X - MM_MARGIN * 2));
-  const MM_H = H - MM_MARGIN * 2;
-  const MM_X = MM_MARGIN;
-  const MM_Y = MM_MARGIN;
-  const MM_SCALE_X = MM_W > 0 ? MM_W / PLAY_W : 0;
-  const MM_SCALE_Y = MM_H / WORLD_H;
-  let minimapHover = false;
-  let minimapTargetCamY = 0;
-
   overlay.classList.add('show');
 
   // ── 플레이 영역 (세계 좌표) ──
@@ -494,6 +483,17 @@ function drawNumbersPinball() {
   const PLAY_TOP = H * 0.04;
 
   const PLAY_BOT = WORLD_H * 0.95;
+
+  // ── 미니맵 ──
+  const MM_MARGIN = 5;
+  const MM_W = Math.max(0, Math.min(70, PLAY_X - MM_MARGIN * 2));
+  const MM_H = H - MM_MARGIN * 2;
+  const MM_X = MM_MARGIN;
+  const MM_Y = MM_MARGIN;
+  const MM_SCALE_X = MM_W > 0 ? MM_W / PLAY_W : 0;
+  const MM_SCALE_Y = MM_H / WORLD_H;
+  let minimapHover = false;
+  let minimapTargetCamY = 0;
 
   // ── 공 ──
   const BALL_R =
