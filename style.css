@@ -545,3 +545,21 @@ button:hover {
     0 0 14px
     rgba(123, 47, 247, 0.5);
 }
+
+.mode-btn[data-mode="pinball-teacher"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #0d0d2e,
+      #5a3d00
+    );
+
+  color: #ffe066;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(255, 200, 0, 0.5);
+}

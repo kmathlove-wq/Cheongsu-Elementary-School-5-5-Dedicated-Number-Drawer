@@ -43,7 +43,7 @@ function getValidItems() {
       (_, i) => String(i + 1)
     ).filter((n) => n !== '19');
 
-  if (currentMode === 'teacher' || currentMode === 'teacher-mystery') {
+  if (currentMode === 'teacher' || currentMode === 'teacher-mystery' || currentMode === 'pinball-teacher') {
     return ['선생님', ...nums];
   }
 
@@ -121,6 +121,11 @@ function updateDescription() {
 
     descriptionEl.textContent =
       '핀볼! 공이 번호 범퍼를 튕기다가 선택된 번호가 뽑힙니다.';
+
+  } else if (currentMode === 'pinball-teacher') {
+
+    descriptionEl.textContent =
+      '핀볼(선생님) 모드: 선생님 공 포함! 선생님이 당첨될 수도?';
 
   } else {
 
@@ -248,7 +253,7 @@ function terminateProgram() {
 
 function drawNumbers() {
 
-  if (currentMode === 'pinball') {
+  if (currentMode === 'pinball' || currentMode === 'pinball-teacher') {
     drawNumbersPinball();
     return;
   }
@@ -492,19 +497,23 @@ function drawNumbersPinball() {
   const shuffledNums =
     [...remainingNumbers].sort(() => Math.random() - 0.5);
 
-  const balls = shuffledNums.map((num, i) => ({
-    num,
-    x: PLAY_X + PLAY_W / 2
-      + (Math.random() - 0.5) * PLAY_W * 0.70,
-    y: PLAY_TOP - BALL_R * 2.5 - i * (BALL_R * 2.6),
-    vx: (Math.random() - 0.5) * 1.5,
-    vy: 0,
-    r: BALL_R,
-    color: PALETTE[i % PALETTE.length],
-    active: false,
-    exited: false,
-    stuckSince: null,
-  }));
+  const balls = shuffledNums.map((num, i) => {
+    const isTeacher = num === '선생님';
+    return {
+      num,
+      x: PLAY_X + PLAY_W / 2
+        + (Math.random() - 0.5) * PLAY_W * 0.70,
+      y: PLAY_TOP - BALL_R * 2.5 - i * (BALL_R * 2.6),
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: 0,
+      r: isTeacher ? BALL_R * 1.5 : BALL_R,
+      color: isTeacher ? '#ffe066' : PALETTE[i % PALETTE.length],
+      active: false,
+      exited: false,
+      stuckSince: null,
+      isTeacher,
+    };
+  });
 
   // ── 핀(대각선 바) ──
   const PEG_LEN = PLAY_W / 10;
@@ -1045,27 +1054,54 @@ function drawNumbersPinball() {
 
       if (!ball.active || ball.exited) continue;
 
-      ctx.save();
-      ctx.shadowBlur = 14;
-      ctx.shadowColor = ball.color;
-      ctx.fillStyle = ball.color;
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
+      if (ball.isTeacher) {
 
-      ctx.save();
-      ctx.fillStyle = '#000';
-      ctx.font =
-        `bold ${Math.floor(ball.r * 0.88)}px ` +
-        `Noto Sans KR, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(ball.num, ball.x, ball.y);
-      ctx.restore();
+        ctx.save();
+        ctx.shadowBlur = 28;
+        ctx.shadowColor = '#ffe066';
+        ctx.fillStyle = '#ffe066';
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.fillStyle = '#3d2000';
+        ctx.font =
+          `bold ${Math.floor(ball.r * 0.60)}px ` +
+          `Noto Sans KR, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('선생님', ball.x, ball.y);
+        ctx.restore();
+
+      } else {
+
+        ctx.save();
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = ball.color;
+        ctx.fillStyle = ball.color;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.fillStyle = '#000';
+        ctx.font =
+          `bold ${Math.floor(ball.r * 0.88)}px ` +
+          `Noto Sans KR, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ball.num, ball.x, ball.y);
+        ctx.restore();
+      }
     }
 
     // ── 세계 좌표 렌더링 끝 ──
