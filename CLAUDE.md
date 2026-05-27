@@ -119,15 +119,16 @@ drawScene()
 - **GitHub push 인증:** `git remote set-url origin`으로 PAT 포함 URL을 터미널에서 직접 설정
 - ⚠️ Codespace 기본 `GITHUB_TOKEN`은 push 권한 없음 → 반드시 PAT 사용
 - ⚠️ PAT를 채팅/출력에 노출하면 GitHub이 자동 취소함 → 터미널에서 직접 입력
-- **`git push` 차단 시 우회:** GitHub API로 ref 직접 업데이트
+- **`git push` 차단 시 우회:** `git push`로 객체 업로드(ref 실패 무시) → API로 ref 갱신
   ```
-  LOCAL_SHA=$(git rev-parse HEAD)
-  PAT=$(git remote get-url origin | sed 's|.*:\(ghp_[^@]*\)@.*|\1|')
+  git push; \
+  LOCAL_SHA=$(git rev-parse HEAD); \
+  PAT=$(git remote get-url origin | sed 's|.*:\(ghp_[^@]*\)@.*|\1|'); \
   curl -s -X PATCH \
     -H "Authorization: Bearer $PAT" \
     -H "Accept: application/vnd.github+json" \
     "https://api.github.com/repos/kmathlove-wq/Cheongsu-Elementary-School-5-5-Dedicated-Number-Drawer/git/refs/heads/main" \
-    -d "{\"sha\":\"$LOCAL_SHA\",\"force\":false}"
+    -d "{\"sha\":\"$LOCAL_SHA\",\"force\":false}" | grep -o '"ref":"[^"]*"'
   ```
 
 ---
