@@ -1027,19 +1027,15 @@ function drawNumbersPinball() {
       ctx.stroke();
     }
 
-    // 공
+    // 공 (결승선 통과 공은 미니맵에서 제외)
     for (const ball of balls) {
-      if (!ball.active) continue;
+      if (!ball.active || ball.exited) continue;
       const px = mmX(ball.x);
       const py = mmY(ball.y);
       if (py < MM_Y - 4 || py > MM_Y + MM_H + 4) continue;
       ctx.beginPath();
       ctx.arc(px, py, 2.2, 0, Math.PI * 2);
-      if (ball.exited) {
-        ctx.fillStyle = '#ffe066';
-      } else {
-        ctx.fillStyle = ball.color;
-      }
+      ctx.fillStyle = ball.color;
       ctx.fill();
     }
 
