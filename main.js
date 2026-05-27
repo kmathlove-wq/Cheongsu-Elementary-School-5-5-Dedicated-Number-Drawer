@@ -471,6 +471,17 @@ function drawNumbersPinball() {
 
   let cameraY = 0;
 
+  // ── 미니맵 ──
+  const MM_MARGIN = 5;
+  const MM_W = Math.max(0, Math.min(70, PLAY_X - MM_MARGIN * 2));
+  const MM_H = H - MM_MARGIN * 2;
+  const MM_X = MM_MARGIN;
+  const MM_Y = MM_MARGIN;
+  const MM_SCALE_X = MM_W > 0 ? MM_W / PLAY_W : 0;
+  const MM_SCALE_Y = MM_H / WORLD_H;
+  let minimapHover = false;
+  let minimapTargetCamY = 0;
+
   overlay.classList.add('show');
 
   // ── 플레이 영역 (세계 좌표) ──
@@ -762,6 +773,27 @@ function drawNumbersPinball() {
 
   const RELEASE_MS = 500;
 
+  // ── 미니맵 마우스 이벤트 ──
+  function onMMMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top)  * scaleY;
+    if (MM_W >= 20 &&
+        mx >= MM_X && mx <= MM_X + MM_W &&
+        my >= MM_Y && my <= MM_Y + MM_H) {
+      minimapHover = true;
+      const worldY = (my - MM_Y) / MM_H * WORLD_H;
+      minimapTargetCamY =
+        Math.max(0, Math.min(worldY - H / 2, WORLD_H - H));
+    } else {
+      minimapHover = false;
+    }
+  }
+  canvas.addEventListener('mousemove', onMMMove);
+  canvas.addEventListener('mouseleave', () => { minimapHover = false; });
+
   function update() {
 
     const elapsed = Date.now() - startTime;
@@ -883,8 +915,10 @@ function drawNumbersPinball() {
       if (sonicBooms[i].alpha <= 0) sonicBooms.splice(i, 1);
     }
 
-    // 카메라: 가장 아래 활성 공을 부드럽게 추적
-    if (active.length > 0) {
+    // 카메라: 미니맵 호버 시 해당 위치, 기본은 공 추적
+    if (minimapHover) {
+      cameraY += (minimapTargetCamY - cameraY) * 0.12;
+    } else if (active.length > 0) {
       const maxY = Math.max(...active.map(b => b.y));
       const target = Math.max(
         0,
@@ -918,6 +952,114 @@ function drawNumbersPinball() {
     ctx.arc(-h + r, 0, r, Math.PI / 2, -Math.PI / 2);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
+  }
+
+  function drawMinimap() {
+    if (MM_W < 20) return;
+
+    ctx.save();
+
+    // 배경
+    ctx.fillStyle = 'rgba(0,0,0,0.72)';
+    ctx.fillRect(MM_X, MM_Y, MM_W, MM_H);
+
+    // 테두리
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(MM_X, MM_Y, MM_W, MM_H);
+
+    // 세계 좌표 → 미니맵 화면 좌표 변환
+    function mmX(wx) { return MM_X + (wx - PLAY_X) * MM_SCALE_X; }
+    function mmY(wy) { return MM_Y + wy * MM_SCALE_Y; }
+
+    // 결승선
+    ctx.strokeStyle = '#ffe066';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(MM_X, mmY(PLAY_BOT));
+    ctx.lineTo(MM_X + MM_W, mmY(PLAY_BOT));
+    ctx.stroke();
+
+    // 핀 (시안 점)
+    ctx.fillStyle = '#00e5ff';
+    for (const peg of pegs) {
+      const px = mmX(peg.cx);
+      const py = mmY(peg.cy);
+      if (py < MM_Y || py > MM_Y + MM_H) continue;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(peg.ang);
+      const hw = Math.max(2, peg.len * MM_SCALE_X / 2);
+      ctx.fillRect(-hw, -0.75, hw * 2, 1.5);
+      ctx.restore();
+    }
+
+    // 스피너 (주황)
+    ctx.fillStyle = '#ff9f43';
+    for (const sp of spinners) {
+      const px = mmX(sp.cx);
+      const py = mmY(sp.cy);
+      if (py < MM_Y || py > MM_Y + MM_H) continue;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(sp.ang);
+      const hw = Math.max(3, sp.len * MM_SCALE_X / 2);
+      ctx.fillRect(-hw, -0.75, hw * 2, 1.5);
+      ctx.restore();
+    }
+
+    // 범퍼 (컬러 원)
+    for (const b of bumpers) {
+      const px = mmX(b.x);
+      const py = mmY(b.y);
+      if (py < MM_Y || py > MM_Y + MM_H) continue;
+      const r = Math.max(2, b.r * MM_SCALE_X);
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 공
+    for (const ball of balls) {
+      if (!ball.active) continue;
+      const px = mmX(ball.x);
+      const py = mmY(ball.y);
+      if (py < MM_Y - 4 || py > MM_Y + MM_H + 4) continue;
+      ctx.beginPath();
+      ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+      if (ball.exited) {
+        ctx.fillStyle = '#ffe066';
+      } else {
+        ctx.fillStyle = ball.color;
+      }
+      ctx.fill();
+    }
+
+    // 뷰포트 표시
+    const vpY = MM_Y + cameraY * MM_SCALE_Y;
+    const vpH = H * MM_SCALE_Y;
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(MM_X, vpY, MM_W, vpH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(MM_X, vpY, MM_W, vpH);
+
+    // 호버 커서 라인
+    if (minimapHover) {
+      const curY = MM_Y + minimapTargetCamY * MM_SCALE_Y + vpH / 2;
+      ctx.strokeStyle = 'rgba(255,80,80,0.8)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(MM_X, curY);
+      ctx.lineTo(MM_X + MM_W, curY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     ctx.restore();
   }
 
@@ -1145,6 +1287,8 @@ function drawNumbersPinball() {
       );
       ctx.restore();
     }
+
+    drawMinimap();
   }
 
   function finalize() {
@@ -1152,6 +1296,7 @@ function drawNumbersPinball() {
     if (stopPinball) return;
 
     stopPinball = true;
+    canvas.removeEventListener('mousemove', onMMMove);
 
     overlay.classList.remove('show');
 
