@@ -506,7 +506,7 @@ function drawNumbersPinball() {
       y: PLAY_TOP - BALL_R * 2.5 - i * (BALL_R * 2.6),
       vx: (Math.random() - 0.5) * 1.5,
       vy: 0,
-      r: isTeacher ? BALL_R * 1.5 : BALL_R,
+      r: BALL_R,
       color: isTeacher ? '#ffe066' : PALETTE[i % PALETTE.length],
       active: false,
       exited: false,
@@ -893,23 +893,6 @@ function drawNumbersPinball() {
       cameraY += (target - cameraY) * 0.04;
     }
 
-    // 60초 타임아웃 안전장치
-    if (!doneHandled && elapsed > 60000) {
-
-      doneHandled = true;
-
-      const rem = balls.filter(
-        b => !b.exited && !winners.includes(b)
-      );
-
-      rem.sort(() => Math.random() - 0.5);
-
-      while (winners.length < count && rem.length) {
-        winners.push(rem.shift());
-      }
-
-      setTimeout(finalize, 400);
-    }
   }
 
   // ── 그리기 ──
