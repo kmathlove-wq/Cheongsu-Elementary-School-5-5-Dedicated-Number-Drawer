@@ -115,7 +115,7 @@ function updateDescription() {
   } else if (currentMode === 'teacher-mystery') {
 
     descriptionEl.textContent =
-      '선생님(?) 모드: 선생님이 반드시 뽑힙니다! (이미 뽑혔으면 일반 랜덤)';
+      '선생님 + 1번~25번 중 뽑습니다. 19번 제외. 선생님에겐 조금 특별한 무언가가 있을지도...?';
 
   } else if (currentMode === 'pinball') {
 
@@ -1140,7 +1140,7 @@ function drawNumbersPinball() {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(
-        `#${i + 1}  ${winners[i].num}번`,
+        `#${i + 1}  ${winners[i].num}${winners[i].num === '선생님' ? '' : '번'}`,
         listX, y
       );
       ctx.restore();
