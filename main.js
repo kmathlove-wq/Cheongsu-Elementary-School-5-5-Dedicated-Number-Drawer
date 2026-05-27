@@ -1045,21 +1045,21 @@ function drawNumbersPinball() {
     );
     ctx.restore();
 
-    // 당첨 순위 목록 (좌우 2열)
+    // 당첨 순위 목록 (오른쪽 단일 열)
+    const listX = PLAY_X2 + 14;
     const listY0 = H * 0.06;
     const availH = H - listY0 - 20;
-    const halfCount = Math.ceil(count / 2);
+    const rightW = W - PLAY_X2 - 28;
     const maxLineH = Math.max(32, H * 0.06);
-    const lineH = Math.min(maxLineH, availH / halfCount);
-    const rfsz = Math.max(12, Math.min(Math.floor(W * 0.022), Math.floor(lineH * 0.65)));
+    const lineH = Math.min(maxLineH, availH / count);
+    const rfsz = Math.max(12, Math.min(
+      Math.floor(lineH * 0.65),
+      Math.floor(rightW / 5.0)
+    ));
 
     for (let i = 0; i < winners.length; i++) {
 
-      const isRight = i >= halfCount;
-      const row = isRight ? i - halfCount : i;
-      const x = isRight ? PLAY_X2 + 14 : PLAY_X - 14;
-      const align = isRight ? 'left' : 'right';
-      const y = listY0 + row * lineH;
+      const y = listY0 + i * lineH;
       const c = RANK_COLORS[i % RANK_COLORS.length];
 
       ctx.save();
@@ -1068,11 +1068,11 @@ function drawNumbersPinball() {
       ctx.fillStyle = c;
       ctx.font =
         `bold ${rfsz}px Noto Sans KR, sans-serif`;
-      ctx.textAlign = align;
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(
         `#${i + 1}  ${winners[i].num}번`,
-        x, y
+        listX, y
       );
       ctx.restore();
     }
