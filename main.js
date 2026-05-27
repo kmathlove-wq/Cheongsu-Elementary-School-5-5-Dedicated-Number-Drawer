@@ -614,6 +614,24 @@ function drawNumbersPinball() {
     },
   ];
 
+  // ── 회전 핀 (스피너) ──
+  const SPINNER_LEN = PEG_LEN * 1.3;
+
+  const spinners = [
+    { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.10, angVel:  0.030 },
+    { cx: PLAY_X + PLAY_W * 0.18, cy: WORLD_H * 0.30, angVel: -0.025 },
+    { cx: PLAY_X + PLAY_W * 0.82, cy: WORLD_H * 0.30, angVel:  0.025 },
+    { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.52, angVel: -0.032 },
+    { cx: PLAY_X + PLAY_W * 0.22, cy: WORLD_H * 0.76, angVel:  0.028 },
+    { cx: PLAY_X + PLAY_W * 0.78, cy: WORLD_H * 0.76, angVel: -0.028 },
+  ].map((s, i) => ({
+    ...s,
+    ang: (Math.PI / 6) * i,
+    len: SPINNER_LEN,
+    lit: 0,
+    x1: 0, y1: 0, x2: 0, y2: 0,
+  }));
+
   // ── 충돌 함수들 ──
 
   function hitPeg(ball, peg) {
@@ -748,6 +766,18 @@ function drawNumbersPinball() {
     const active =
       balls.filter(b => b.active && !b.exited);
 
+    // 스피너 각도 갱신 (프레임당 1회)
+    for (const sp of spinners) {
+      sp.ang += sp.angVel;
+      const h = sp.len / 2;
+      const cos = Math.cos(sp.ang);
+      const sin = Math.sin(sp.ang);
+      sp.x1 = sp.cx - cos * h;
+      sp.y1 = sp.cy - sin * h;
+      sp.x2 = sp.cx + cos * h;
+      sp.y2 = sp.cy + sin * h;
+    }
+
     for (const ball of active) {
 
       ball.vy += 0.28;
@@ -776,6 +806,8 @@ function drawNumbersPinball() {
       for (const peg of pegs) hitPeg(ball, peg);
 
       for (const bumper of bumpers) hitBumper(ball, bumper);
+
+      for (const sp of spinners) hitPeg(ball, sp);
 
       if (ball.y - ball.r > PLAY_BOT) {
 
@@ -808,6 +840,10 @@ function drawNumbersPinball() {
 
     for (const bumper of bumpers) {
       if (bumper.lit > 0) bumper.lit--;
+    }
+
+    for (const sp of spinners) {
+      if (sp.lit > 0) sp.lit--;
     }
 
     // 카메라: 가장 아래 활성 공을 부드럽게 추적
@@ -911,6 +947,22 @@ function drawNumbersPinball() {
       ctx.shadowColor = lit ? '#ffffff' : '#00e5ff';
       ctx.fillStyle = lit ? '#ffffff' : '#00e5ff';
       drawBar(peg.cx, peg.cy, peg.len, peg.thick, peg.ang);
+      ctx.restore();
+    }
+
+    // 스피너 (주황 네온 회전 바)
+    for (const sp of spinners) {
+
+      const lit = sp.lit > 0;
+
+      ctx.save();
+      ctx.shadowBlur = lit ? 30 : 14;
+      ctx.shadowColor = lit ? '#ffffff' : '#ff9f43';
+      ctx.fillStyle   = lit ? '#ffffff' : '#ff9f43';
+      drawBar(sp.cx, sp.cy, sp.len, PEG_THICK, sp.ang);
+      ctx.beginPath();
+      ctx.arc(sp.cx, sp.cy, PEG_R * 1.8, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
 
