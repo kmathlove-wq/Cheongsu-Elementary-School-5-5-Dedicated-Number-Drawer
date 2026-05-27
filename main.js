@@ -1087,22 +1087,30 @@ function drawNumbersPinball() {
     );
     ctx.restore();
 
-    // 당첨 순위 목록 (오른쪽 단일 열)
-    const listX = PLAY_X2 + 14;
+    // 당첨 순위 목록 (플레이 영역 내부 좌측 오버레이)
+    const listX  = PLAY_X + 10;
     const listY0 = H * 0.06;
+    const listW  = PLAY_W * 0.44;
     const availH = H - listY0 - 20;
-    const rightW = W - PLAY_X2 - 28;
     const maxLineH = Math.max(32, H * 0.06);
-    const lineH = Math.min(maxLineH, availH / count);
-    const rfsz = Math.max(12, Math.min(
+    const lineH  = Math.min(maxLineH, availH / count);
+    const rfsz   = Math.max(13, Math.min(
       Math.floor(lineH * 0.65),
-      Math.floor(rightW / 5.0)
+      Math.floor(listW / 5.0)
     ));
 
     for (let i = 0; i < winners.length; i++) {
 
       const y = listY0 + i * lineH;
       const c = RANK_COLORS[i % RANK_COLORS.length];
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(
+        listX - 4, y - lineH * 0.5,
+        listW, lineH * 0.92
+      );
+      ctx.restore();
 
       ctx.save();
       ctx.shadowBlur = 10;
