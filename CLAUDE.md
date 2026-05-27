@@ -116,12 +116,9 @@ drawScene()
 
 ## GitHub 배포
 - `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포
-- **GitHub push 인증:** PAT를 remote URL에 직접 삽입
-  ```
-  git remote set-url origin https://kmathlove-wq:<PAT>@github.com/kmathlove-wq/Cheongsu-Elementary-School-5-5-Dedicated-Number-Drawer.git
-  ```
+- **GitHub push 인증:** `git remote set-url origin`으로 PAT 포함 URL을 터미널에서 직접 설정
 - ⚠️ Codespace 기본 `GITHUB_TOKEN`은 push 권한 없음 → 반드시 PAT 사용
-- ⚠️ PAT를 채팅에 붙여넣으면 GitHub이 자동 취소함 → 터미널에서 직접 입력
+- ⚠️ PAT를 채팅/출력에 노출하면 GitHub이 자동 취소함 → 터미널에서 직접 입력
 
 ---
 
