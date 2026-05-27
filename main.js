@@ -1045,31 +1045,34 @@ function drawNumbersPinball() {
     );
     ctx.restore();
 
-    // 당첨 순위 목록
-    const hasRight = (W - PLAY_X2) >= 110;
-    const listX = hasRight ? PLAY_X2 + 18 : 14;
-    const listY0 = hasRight ? H * 0.22 : H * 0.06;
+    // 당첨 순위 목록 (좌우 2열)
+    const listY0 = H * 0.06;
     const availH = H - listY0 - 20;
-    const maxLineH = Math.max(28, H * 0.055);
-    const lineH = Math.min(maxLineH, availH / count);
-    const rfsz = Math.max(9, Math.min(Math.floor(W * 0.017), Math.floor(lineH * 0.62)));
+    const halfCount = Math.ceil(count / 2);
+    const maxLineH = Math.max(32, H * 0.06);
+    const lineH = Math.min(maxLineH, availH / halfCount);
+    const rfsz = Math.max(12, Math.min(Math.floor(W * 0.022), Math.floor(lineH * 0.65)));
 
     for (let i = 0; i < winners.length; i++) {
 
-      const y = listY0 + i * lineH;
+      const isRight = i >= halfCount;
+      const row = isRight ? i - halfCount : i;
+      const x = isRight ? PLAY_X2 + 14 : PLAY_X - 14;
+      const align = isRight ? 'left' : 'right';
+      const y = listY0 + row * lineH;
       const c = RANK_COLORS[i % RANK_COLORS.length];
 
       ctx.save();
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10;
       ctx.shadowColor = c;
       ctx.fillStyle = c;
       ctx.font =
         `bold ${rfsz}px Noto Sans KR, sans-serif`;
-      ctx.textAlign = 'left';
+      ctx.textAlign = align;
       ctx.textBaseline = 'middle';
       ctx.fillText(
         `#${i + 1}  ${winners[i].num}번`,
-        listX, y
+        x, y
       );
       ctx.restore();
     }
