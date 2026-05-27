@@ -974,12 +974,17 @@ function drawNumbersPinball() {
     function mmY(wy) { return MM_Y + wy * MM_SCALE_Y; }
 
     // 결승선
+    ctx.save();
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = '#ffe066';
     ctx.strokeStyle = '#ffe066';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(MM_X, mmY(PLAY_BOT));
     ctx.lineTo(MM_X + MM_W, mmY(PLAY_BOT));
     ctx.stroke();
+    ctx.restore();
 
     // 핀 (시안 점)
     ctx.fillStyle = '#00e5ff';
