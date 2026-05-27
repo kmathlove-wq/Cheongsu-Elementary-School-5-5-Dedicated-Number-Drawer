@@ -503,6 +503,7 @@ function drawNumbersPinball() {
     color: PALETTE[i % PALETTE.length],
     active: false,
     exited: false,
+    stuckSince: null,
   }));
 
   // ── 핀(대각선 바) ──
@@ -615,7 +616,7 @@ function drawNumbersPinball() {
   ];
 
   // ── 회전 핀 (스피너) ──
-  const SPINNER_LEN = PEG_LEN * 1.3;
+  const SPINNER_LEN = PEG_LEN * 2.8;
 
   const spinners = [
     { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.10, angVel:  0.030 },
@@ -744,6 +745,8 @@ function drawNumbersPinball() {
 
   const winners = [];
 
+  const sonicBooms = [];
+
   let doneHandled = false;
 
   const startTime = Date.now();
@@ -809,6 +812,25 @@ function drawNumbersPinball() {
 
       for (const sp of spinners) hitPeg(ball, sp);
 
+      // 5초 이상 멈춤 → 소닉붐
+      const bSpeed =
+        Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      const nowMs = Date.now();
+      if (bSpeed < 0.8) {
+        if (ball.stuckSince === null) ball.stuckSince = nowMs;
+        else if (nowMs - ball.stuckSince > 5000) {
+          ball.vx = (Math.random() - 0.5) * 8;
+          ball.vy = -22;
+          ball.stuckSince = null;
+          sonicBooms.push({
+            x: ball.x, y: ball.y, r: 0, alpha: 1.0,
+          });
+          playBumperBeep();
+        }
+      } else {
+        ball.stuckSince = null;
+      }
+
       if (ball.y - ball.r > PLAY_BOT) {
 
         ball.exited = true;
@@ -844,6 +866,12 @@ function drawNumbersPinball() {
 
     for (const sp of spinners) {
       if (sp.lit > 0) sp.lit--;
+    }
+
+    for (let i = sonicBooms.length - 1; i >= 0; i--) {
+      sonicBooms[i].r += 7;
+      sonicBooms[i].alpha -= 0.035;
+      if (sonicBooms[i].alpha <= 0) sonicBooms.splice(i, 1);
     }
 
     // 카메라: 가장 아래 활성 공을 부드럽게 추적
@@ -994,6 +1022,20 @@ function drawNumbersPinball() {
       ctx.lineTo(bumper.x + cs, bumper.y);
       ctx.moveTo(bumper.x, bumper.y - cs);
       ctx.lineTo(bumper.x, bumper.y + cs);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 소닉붐 이펙트
+    for (const sb of sonicBooms) {
+      ctx.save();
+      ctx.globalAlpha = sb.alpha;
+      ctx.shadowBlur = 24;
+      ctx.shadowColor = '#00e5ff';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(sb.x, sb.y, sb.r, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
