@@ -1087,16 +1087,16 @@ function drawNumbersPinball() {
     );
     ctx.restore();
 
-    // 당첨 순위 목록 (플레이 영역 내부 좌측 오버레이)
-    const listX  = PLAY_X + 10;
+    // 당첨 순위 목록 (플레이 영역 오른쪽 바깥 패널)
+    const listX  = PLAY_X2 + 10;
     const listY0 = H * 0.06;
-    const listW  = PLAY_W * 0.44;
+    const listW  = Math.max(60, W - PLAY_X2 - 20);
     const availH = H - listY0 - 20;
-    const maxLineH = Math.max(32, H * 0.06);
+    const maxLineH = Math.max(54, H * 0.09);
     const lineH  = Math.min(maxLineH, availH / count);
-    const rfsz   = Math.max(13, Math.min(
-      Math.floor(lineH * 0.65),
-      Math.floor(listW / 5.0)
+    const rfsz   = Math.max(20, Math.min(
+      Math.floor(lineH * 0.82),
+      Math.floor(listW / 2.8)
     ));
 
     for (let i = 0; i < winners.length; i++) {
