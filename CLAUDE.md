@@ -38,6 +38,11 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 ### 선생님 (teacher)
 - `선생님` 항목 포함. 결과 정렬 시 선생님이 항상 맨 앞
 
+### 선생님(?) (teacher-mystery)
+- 선생님 모드와 동일한 번호 풀 (선생님 + 1~25, 19 제외)
+- **선생님이 남아있으면 무조건 당첨**에 포함됨
+- 선생님이 이미 뽑혔으면 일반 랜덤 뽑기로 동작
+
 ### ??? (mystery)
 - 기본과 동일하나 **5번이 뽑히면 `window.close()` 실행** (장난 모드)
 
@@ -127,7 +132,7 @@ drawScene()
 ```
 .container
   h1 제목
-  .mode-selector       기본 | 선생님 | ??? | 핀볼
+  .mode-selector       기본 | 선생님 | 선생님(?) | ??? | 핀볼
   .card
     #drawSettings      인원수 선택 (모든 모드에서 표시, 핀볼도 적용됨)
     #numberDisplay     결과 표시 영역

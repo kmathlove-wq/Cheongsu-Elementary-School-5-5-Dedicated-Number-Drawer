@@ -43,7 +43,7 @@ function getValidItems() {
       (_, i) => String(i + 1)
     ).filter((n) => n !== '19');
 
-  if (currentMode === 'teacher') {
+  if (currentMode === 'teacher' || currentMode === 'teacher-mystery') {
     return ['선생님', ...nums];
   }
 
@@ -111,6 +111,11 @@ function updateDescription() {
 
     descriptionEl.textContent =
       '선생님 + 1번~25번 중 랜덤으로 뽑습니다. 19번은 제외됩니다.';
+
+  } else if (currentMode === 'teacher-mystery') {
+
+    descriptionEl.textContent =
+      '선생님(?) 모드: 선생님이 반드시 뽑힙니다! (이미 뽑혔으면 일반 랜덤)';
 
   } else if (currentMode === 'pinball') {
 
@@ -318,7 +323,22 @@ function drawNumbers() {
 
       const selected = [];
 
-      for (let i = 0; i < count; i++) {
+      // 선생님(?) 모드: 선생님이 남아있으면 무조건 첫 번째로 추출
+      if (
+        currentMode === 'teacher-mystery' &&
+        remainingNumbers.includes('선생님')
+      ) {
+        const idx = remainingNumbers.indexOf('선생님');
+        remainingNumbers.splice(idx, 1);
+        selected.push('선생님');
+        pickedNumbers.push('선생님');
+        const teacherCell = cells.find(
+          (cell) => cell.dataset.num === '선생님'
+        );
+        if (teacherCell) teacherCell.classList.add('picked');
+      }
+
+      for (let i = selected.length; i < count; i++) {
 
         const randomIndex =
           Math.floor(

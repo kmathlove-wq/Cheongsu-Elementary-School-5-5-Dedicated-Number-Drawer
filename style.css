@@ -456,6 +456,24 @@ button:hover {
     );
 }
 
+.mode-btn[data-mode="teacher-mystery"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #1a1a2e,
+      #7d5a00
+    );
+
+  color: #ffe066;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(255, 200, 0, 0.4);
+}
+
 .number-cell.teacher-cell {
 
   background:
