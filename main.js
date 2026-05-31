@@ -99,8 +99,6 @@ const DEFAULT_MODE_POOLS = {
   'pinball-teacher': ['선생님', ...baseNumbers],
 };
 
-const ADMIN_STORAGE_KEY = 'cheongsu55ModePools';
-
 let modePools = loadModePools();
 
 let adminUnlocked = false;
@@ -132,52 +130,12 @@ function normalizeItems(items) {
 
 function loadModePools() {
 
-  try {
-
-    const saved =
-      JSON.parse(
-        localStorage.getItem(ADMIN_STORAGE_KEY)
-      );
-
-    if (!saved || typeof saved !== 'object') {
-      return cloneDefaultModePools();
-    }
-
-    const pools = {};
-
-    Object.keys(DEFAULT_MODE_POOLS).forEach((mode) => {
-      const items =
-        Array.isArray(saved[mode])
-          ? normalizeItems(saved[mode])
-          : [];
-
-      pools[mode] =
-        items.length > 0
-          ? items
-          : [...DEFAULT_MODE_POOLS[mode]];
-    });
-
-    return pools;
-
-  } catch (e) {
-    return cloneDefaultModePools();
-  }
+  return cloneDefaultModePools();
 }
 
 function saveModePools() {
 
-  try {
-
-    localStorage.setItem(
-      ADMIN_STORAGE_KEY,
-      JSON.stringify(modePools)
-    );
-
-    return true;
-
-  } catch (e) {
-    return false;
-  }
+  return true;
 }
 
 function resetModePools() {
@@ -604,17 +562,13 @@ function saveAdminListInputs(mode) {
 
   modePools[mode] = items;
 
-  const saved = saveModePools();
+  saveModePools();
 
   if (mode === currentMode) {
     resetDraw();
   }
 
-  setAdminManageError(
-    saved
-      ? '저장되었습니다.'
-      : '브라우저 저장에 실패했습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.'
-  );
+  setAdminManageError('현재 접속 중에만 적용되었습니다.');
 
   return true;
 }
@@ -623,7 +577,7 @@ function commitAdminPoolChange(mode) {
 
   modePools[mode] = normalizeItems(modePools[mode]);
 
-  const saved = saveModePools();
+  saveModePools();
 
   renderAdminList();
 
@@ -631,11 +585,7 @@ function commitAdminPoolChange(mode) {
     resetDraw();
   }
 
-  if (!saved) {
-    setAdminManageError(
-      '브라우저 저장에 실패했습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.'
-    );
-  }
+  setAdminManageError('현재 접속 중에만 적용되었습니다.');
 }
 
 function addAdminItem(value) {
