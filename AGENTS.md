@@ -8,7 +8,8 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 ```
 /
 ├── index.html      # UI 마크업
-├── main.js         # 전체 로직
+├── main.js         # 공통 UI·일반 뽑기·관리자 로직
+├── pinball.js      # 핀볼 모드 물리/렌더링
 ├── style.css       # 스타일
 ├── logo.png        # 파비콘 및 로고
 ├── 사진/logo.png   # 보조 로고 이미지
@@ -46,7 +47,8 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 
 ## 주요 파일별 책임
 - `index.html`: 모드 버튼, 뽑기 설정, 번호 표시, 결과 기록, 오버레이, 핀볼 캔버스.
-- `main.js`: 번호 풀 생성, 모드 전환, 관리자 모드, 일반 뽑기, 핀볼 시뮬레이션, 효과음, 리셋.
+- `main.js`: 번호 풀 생성, 모드 전환, 관리자 모드, 일반 뽑기, 효과음, 리셋.
+- `pinball.js`: 핀볼 모드 물리 시뮬레이션, 캔버스 렌더링, 핀볼 중단 처리.
 - `style.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
 - `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
 
@@ -56,7 +58,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `getValidItems()` | 현재 모드에 맞는 번호 풀 반환 |
 | `switchMode(mode)` | 모드 전환 후 리셋 |
 | `drawNumbers()` | 일반 뽑기 실행, 핀볼 모드면 위임 |
-| `drawNumbersPinball()` | 캔버스 기반 핀볼 시뮬레이션 |
+| `drawNumbersPinball()` | `pinball.js`의 캔버스 기반 핀볼 시뮬레이션 |
 | `resetDraw()` | 전체 초기화 및 핀볼 애니메이션 중단 |
 | `playSound()` | 결과 발표 효과음 |
 | `playBumperBeep()` | 핀볼 충돌 효과음 |

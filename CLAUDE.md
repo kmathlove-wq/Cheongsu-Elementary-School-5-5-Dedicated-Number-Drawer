@@ -10,7 +10,8 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 ```
 /
 ├── index.html      # UI 마크업
-├── main.js         # 전체 로직
+├── main.js         # 공통 UI·일반 뽑기·관리자 로직
+├── pinball.js      # 핀볼 모드 물리/렌더링
 ├── style.css       # 스타일
 ├── logo.png        # 파비콘 및 로고
 ├── 사진/logo.png   # 보조 로고 이미지
@@ -60,7 +61,7 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 | `getValidItems()` | 현재 모드에 맞는 번호 풀 반환 |
 | `switchMode(mode)` | 모드 전환 + 리셋 |
 | `drawNumbers()` | 뽑기 실행 (핀볼 모드면 `drawNumbersPinball()` 위임) |
-| `drawNumbersPinball()` | 캔버스 기반 갈튼 보드 물리 시뮬레이션 |
+| `drawNumbersPinball()` | `pinball.js`의 캔버스 기반 갈튼 보드 물리 시뮬레이션 |
 | `resetDraw()` | 전체 초기화 (핀볼 애니메이션도 중단) |
 | `playSound()` | 결과 발표 효과음 (Google OGG) |
 | `playBumperBeep()` | 핀/범퍼 충돌 효과음 (Web Audio API) |
