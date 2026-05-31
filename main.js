@@ -107,6 +107,8 @@ let adminUnlocked = false;
 
 let lastControlPress = 0;
 
+let adminEditingMode = currentMode;
+
 function cloneDefaultModePools() {
 
   return Object.fromEntries(
@@ -171,7 +173,11 @@ function saveModePools() {
       JSON.stringify(modePools)
     );
 
-  } catch (e) {}
+    return true;
+
+  } catch (e) {
+    return false;
+  }
 }
 
 function resetModePools() {
@@ -412,6 +418,13 @@ function openAdminMode() {
 
 function closeAdminMode() {
 
+  if (
+    !adminManageView.hidden &&
+    !saveAdminListInputs(adminEditingMode)
+  ) {
+    return;
+  }
+
   adminOverlay.classList.remove('show');
 
   adminOverlay.setAttribute('aria-hidden', 'true');
@@ -457,6 +470,8 @@ function renderAdminList() {
 
   const items = modePools[mode];
 
+  adminEditingMode = mode;
+
   adminList.innerHTML = '';
 
   items.forEach((item, index) => {
@@ -474,6 +489,8 @@ function renderAdminList() {
     input.maxLength = 20;
 
     input.value = item;
+
+    input.className = 'admin-item-input';
 
     const saveButton =
       document.createElement('button');
@@ -508,22 +525,103 @@ function renderAdminList() {
       }
     });
 
+    input.addEventListener('change', () => {
+      saveAdminListInputs(mode);
+    });
+
     row.append(input, saveButton, deleteButton);
 
     adminList.appendChild(row);
   });
 }
 
+function getAdminListInputValues() {
+
+  return Array.from(
+    adminList.querySelectorAll('.admin-item-input')
+  ).map((input) => input.value.trim());
+}
+
+function validateAdminItems(items) {
+
+  if (items.length === 0) {
+    return '각 모드에는 최소 1개 항목이 필요합니다.';
+  }
+
+  const seen = new Set();
+
+  for (const item of items) {
+
+    if (!item) {
+      return '빈 값으로 변경할 수 없습니다.';
+    }
+
+    if (seen.has(item)) {
+      return '이미 있는 값입니다.';
+    }
+
+    seen.add(item);
+  }
+
+  return '';
+}
+
+function saveAdminListInputs(mode) {
+
+  if (!mode || !modePools[mode]) {
+    return true;
+  }
+
+  const items = getAdminListInputValues();
+
+  const error = validateAdminItems(items);
+
+  if (error) {
+    setAdminManageError(error);
+    return false;
+  }
+
+  const changed =
+    items.length !== modePools[mode].length ||
+    items.some((item, index) => item !== modePools[mode][index]);
+
+  if (!changed) {
+    return true;
+  }
+
+  modePools[mode] = items;
+
+  const saved = saveModePools();
+
+  if (mode === currentMode) {
+    resetDraw();
+  }
+
+  setAdminManageError(
+    saved
+      ? '저장되었습니다.'
+      : '브라우저 저장에 실패했습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.'
+  );
+
+  return true;
+}
+
 function commitAdminPoolChange(mode) {
 
   modePools[mode] = normalizeItems(modePools[mode]);
 
-  saveModePools();
+  const saved = saveModePools();
 
   renderAdminList();
 
   if (mode === currentMode) {
     resetDraw();
+  }
+
+  if (!saved) {
+    setAdminManageError(
+      '브라우저 저장에 실패했습니다. 새로고침하면 변경 내용이 사라질 수 있습니다.'
+    );
   }
 }
 
@@ -1878,7 +1976,14 @@ adminLoginForm.addEventListener('submit', (event) => {
 });
 
 adminModeSelect.addEventListener('change', () => {
+
+  if (!saveAdminListInputs(adminEditingMode)) {
+    adminModeSelect.value = adminEditingMode;
+    return;
+  }
+
   setAdminManageError('');
+
   renderAdminList();
 });
 
