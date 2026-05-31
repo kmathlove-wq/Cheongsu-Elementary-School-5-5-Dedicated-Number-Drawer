@@ -215,6 +215,17 @@ function getResultLabel(item) {
     : item;
 }
 
+function getDisplayLabel(item, maxLength = 6) {
+
+  const text = String(item);
+
+  if (text === '선생님' || text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength)}...`;
+}
+
 function isDefaultModePool(mode) {
 
   const currentItems = modePools[mode];
@@ -228,7 +239,7 @@ function isDefaultModePool(mode) {
 // 모드별 풀 반환 (모두 문자열로 통일)
 function getValidItems() {
 
-  return [...modePools[currentMode]];
+  return [...modePools[currentMode]].sort(compareItems);
 }
 
 let validItems = getValidItems();
@@ -273,7 +284,9 @@ function renderGrid() {
 
     cell.dataset.num = item;
 
-    cell.textContent = item;
+    cell.title = item;
+
+    cell.textContent = getDisplayLabel(item);
 
     numberGrid.appendChild(cell);
   });
@@ -1022,7 +1035,12 @@ function drawNumbersPinball() {
   ];
 
   const shuffledNums =
-    [...remainingNumbers].sort(() => Math.random() - 0.5);
+    [
+      ...remainingNumbers.filter((num) => num === '선생님'),
+      ...remainingNumbers
+        .filter((num) => num !== '선생님')
+        .sort(() => Math.random() - 0.5),
+    ];
 
   const balls = shuffledNums.map((num, i) => {
     const isTeacher = num === '선생님';
@@ -1741,7 +1759,11 @@ function drawNumbersPinball() {
           `Noto Sans KR, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(ball.num, ball.x, ball.y);
+        ctx.fillText(
+          getDisplayLabel(ball.num, 2),
+          ball.x,
+          ball.y
+        );
         ctx.restore();
       }
     }

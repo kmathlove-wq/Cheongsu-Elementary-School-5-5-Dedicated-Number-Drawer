@@ -273,6 +273,8 @@ button:hover {
 
   min-height: 84px;
 
+  min-width: 0;
+
   border-radius: 14px;
 
   background:
@@ -288,6 +290,16 @@ button:hover {
 
   font-size:
     clamp(1rem, 2.4vw, 1.6rem);
+
+  line-height: 1.1;
+
+  overflow: hidden;
+
+  padding: 0 12px;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
 
   transition: 0.15s;
 
