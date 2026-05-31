@@ -666,6 +666,28 @@ export function drawNumbersPinball({
     ctx.restore();
   }
 
+  function fitText(text, maxWidth) {
+
+    if (ctx.measureText(text).width <= maxWidth) {
+      return text;
+    }
+
+    const ellipsis = '...';
+
+    let clipped = text;
+
+    while (
+      clipped.length > 0 &&
+      ctx.measureText(`${clipped}${ellipsis}`).width > maxWidth
+    ) {
+      clipped = clipped.slice(0, -1);
+    }
+
+    return clipped
+      ? `${clipped}${ellipsis}`
+      : ellipsis;
+  }
+
   function drawScene() {
 
     // 배경 (화면 좌표)
@@ -888,8 +910,15 @@ export function drawNumbersPinball({
         `bold ${rfsz}px Noto Sans KR, sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
+      const rankText = `#${i + 1} `;
+      const rankW = ctx.measureText(rankText).width;
+      const nameText =
+        fitText(
+          getResultLabel(winners[i].num),
+          Math.max(12, listW - rankW - 8)
+        );
       ctx.fillText(
-        `#${i + 1}  ${getResultLabel(winners[i].num)}`,
+        `${rankText}${nameText}`,
         listX, y
       );
       ctx.restore();
