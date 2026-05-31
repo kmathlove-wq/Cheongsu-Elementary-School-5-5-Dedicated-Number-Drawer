@@ -488,6 +488,209 @@ button:hover {
   font-size: clamp(0.75rem, 1.8vw, 1.1rem);
 }
 
+.admin-overlay {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1200;
+
+  display: none;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(10, 14, 35, 0.46);
+
+  backdrop-filter: blur(8px);
+}
+
+.admin-overlay.show {
+
+  display: flex;
+}
+
+.admin-panel {
+
+  position: relative;
+
+  width: min(560px, 100%);
+
+  max-height: min(760px, 92vh);
+
+  overflow: auto;
+
+  background: white;
+
+  border:
+    1px solid rgba(90, 92, 255, 0.22);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 28px 80px rgba(12, 18, 40, 0.28);
+
+  padding: 26px;
+
+  text-align: left;
+}
+
+.admin-panel h2 {
+
+  margin: 0 42px 22px 0;
+
+  font-size: 1.45rem;
+}
+
+.admin-close {
+
+  position: absolute;
+
+  top: 14px;
+
+  right: 14px;
+
+  width: 40px;
+
+  height: 40px;
+
+  padding: 0;
+
+  border-radius: 50%;
+
+  background: #eef0ff;
+
+  color: var(--text);
+
+  font-size: 1.5rem;
+
+  line-height: 1;
+}
+
+.admin-login-form,
+.admin-add-form {
+
+  display: grid;
+
+  gap: 10px;
+}
+
+.admin-mode-label {
+
+  display: block;
+
+  margin-bottom: 8px;
+
+  font-weight: 800;
+}
+
+.admin-panel input,
+.admin-panel select {
+
+  width: 100%;
+
+  min-height: 44px;
+
+  border:
+    2px solid var(--border);
+
+  border-radius: 12px;
+
+  padding: 10px 12px;
+
+  font-size: 1rem;
+
+  font: inherit;
+}
+
+.admin-list {
+
+  display: grid;
+
+  gap: 10px;
+
+  margin: 18px 0;
+}
+
+.admin-row {
+
+  display: grid;
+
+  grid-template-columns: minmax(0, 1fr) 74px 74px;
+
+  gap: 8px;
+
+  align-items: center;
+}
+
+.admin-row button,
+.admin-add-form button {
+
+  width: auto;
+
+  min-height: 44px;
+
+  padding: 10px 12px;
+
+  border-radius: 12px;
+}
+
+.admin-row button {
+
+  background: #eef0ff;
+
+  color: var(--text);
+}
+
+.admin-row button.danger {
+
+  background: #ffe7e7;
+
+  color: #b4232a;
+}
+
+.admin-row button:disabled {
+
+  cursor: not-allowed;
+
+  opacity: 0.45;
+}
+
+.admin-error {
+
+  min-height: 22px;
+
+  margin: 8px 0 0;
+
+  color: #b4232a;
+
+  font-size: 0.95rem;
+
+  font-weight: 700;
+}
+
+.admin-add-form {
+
+  grid-template-columns: minmax(0, 1fr) 88px;
+}
+
+.admin-add-form button,
+.admin-login-form button {
+
+  background:
+    linear-gradient(
+      135deg,
+      #5a5cff,
+      #22a7a2
+    );
+
+  color: white;
+}
+
 
 @media (max-width: 600px) {
 
@@ -500,6 +703,27 @@ button:hover {
   .number-display {
 
     font-size: 2rem;
+  }
+
+  .admin-panel {
+
+    padding: 22px 18px;
+  }
+
+  .admin-row {
+
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-row button,
+  .admin-add-form button {
+
+    width: 100%;
+  }
+
+  .admin-add-form {
+
+    grid-template-columns: 1fr;
   }
 }
 

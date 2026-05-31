@@ -99,6 +99,54 @@
     <canvas id="pinballCanvas"></canvas>
   </div>
 
+  <div class="admin-overlay" id="adminOverlay" aria-hidden="true">
+    <section class="admin-panel" role="dialog" aria-modal="true">
+      <button class="admin-close" id="adminCloseButton" aria-label="관리자 모드 닫기">
+        ×
+      </button>
+
+      <div id="adminLoginView">
+        <h2>관리자 모드</h2>
+        <form id="adminLoginForm" class="admin-login-form">
+          <label for="adminPassword">비밀번호</label>
+          <input
+            id="adminPassword"
+            type="password"
+            autocomplete="current-password"
+          />
+          <p class="admin-error" id="adminError"></p>
+          <button type="submit">입장</button>
+        </form>
+      </div>
+
+      <div id="adminManageView" hidden>
+        <h2>관리자 모드</h2>
+
+        <label class="admin-mode-label" for="adminModeSelect">
+          수정할 모드
+        </label>
+        <select id="adminModeSelect"></select>
+
+        <div class="admin-list" id="adminList"></div>
+
+        <form id="adminAddForm" class="admin-add-form">
+          <input
+            id="adminNewItem"
+            type="text"
+            maxlength="20"
+            placeholder="추가할 번호 또는 이름"
+          />
+          <button type="submit">추가</button>
+        </form>
+
+        <p class="admin-error" id="adminManageError"></p>
+        <button class="secondary" id="adminResetButton" type="button">
+          기본값으로 되돌리기
+        </button>
+      </div>
+    </section>
+  </div>
+
 <script src="main.js"></script>
 
 </body>

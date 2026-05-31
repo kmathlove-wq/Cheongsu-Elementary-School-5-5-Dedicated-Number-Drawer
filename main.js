@@ -26,6 +26,45 @@ const bigNumber =
 const descriptionEl =
   document.getElementById('description');
 
+const adminOverlay =
+  document.getElementById('adminOverlay');
+
+const adminCloseButton =
+  document.getElementById('adminCloseButton');
+
+const adminLoginView =
+  document.getElementById('adminLoginView');
+
+const adminManageView =
+  document.getElementById('adminManageView');
+
+const adminLoginForm =
+  document.getElementById('adminLoginForm');
+
+const adminPassword =
+  document.getElementById('adminPassword');
+
+const adminError =
+  document.getElementById('adminError');
+
+const adminModeSelect =
+  document.getElementById('adminModeSelect');
+
+const adminList =
+  document.getElementById('adminList');
+
+const adminAddForm =
+  document.getElementById('adminAddForm');
+
+const adminNewItem =
+  document.getElementById('adminNewItem');
+
+const adminManageError =
+  document.getElementById('adminManageError');
+
+const adminResetButton =
+  document.getElementById('adminResetButton');
+
 let pinballRafId = null;
 
 let stopPinball = false;
@@ -34,20 +73,156 @@ let _pinballAudioCtx = null;
 
 let currentMode = 'basic';
 
-// 모드별 풀 생성 (모두 문자열로 통일)
-function getValidItems() {
+const ADMIN_PASSWORD = '1+1=1';
 
-  const nums =
-    Array.from(
-      { length: 25 },
-      (_, i) => String(i + 1)
-    ).filter((n) => n !== '19');
+const MODE_LABELS = {
+  basic: '기본',
+  teacher: '선생님',
+  'teacher-mystery': '선생님(?)',
+  mystery: '???',
+  pinball: '핀볼',
+  'pinball-teacher': '핀볼(선생님)',
+};
 
-  if (currentMode === 'teacher' || currentMode === 'teacher-mystery' || currentMode === 'pinball-teacher') {
-    return ['선생님', ...nums];
+const baseNumbers =
+  Array.from(
+    { length: 25 },
+    (_, i) => String(i + 1)
+  ).filter((n) => n !== '19');
+
+const DEFAULT_MODE_POOLS = {
+  basic: [...baseNumbers],
+  teacher: ['선생님', ...baseNumbers],
+  'teacher-mystery': ['선생님', ...baseNumbers],
+  mystery: [...baseNumbers],
+  pinball: [...baseNumbers],
+  'pinball-teacher': ['선생님', ...baseNumbers],
+};
+
+const ADMIN_STORAGE_KEY = 'cheongsu55ModePools';
+
+let modePools = loadModePools();
+
+let adminUnlocked = false;
+
+let lastControlPress = 0;
+
+function cloneDefaultModePools() {
+
+  return Object.fromEntries(
+    Object.entries(DEFAULT_MODE_POOLS)
+      .map(([mode, items]) => [mode, [...items]])
+  );
+}
+
+function normalizeItems(items) {
+
+  const seen = new Set();
+
+  return items
+    .map((item) => String(item).trim())
+    .filter((item) => {
+      if (!item || seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+}
+
+function loadModePools() {
+
+  try {
+
+    const saved =
+      JSON.parse(
+        localStorage.getItem(ADMIN_STORAGE_KEY)
+      );
+
+    if (!saved || typeof saved !== 'object') {
+      return cloneDefaultModePools();
+    }
+
+    const pools = {};
+
+    Object.keys(DEFAULT_MODE_POOLS).forEach((mode) => {
+      const items =
+        Array.isArray(saved[mode])
+          ? normalizeItems(saved[mode])
+          : [];
+
+      pools[mode] =
+        items.length > 0
+          ? items
+          : [...DEFAULT_MODE_POOLS[mode]];
+    });
+
+    return pools;
+
+  } catch (e) {
+    return cloneDefaultModePools();
+  }
+}
+
+function saveModePools() {
+
+  try {
+
+    localStorage.setItem(
+      ADMIN_STORAGE_KEY,
+      JSON.stringify(modePools)
+    );
+
+  } catch (e) {}
+}
+
+function resetModePools() {
+
+  modePools = cloneDefaultModePools();
+
+  saveModePools();
+}
+
+function compareItems(a, b) {
+
+  if (a === '선생님') return -1;
+
+  if (b === '선생님') return 1;
+
+  const aNum = Number(a);
+
+  const bNum = Number(b);
+
+  if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
+    return aNum - bNum;
   }
 
-  return nums;
+  if (Number.isFinite(aNum)) return -1;
+
+  if (Number.isFinite(bNum)) return 1;
+
+  return a.localeCompare(b, 'ko');
+}
+
+function getResultLabel(item) {
+
+  return Number.isFinite(Number(item))
+    ? `${item}번`
+    : item;
+}
+
+function isDefaultModePool(mode) {
+
+  const currentItems = modePools[mode];
+
+  const defaultItems = DEFAULT_MODE_POOLS[mode];
+
+  return currentItems.length === defaultItems.length &&
+    currentItems.every((item, index) => item === defaultItems[index]);
+}
+
+// 모드별 풀 반환 (모두 문자열로 통일)
+function getValidItems() {
+
+  return [...modePools[currentMode]];
 }
 
 let validItems = getValidItems();
@@ -101,6 +276,37 @@ function renderGrid() {
 renderGrid();
 
 function updateDescription() {
+
+  if (!isDefaultModePool(currentMode)) {
+
+    const items = getValidItems();
+
+    let text =
+      `${MODE_LABELS[currentMode]} 모드: 관리자 설정 항목 ${items.length}개 중 뽑습니다.`;
+
+    if (
+      currentMode === 'teacher-mystery' &&
+      items.includes('선생님')
+    ) {
+      text += ' 선생님은 남아있으면 무조건 포함됩니다.';
+    }
+
+    if (
+      currentMode === 'mystery' &&
+      items.includes('5')
+    ) {
+      text += ' 단, 5번이 나오면...?';
+    }
+
+    if (currentMode === 'pinball' ||
+        currentMode === 'pinball-teacher') {
+      text += ' 핀볼 방식으로 진행됩니다.';
+    }
+
+    descriptionEl.textContent = text;
+
+    return;
+  }
 
   if (currentMode === 'basic') {
 
@@ -162,10 +368,230 @@ function updatePickedNumbers() {
     return;
   }
 
-  pickedNumbersContainer.innerHTML =
-    pickedNumbers
-      .map((num) => `<span>${num}</span>`)
-      .join('');
+  pickedNumbersContainer.innerHTML = '';
+
+  pickedNumbers.forEach((num) => {
+
+    const tag =
+      document.createElement('span');
+
+    tag.textContent = num;
+
+    pickedNumbersContainer.appendChild(tag);
+  });
+}
+
+function setAdminManageError(message) {
+
+  adminManageError.textContent = message;
+}
+
+function openAdminMode() {
+
+  adminOverlay.classList.add('show');
+
+  adminOverlay.setAttribute('aria-hidden', 'false');
+
+  adminError.textContent = '';
+
+  setAdminManageError('');
+
+  if (adminUnlocked) {
+    showAdminManageView();
+    return;
+  }
+
+  adminLoginView.hidden = false;
+
+  adminManageView.hidden = true;
+
+  adminPassword.value = '';
+
+  setTimeout(() => adminPassword.focus(), 0);
+}
+
+function closeAdminMode() {
+
+  adminOverlay.classList.remove('show');
+
+  adminOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function showAdminManageView() {
+
+  adminLoginView.hidden = true;
+
+  adminManageView.hidden = false;
+
+  renderAdminModeOptions();
+
+  renderAdminList();
+}
+
+function renderAdminModeOptions() {
+
+  const prev =
+    adminModeSelect.value || currentMode;
+
+  adminModeSelect.innerHTML = '';
+
+  Object.keys(DEFAULT_MODE_POOLS).forEach((mode) => {
+
+    const option =
+      document.createElement('option');
+
+    option.value = mode;
+
+    option.textContent = MODE_LABELS[mode];
+
+    adminModeSelect.appendChild(option);
+  });
+
+  adminModeSelect.value =
+    modePools[prev] ? prev : currentMode;
+}
+
+function renderAdminList() {
+
+  const mode = adminModeSelect.value;
+
+  const items = modePools[mode];
+
+  adminList.innerHTML = '';
+
+  items.forEach((item, index) => {
+
+    const row =
+      document.createElement('div');
+
+    row.className = 'admin-row';
+
+    const input =
+      document.createElement('input');
+
+    input.type = 'text';
+
+    input.maxLength = 20;
+
+    input.value = item;
+
+    const saveButton =
+      document.createElement('button');
+
+    saveButton.type = 'button';
+
+    saveButton.textContent = '변경';
+
+    saveButton.addEventListener('click', () => {
+      renameAdminItem(index, input.value);
+    });
+
+    const deleteButton =
+      document.createElement('button');
+
+    deleteButton.type = 'button';
+
+    deleteButton.className = 'danger';
+
+    deleteButton.textContent = '삭제';
+
+    deleteButton.disabled = items.length <= 1;
+
+    deleteButton.addEventListener('click', () => {
+      deleteAdminItem(index);
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        renameAdminItem(index, input.value);
+      }
+    });
+
+    row.append(input, saveButton, deleteButton);
+
+    adminList.appendChild(row);
+  });
+}
+
+function commitAdminPoolChange(mode) {
+
+  modePools[mode] = normalizeItems(modePools[mode]);
+
+  saveModePools();
+
+  renderAdminList();
+
+  if (mode === currentMode) {
+    resetDraw();
+  }
+}
+
+function addAdminItem(value) {
+
+  const mode = adminModeSelect.value;
+
+  const item = value.trim();
+
+  if (!item) {
+    setAdminManageError('추가할 값을 입력해 주세요.');
+    return;
+  }
+
+  if (modePools[mode].includes(item)) {
+    setAdminManageError('이미 있는 값입니다.');
+    return;
+  }
+
+  modePools[mode].push(item);
+
+  adminNewItem.value = '';
+
+  setAdminManageError('');
+
+  commitAdminPoolChange(mode);
+}
+
+function renameAdminItem(index, value) {
+
+  const mode = adminModeSelect.value;
+
+  const item = value.trim();
+
+  if (!item) {
+    setAdminManageError('빈 값으로 변경할 수 없습니다.');
+    return;
+  }
+
+  const duplicateIndex =
+    modePools[mode].findIndex((entry) => entry === item);
+
+  if (duplicateIndex !== -1 && duplicateIndex !== index) {
+    setAdminManageError('이미 있는 값입니다.');
+    return;
+  }
+
+  modePools[mode][index] = item;
+
+  setAdminManageError('');
+
+  commitAdminPoolChange(mode);
+}
+
+function deleteAdminItem(index) {
+
+  const mode = adminModeSelect.value;
+
+  if (modePools[mode].length <= 1) {
+    setAdminManageError('각 모드에는 최소 1개 항목이 필요합니다.');
+    return;
+  }
+
+  modePools[mode].splice(index, 1);
+
+  setAdminManageError('');
+
+  commitAdminPoolChange(mode);
 }
 
 function playSound() {
@@ -372,15 +798,7 @@ function drawNumbers() {
         }
       }
 
-      // 선생님은 항상 앞에, 나머지는 숫자 오름차순
-      selected.sort((a, b) => {
-
-        if (a === '선생님') return -1;
-
-        if (b === '선생님') return 1;
-
-        return Number(a) - Number(b);
-      });
+      selected.sort(compareItems);
 
       const resultText = selected.join(', ');
 
@@ -1283,7 +1701,7 @@ function drawNumbersPinball() {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(
-        `#${i + 1}  ${winners[i].num}${winners[i].num === '선생님' ? '' : '번'}`,
+        `#${i + 1}  ${getResultLabel(winners[i].num)}`,
         listX, y
       );
       ctx.restore();
@@ -1303,11 +1721,7 @@ function drawNumbersPinball() {
 
     const selected = winners.map(b => b.num);
 
-    selected.sort((a, b) => {
-      if (a === '선생님') return -1;
-      if (b === '선생님') return 1;
-      return Number(a) - Number(b);
-    });
+    selected.sort(compareItems);
 
     for (const num of selected) {
       const idx = remainingNumbers.indexOf(num);
@@ -1386,6 +1800,8 @@ function resetDraw() {
 
   pickedNumbers = [];
 
+  updateDescription();
+
   buildDrawCountOptions();
 
   renderGrid();
@@ -1426,6 +1842,79 @@ resetButton.addEventListener(
   resetDraw
 );
 
+document.addEventListener('keydown', (event) => {
+
+  if (event.key === 'Control' && !event.repeat) {
+
+    const now = Date.now();
+
+    if (now - lastControlPress <= 450) {
+      lastControlPress = 0;
+      openAdminMode();
+    } else {
+      lastControlPress = now;
+    }
+  }
+
+  if (event.key === 'Escape' &&
+      adminOverlay.classList.contains('show')) {
+    closeAdminMode();
+  }
+});
+
+adminLoginForm.addEventListener('submit', (event) => {
+
+  event.preventDefault();
+
+  if (adminPassword.value === ADMIN_PASSWORD) {
+    adminUnlocked = true;
+    showAdminManageView();
+    return;
+  }
+
+  adminError.textContent = '비밀번호가 맞지 않습니다.';
+
+  adminPassword.select();
+});
+
+adminModeSelect.addEventListener('change', () => {
+  setAdminManageError('');
+  renderAdminList();
+});
+
+adminAddForm.addEventListener('submit', (event) => {
+
+  event.preventDefault();
+
+  addAdminItem(adminNewItem.value);
+});
+
+adminResetButton.addEventListener('click', () => {
+
+  if (!confirm('모든 모드의 항목을 기본값으로 되돌릴까요?')) {
+    return;
+  }
+
+  resetModePools();
+
+  renderAdminList();
+
+  resetDraw();
+
+  setAdminManageError('기본값으로 되돌렸습니다.');
+});
+
+adminCloseButton.addEventListener(
+  'click',
+  closeAdminMode
+);
+
+adminOverlay.addEventListener('click', (event) => {
+
+  if (event.target === adminOverlay) {
+    closeAdminMode();
+  }
+});
 
 bigOverlay.addEventListener(
   'click',
