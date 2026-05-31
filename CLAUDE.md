@@ -13,6 +13,7 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 ├── main.js         # 전체 로직
 ├── style.css       # 스타일
 ├── logo.png        # 파비콘 및 로고
+├── 사진/logo.png   # 보조 로고 이미지
 ├── CNAME           # 커스텀 도메인 설정
 └── .github/workflows/deploy.yml  # GitHub Pages 자동 배포
 ```
@@ -136,7 +137,9 @@ drawScene()
 ## 작업 규칙 (유저 지시사항)
 - **코드 수정 후 항상 GitHub push** (유저가 명시적으로 금지하지 않는 한)
 - 커밋 메시지는 한/영 혼용 가능, 변경 내용을 구체적으로 작성
-- **CLAUDE.md는 200줄을 초과하면 안 됨** — 수정 시 항상 줄 수를 확인하고 초과 시 압축
+- 새로 알게 된 프로젝트 지식은 필요할 때 `AGENTS.md` 또는 `CLAUDE.md`에 반영
+- `AGENTS.md`와 `CLAUDE.md`는 각각 200줄을 초과하면 안 됨 — 수정 시 항상 줄 수를 확인하고 초과 시 압축
+- 사용자 요청 없이 기존 변경사항을 되돌리지 않음
 
 ---
 
