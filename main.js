@@ -1034,26 +1034,36 @@ function drawNumbersPinball() {
     '#6bb0ff', '#ff6baa', '#6bff6b', '#ffb06b',
   ];
 
-  const shuffledNums =
-    [
-      ...remainingNumbers.filter((num) => num === '선생님'),
-      ...remainingNumbers
-        .filter((num) => num !== '선생님')
-        .sort(() => Math.random() - 0.5),
-    ];
+  const dropItems =
+    [...remainingNumbers].sort(compareItems);
 
-  const balls = shuffledNums.map((num, i) => {
+  const BALL_GAP = BALL_R * 2.35;
+
+  const DROP_COLS =
+    Math.max(
+      1,
+      Math.min(
+        dropItems.length,
+        Math.floor(PLAY_W / BALL_GAP)
+      )
+    );
+
+  const balls = dropItems.map((num, i) => {
     const isTeacher = num === '선생님';
+    const col = i % DROP_COLS;
+    const row = Math.floor(i / DROP_COLS);
+    const rowCount =
+      Math.min(DROP_COLS, dropItems.length - row * DROP_COLS);
+    const rowW = (rowCount - 1) * BALL_GAP;
     return {
       num,
-      x: PLAY_X + PLAY_W / 2
-        + (Math.random() - 0.5) * PLAY_W * 0.70,
-      y: PLAY_TOP - BALL_R * 2.5 - i * (BALL_R * 2.6),
-      vx: (Math.random() - 0.5) * 1.5,
+      x: PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
+      y: PLAY_TOP + BALL_R + row * BALL_GAP,
+      vx: 0,
       vy: 0,
       r: BALL_R,
       color: isTeacher ? '#ffe066' : PALETTE[i % PALETTE.length],
-      active: false,
+      active: true,
       exited: false,
       stuckSince: null,
       isTeacher,
@@ -1303,10 +1313,6 @@ function drawNumbersPinball() {
 
   let doneHandled = false;
 
-  const startTime = Date.now();
-
-  const RELEASE_MS = 500;
-
   // ── 미니맵 마우스 이벤트 ──
   function onMMMove(e) {
     const rect = canvas.getBoundingClientRect();
@@ -1329,17 +1335,6 @@ function drawNumbersPinball() {
   canvas.addEventListener('mouseleave', () => { minimapHover = false; });
 
   function update() {
-
-    const elapsed = Date.now() - startTime;
-
-    const toRelease =
-      Math.floor(elapsed / RELEASE_MS);
-
-    for (let i = 0;
-         i < Math.min(toRelease, balls.length);
-         i++) {
-      balls[i].active = true;
-    }
 
     const active =
       balls.filter(b => b.active && !b.exited);

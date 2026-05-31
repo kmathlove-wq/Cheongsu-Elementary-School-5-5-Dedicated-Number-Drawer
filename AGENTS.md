@@ -65,7 +65,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 
 ## 핀볼 구현 메모
 - 가상 월드는 화면 높이의 4배(`WORLD_H = H * 4`).
-- 공은 500ms 간격으로 순차 활성화된다.
+- 공은 항목 정렬 순서대로 상단 가로 그리드에 배치되고 한 번에 떨어진다.
 - 카메라는 기본적으로 가장 아래 활성 공을 따라가며, 미니맵 호버 중에는 호버 위치를 따른다.
 - `pegs`, `bumpers`, `spinners`, `balls`, `winners`, `sonicBooms`가 핵심 상태다.
 - 결승선(`PLAY_BOT`)을 통과한 순서대로 `winners`에 들어가고 목표 인원 달성 후 `finalize()`가 결과를 반영한다.
