@@ -13,8 +13,7 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 ├── main.js         # 공통 UI·일반 뽑기·관리자 로직
 ├── pinball.js      # 핀볼 모드 물리/렌더링
 ├── style.css       # 스타일
-├── logo.png        # 파비콘 및 로고
-├── 사진/logo.png   # 보조 로고 이미지
+├── 사진/logo.png   # 파비콘 및 로고
 ├── CNAME           # 커스텀 도메인 설정
 └── .github/workflows/deploy.yml  # GitHub Pages 자동 배포
 ```
