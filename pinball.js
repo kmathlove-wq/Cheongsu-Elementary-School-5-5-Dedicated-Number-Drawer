@@ -28,6 +28,7 @@ export function drawNumbersPinball({
   getResultLabel,
   getDisplayLabel,
   playBumperBeep,
+  forcedItems = [],
   applyPinballResult,
 }) {
 
@@ -107,8 +108,19 @@ export function drawNumbersPinball({
     '#6bb0ff', '#ff6baa', '#6bff6b', '#ffb06b',
   ];
 
+  const forcedSet = new Set(forcedItems);
+
+  const shuffledItems =
+    [...remainingNumbers]
+      .map((item) => ({
+        item,
+        sort: Math.random(),
+      }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ item }) => item);
+
   const dropItems =
-    [...remainingNumbers].sort(compareItems);
+    shuffledItems;
 
   const BALL_GAP = BALL_R * 2.35;
 
@@ -123,6 +135,8 @@ export function drawNumbersPinball({
 
   const balls = dropItems.map((num, i) => {
     const isTeacher = num === '선생님';
+    const isForced = forcedSet.has(num);
+    const forceSide = i % 2 === 0 ? -1 : 1;
     const col = i % DROP_COLS;
     const row = Math.floor(i / DROP_COLS);
     const rowCount =
@@ -130,16 +144,25 @@ export function drawNumbersPinball({
     const rowW = (rowCount - 1) * BALL_GAP;
     return {
       num,
-      x: PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
+      x: isForced
+        ? (
+          forceSide < 0
+            ? PLAY_X + BALL_R * 1.1
+            : PLAY_X2 - BALL_R * 1.1
+        )
+        : PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
       y: PLAY_TOP + BALL_R + row * BALL_GAP,
-      vx: 0,
-      vy: 0,
+      vx: isForced ? forceSide * 5 : 0,
+      vy: isForced ? 4 : 0,
       r: BALL_R,
       color: isTeacher ? '#ffe066' : PALETTE[i % PALETTE.length],
       active: true,
       exited: false,
       stuckSince: null,
+      sonicCooldown: 0,
       isTeacher,
+      isForced,
+      forceSide,
     };
   });
 
@@ -431,9 +454,16 @@ export function drawNumbersPinball({
       const spd =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
 
-      if (spd > 14) {
-        ball.vx = ball.vx / spd * 14;
-        ball.vy = ball.vy / spd * 14;
+      const maxSpeed = ball.isForced ? 22 : 14;
+
+      if (spd > maxSpeed) {
+        ball.vx = ball.vx / spd * maxSpeed;
+        ball.vy = ball.vy / spd * maxSpeed;
+      }
+
+      if (ball.isForced) {
+        ball.vx += ball.forceSide * 0.18;
+        ball.vy += 0.08;
       }
 
       ball.x += ball.vx;
@@ -441,12 +471,16 @@ export function drawNumbersPinball({
 
       if (ball.x - ball.r < PLAY_X) {
         ball.x = PLAY_X + ball.r;
-        ball.vx = Math.abs(ball.vx) * 0.65;
+        ball.vx = ball.isForced && ball.forceSide < 0
+          ? -Math.abs(ball.vx) * 0.35
+          : Math.abs(ball.vx) * 0.65;
       }
 
       if (ball.x + ball.r > PLAY_X2) {
         ball.x = PLAY_X2 - ball.r;
-        ball.vx = -Math.abs(ball.vx) * 0.65;
+        ball.vx = ball.isForced && ball.forceSide > 0
+          ? Math.abs(ball.vx) * 0.35
+          : -Math.abs(ball.vx) * 0.65;
       }
 
       for (const peg of pegs) hitPeg(ball, peg);
@@ -459,7 +493,23 @@ export function drawNumbersPinball({
       const bSpeed =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
       const nowMs = Date.now();
-      if (bSpeed < 0.8) {
+      if (ball.sonicCooldown > 0) {
+        ball.sonicCooldown--;
+      }
+      if (
+        ball.isForced &&
+        bSpeed < 1.8 &&
+        ball.sonicCooldown === 0
+      ) {
+        ball.vx = ball.forceSide * 10;
+        ball.vy = -24;
+        ball.stuckSince = null;
+        ball.sonicCooldown = 60;
+        sonicBooms.push({
+          x: ball.x, y: ball.y, r: 0, alpha: 1.0,
+        });
+        playBumperBeep();
+      } else if (bSpeed < 0.8) {
         if (ball.stuckSince === null) ball.stuckSince = nowMs;
         else if (nowMs - ball.stuckSince > 5000) {
           ball.vx = (Math.random() - 0.5) * 8;
@@ -937,6 +987,32 @@ export function drawNumbersPinball({
     overlay.classList.remove('show');
 
     const selected = winners.map(b => b.num);
+
+    const forcedAvailable =
+      forcedItems.filter((item) =>
+        remainingNumbers.includes(item)
+      );
+
+    for (const forced of forcedAvailable) {
+
+      if (selected.includes(forced)) {
+        continue;
+      }
+
+      if (selected.length < count) {
+        selected.push(forced);
+        continue;
+      }
+
+      const replaceIndex =
+        selected.findIndex((item) => !forcedSet.has(item));
+
+      if (replaceIndex !== -1) {
+        selected[replaceIndex] = forced;
+      }
+    }
+
+    selected.splice(count);
 
     selected.sort(compareItems);
 

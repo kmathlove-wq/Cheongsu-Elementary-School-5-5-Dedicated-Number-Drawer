@@ -628,11 +628,51 @@ button:hover {
   margin: 18px 0;
 }
 
+.admin-options {
+
+  display: flex;
+
+  gap: 12px;
+
+  flex-wrap: wrap;
+
+  margin-top: 14px;
+}
+
+.admin-option,
+.admin-flag {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  min-height: 36px;
+
+  font-weight: 800;
+}
+
+.admin-option input,
+.admin-flag input {
+
+  width: 18px;
+
+  height: 18px;
+
+  min-height: 0;
+
+  padding: 0;
+
+  border: none;
+}
+
 .admin-row {
 
   display: grid;
 
-  grid-template-columns: minmax(0, 1fr) 74px 74px;
+  grid-template-columns:
+    minmax(0, 1fr) 70px 58px 62px 62px;
 
   gap: 8px;
 

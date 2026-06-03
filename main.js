@@ -55,6 +55,9 @@ const adminError =
 const adminModeSelect =
   document.getElementById('adminModeSelect');
 
+const adminOptions =
+  document.getElementById('adminOptions');
+
 const adminList =
   document.getElementById('adminList');
 
@@ -100,7 +103,22 @@ const DEFAULT_MODE_POOLS = {
   'pinball-teacher': ['선생님', ...baseNumbers],
 };
 
+const DEFAULT_MODE_OPTIONS =
+  Object.fromEntries(
+    Object.keys(DEFAULT_MODE_POOLS)
+      .map((mode) => [
+        mode,
+        {
+          allowDuplicates: false,
+          forcedItems: [],
+          blockedItems: [],
+        },
+      ])
+  );
+
 let modePools = loadModePools();
+
+let modeOptions = loadModeOptions();
 
 let adminUnlocked = false;
 
@@ -116,7 +134,27 @@ function cloneDefaultModePools() {
   );
 }
 
-function normalizeItems(items) {
+function cloneDefaultModeOptions() {
+
+  return Object.fromEntries(
+    Object.entries(DEFAULT_MODE_OPTIONS)
+      .map(([mode, options]) => [
+        mode,
+        {
+          allowDuplicates: options.allowDuplicates,
+          forcedItems: [...options.forcedItems],
+          blockedItems: [...options.blockedItems],
+        },
+      ])
+  );
+}
+
+function isPinballMode(mode) {
+
+  return mode === 'pinball' || mode === 'pinball-teacher';
+}
+
+function uniqueItems(items) {
 
   const seen = new Set();
 
@@ -129,9 +167,34 @@ function normalizeItems(items) {
     });
 }
 
+function normalizeItems(items, allowDuplicates = false) {
+
+  const normalized =
+    items
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+
+  return allowDuplicates
+    ? normalized
+    : uniqueItems(normalized);
+}
+
+function normalizeOptionItems(items, mode) {
+
+  const available = new Set(modePools[mode] || []);
+
+  return uniqueItems(items)
+    .filter((item) => available.has(item));
+}
+
 function loadModePools() {
 
   return cloneDefaultModePools();
+}
+
+function loadModeOptions() {
+
+  return cloneDefaultModeOptions();
 }
 
 function saveModePools() {
@@ -142,6 +205,8 @@ function saveModePools() {
 function resetModePools() {
 
   modePools = cloneDefaultModePools();
+
+  modeOptions = cloneDefaultModeOptions();
 
   saveModePools();
 }
@@ -190,15 +255,26 @@ function isDefaultModePool(mode) {
   const currentItems = modePools[mode];
 
   const defaultItems = DEFAULT_MODE_POOLS[mode];
+  const options = modeOptions[mode];
 
   return currentItems.length === defaultItems.length &&
-    currentItems.every((item, index) => item === defaultItems[index]);
+    currentItems.every((item, index) => item === defaultItems[index]) &&
+    !options.allowDuplicates &&
+    options.forcedItems.length === 0 &&
+    options.blockedItems.length === 0;
 }
 
 // 모드별 풀 반환 (모두 문자열로 통일)
 function getValidItems() {
 
   return [...modePools[currentMode]].sort(compareItems);
+}
+
+function getDrawableItems(mode = currentMode, items = getValidItems()) {
+
+  const blocked = new Set(modeOptions[mode].blockedItems);
+
+  return items.filter((item) => !blocked.has(item));
 }
 
 let validItems = getValidItems();
@@ -261,6 +337,17 @@ function updateDescription() {
 
     let text =
       `${MODE_LABELS[currentMode]} 모드: 관리자 설정 항목 ${items.length}개 중 뽑습니다.`;
+
+    if (modeOptions[currentMode].forcedItems.length > 0) {
+      text += ' 무조건 뽑힘 항목이 적용됩니다.';
+    }
+
+    if (
+      !isPinballMode(currentMode) &&
+      modeOptions[currentMode].blockedItems.length > 0
+    ) {
+      text += ' 제외 항목은 뽑지 않습니다.';
+    }
 
     if (
       currentMode === 'teacher-mystery' &&
@@ -410,6 +497,8 @@ function showAdminManageView() {
 
   renderAdminModeOptions();
 
+  renderAdminOptions();
+
   renderAdminList();
 }
 
@@ -441,6 +530,10 @@ function renderAdminList() {
   const mode = adminModeSelect.value;
 
   const items = modePools[mode];
+  const options = modeOptions[mode];
+  const forced = new Set(options.forcedItems);
+  const blocked = new Set(options.blockedItems);
+  const pinballMode = isPinballMode(mode);
 
   adminEditingMode = mode;
 
@@ -463,6 +556,58 @@ function renderAdminList() {
     input.value = item;
 
     input.className = 'admin-item-input';
+
+    const forcedLabel =
+      document.createElement('label');
+
+    forcedLabel.className = 'admin-flag';
+
+    const forcedInput =
+      document.createElement('input');
+
+    forcedInput.type = 'checkbox';
+
+    forcedInput.className = 'admin-force-input';
+
+    forcedInput.checked = forced.has(item);
+
+    forcedLabel.append(forcedInput, '무조건');
+
+    const blockedLabel =
+      document.createElement('label');
+
+    blockedLabel.className = 'admin-flag';
+
+    const blockedInput =
+      document.createElement('input');
+
+    blockedInput.type = 'checkbox';
+
+    blockedInput.className = 'admin-block-input';
+
+    blockedInput.checked = blocked.has(item);
+
+    blockedInput.disabled = pinballMode;
+
+    blockedLabel.append(blockedInput, '제외');
+
+    if (pinballMode) {
+      blockedLabel.hidden = true;
+    }
+
+    forcedInput.addEventListener('change', () => {
+      if (forcedInput.checked) {
+        blockedInput.checked = false;
+      }
+      saveAdminListInputs(mode);
+    });
+
+    blockedInput.addEventListener('change', () => {
+      if (blockedInput.checked) {
+        forcedInput.checked = false;
+      }
+      saveAdminListInputs(mode);
+    });
 
     const saveButton =
       document.createElement('button');
@@ -501,10 +646,60 @@ function renderAdminList() {
       saveAdminListInputs(mode);
     });
 
-    row.append(input, saveButton, deleteButton);
+    row.append(
+      input,
+      forcedLabel,
+      blockedLabel,
+      saveButton,
+      deleteButton
+    );
 
     adminList.appendChild(row);
   });
+}
+
+function renderAdminOptions() {
+
+  const mode = adminModeSelect.value;
+
+  adminOptions.innerHTML = '';
+
+  const duplicateLabel =
+    document.createElement('label');
+
+  duplicateLabel.className = 'admin-option';
+
+  const duplicateInput =
+    document.createElement('input');
+
+  duplicateInput.type = 'checkbox';
+
+  duplicateInput.checked = modeOptions[mode].allowDuplicates;
+
+  duplicateInput.addEventListener('change', () => {
+
+    if (!saveAdminListInputs(adminEditingMode)) {
+      duplicateInput.checked =
+        modeOptions[mode].allowDuplicates;
+      return;
+    }
+
+    modeOptions[mode].allowDuplicates = duplicateInput.checked;
+
+    modePools[mode] =
+      normalizeItems(
+        modePools[mode],
+        modeOptions[mode].allowDuplicates
+      );
+
+    syncModeOptions(mode);
+
+    commitAdminPoolChange(mode);
+  });
+
+  duplicateLabel.append(duplicateInput, '중복 허용');
+
+  adminOptions.appendChild(duplicateLabel);
 }
 
 function getAdminListInputValues() {
@@ -514,13 +709,26 @@ function getAdminListInputValues() {
   ).map((input) => input.value.trim());
 }
 
-function validateAdminItems(items) {
+function getAdminListRows() {
+
+  return Array.from(
+    adminList.querySelectorAll('.admin-row')
+  ).map((row) => ({
+    item: row.querySelector('.admin-item-input').value.trim(),
+    forced: row.querySelector('.admin-force-input').checked,
+    blocked:
+      row.querySelector('.admin-block-input')?.checked || false,
+  }));
+}
+
+function validateAdminItems(items, mode) {
 
   if (items.length === 0) {
     return '각 모드에는 최소 1개 항목이 필요합니다.';
   }
 
   const seen = new Set();
+  const allowDuplicates = modeOptions[mode].allowDuplicates;
 
   for (const item of items) {
 
@@ -528,7 +736,7 @@ function validateAdminItems(items) {
       return '빈 값으로 변경할 수 없습니다.';
     }
 
-    if (seen.has(item)) {
+    if (!allowDuplicates && seen.has(item)) {
       return '이미 있는 값입니다.';
     }
 
@@ -538,15 +746,36 @@ function validateAdminItems(items) {
   return '';
 }
 
+function syncModeOptions(mode) {
+
+  modeOptions[mode].forcedItems =
+    normalizeOptionItems(
+      modeOptions[mode].forcedItems,
+      mode
+    );
+
+  modeOptions[mode].blockedItems =
+    isPinballMode(mode)
+      ? []
+      : normalizeOptionItems(
+        modeOptions[mode].blockedItems,
+        mode
+      ).filter((item) =>
+        !modeOptions[mode].forcedItems.includes(item)
+      );
+}
+
 function saveAdminListInputs(mode) {
 
   if (!mode || !modePools[mode]) {
     return true;
   }
 
-  const items = getAdminListInputValues();
+  const rows = getAdminListRows();
 
-  const error = validateAdminItems(items);
+  const items = rows.map((row) => row.item);
+
+  const error = validateAdminItems(items, mode);
 
   if (error) {
     setAdminManageError(error);
@@ -557,11 +786,39 @@ function saveAdminListInputs(mode) {
     items.length !== modePools[mode].length ||
     items.some((item, index) => item !== modePools[mode][index]);
 
-  if (!changed) {
+  const forcedItems =
+    uniqueItems(
+      rows
+        .filter((row) => row.forced)
+        .map((row) => row.item)
+    );
+
+  const blockedItems =
+    isPinballMode(mode)
+      ? []
+      : uniqueItems(
+        rows
+          .filter((row) => row.blocked && !row.forced)
+          .map((row) => row.item)
+      );
+
+  const optionsChanged =
+    forcedItems.join('\n') !==
+      modeOptions[mode].forcedItems.join('\n') ||
+    blockedItems.join('\n') !==
+      modeOptions[mode].blockedItems.join('\n');
+
+  if (!changed && !optionsChanged) {
     return true;
   }
 
   modePools[mode] = items;
+
+  modeOptions[mode].forcedItems = forcedItems;
+
+  modeOptions[mode].blockedItems = blockedItems;
+
+  syncModeOptions(mode);
 
   saveModePools();
 
@@ -576,9 +833,17 @@ function saveAdminListInputs(mode) {
 
 function commitAdminPoolChange(mode) {
 
-  modePools[mode] = normalizeItems(modePools[mode]);
+  modePools[mode] =
+    normalizeItems(
+      modePools[mode],
+      modeOptions[mode].allowDuplicates
+    );
+
+  syncModeOptions(mode);
 
   saveModePools();
+
+  renderAdminOptions();
 
   renderAdminList();
 
@@ -600,7 +865,10 @@ function addAdminItem(value) {
     return;
   }
 
-  if (modePools[mode].includes(item)) {
+  if (
+    !modeOptions[mode].allowDuplicates &&
+    modePools[mode].includes(item)
+  ) {
     setAdminManageError('이미 있는 값입니다.');
     return;
   }
@@ -628,7 +896,11 @@ function renameAdminItem(index, value) {
   const duplicateIndex =
     modePools[mode].findIndex((entry) => entry === item);
 
-  if (duplicateIndex !== -1 && duplicateIndex !== index) {
+  if (
+    !modeOptions[mode].allowDuplicates &&
+    duplicateIndex !== -1 &&
+    duplicateIndex !== index
+  ) {
     setAdminManageError('이미 있는 값입니다.');
     return;
   }
@@ -743,7 +1015,10 @@ function drawNumbers() {
 
   if (currentMode === 'pinball' || currentMode === 'pinball-teacher') {
     drawNumbersPinball({
-      remainingNumbers,
+      remainingNumbers:
+        modeOptions[currentMode].allowDuplicates
+          ? [...validItems]
+          : remainingNumbers,
       drawCountSelect,
       numberDisplay,
       drawButton,
@@ -751,12 +1026,25 @@ function drawNumbers() {
       getResultLabel,
       getDisplayLabel,
       playBumperBeep,
+      forcedItems: modeOptions[currentMode].forcedItems,
       applyPinballResult,
     });
     return;
   }
 
-  if (remainingNumbers.length === 0) {
+  const options = modeOptions[currentMode];
+
+  const sourceNumbers =
+    options.allowDuplicates
+      ? [...validItems]
+      : remainingNumbers;
+
+  const blocked = new Set(options.blockedItems);
+
+  const eligibleNumbers =
+    sourceNumbers.filter((num) => !blocked.has(num));
+
+  if (sourceNumbers.length === 0) {
 
     numberDisplay.textContent =
       '모든 번호를 이미 뽑았습니다!';
@@ -773,8 +1061,14 @@ function drawNumbers() {
   const count =
     Math.min(
       Number(drawCountSelect.value),
-      remainingNumbers.length
+      sourceNumbers.length
     );
+
+  if (eligibleNumbers.length === 0 ||
+      (!options.allowDuplicates && count > eligibleNumbers.length)) {
+    terminateProgram();
+    return;
+  }
 
   drawButton.disabled = true;
 
@@ -796,7 +1090,7 @@ function drawNumbers() {
     // dataset.num은 항상 문자열이므로 문자열로 비교
     const availableCells =
       cells.filter((cell) =>
-        remainingNumbers.includes(cell.dataset.num)
+        eligibleNumbers.includes(cell.dataset.num)
       );
 
     const randomCell =
@@ -825,39 +1119,19 @@ function drawNumbers() {
       }
 
       const selected = [];
+      const selectedForHistory = [];
+      const selectedSet = new Set();
 
-      // 선생님(?) 모드: 선생님이 남아있으면 무조건 첫 번째로 추출
-      if (
-        currentMode === 'teacher-mystery' &&
-        remainingNumbers.includes('선생님')
-      ) {
-        const idx = remainingNumbers.indexOf('선생님');
-        remainingNumbers.splice(idx, 1);
-        selected.push('선생님');
-        pickedNumbers.push('선생님');
-        const teacherCell = cells.find(
-          (cell) => cell.dataset.num === '선생님'
-        );
-        if (teacherCell) teacherCell.classList.add('picked');
-      }
-
-      for (let i = selected.length; i < count; i++) {
-
-        const randomIndex =
-          Math.floor(
-            Math.random() *
-            remainingNumbers.length
-          );
-
-        const picked =
-          remainingNumbers.splice(
-            randomIndex,
-            1
-          )[0];
+      const pickItem = (picked) => {
 
         selected.push(picked);
+        selectedForHistory.push(picked);
+        selectedSet.add(picked);
 
-        pickedNumbers.push(picked);
+        if (!options.allowDuplicates) {
+          const idx = remainingNumbers.indexOf(picked);
+          if (idx !== -1) remainingNumbers.splice(idx, 1);
+        }
 
         const pickedCell =
           cells.find(
@@ -865,9 +1139,72 @@ function drawNumbers() {
           );
 
         if (pickedCell) {
-
           pickedCell.classList.add('picked');
         }
+      };
+
+      // 선생님(?) 모드: 선생님이 남아있으면 무조건 첫 번째로 추출
+      if (
+        currentMode === 'teacher-mystery' &&
+        sourceNumbers.includes('선생님') &&
+        !blocked.has('선생님') &&
+        selected.length < count
+      ) {
+        pickItem('선생님');
+      }
+
+      for (const forced of options.forcedItems) {
+
+        if (
+          selected.length >= count ||
+          blocked.has(forced) ||
+          selectedSet.has(forced) ||
+          !sourceNumbers.includes(forced)
+        ) {
+          continue;
+        }
+
+        pickItem(forced);
+      }
+
+      while (selected.length < count) {
+
+        const drawPool =
+          (
+            options.allowDuplicates
+              ? validItems
+              : remainingNumbers
+          ).filter((num) =>
+            !blocked.has(num) &&
+            (
+              options.allowDuplicates ||
+              !selectedSet.has(num)
+            )
+          );
+
+        if (drawPool.length === 0) {
+          terminateProgram();
+          return;
+        }
+
+        const picked =
+          drawPool[
+            Math.floor(
+              Math.random() *
+              drawPool.length
+            )
+          ];
+
+        pickItem(picked);
+      }
+
+      pickedNumbers.push(...selectedForHistory);
+
+      if (
+        selected.some((num) => blocked.has(num))
+      ) {
+        terminateProgram();
+        return;
       }
 
       selected.sort(compareItems);
@@ -921,10 +1258,13 @@ function applyPinballResult(selected) {
 
   for (const num of selected) {
 
-    const idx = remainingNumbers.indexOf(num);
+    if (!modeOptions[currentMode].allowDuplicates) {
 
-    if (idx !== -1) {
-      remainingNumbers.splice(idx, 1);
+      const idx = remainingNumbers.indexOf(num);
+
+      if (idx !== -1) {
+        remainingNumbers.splice(idx, 1);
+      }
     }
 
     pickedNumbers.push(num);
@@ -1063,6 +1403,8 @@ adminModeSelect.addEventListener('change', () => {
 
   setAdminManageError('');
 
+  renderAdminOptions();
+
   renderAdminList();
 });
 
@@ -1080,6 +1422,8 @@ adminResetButton.addEventListener('click', () => {
   }
 
   resetModePools();
+
+  renderAdminOptions();
 
   renderAdminList();
 
