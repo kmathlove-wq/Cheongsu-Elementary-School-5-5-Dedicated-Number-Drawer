@@ -161,6 +161,7 @@ export function drawNumbersPinball({
       active: true,
       exited: false,
       stuckSince: null,
+      noBallCollisionFrames: 0,
       sonicCooldown: 0,
       isTeacher,
       isForced,
@@ -432,6 +433,28 @@ export function drawNumbersPinball({
     }
   }
 
+  function releaseStuckBall(ball) {
+
+    const side =
+      ball.x < PLAY_X + PLAY_W / 2
+        ? 1
+        : -1;
+
+    ball.x += side * ball.r * 1.8;
+    ball.y -= ball.r * 2.4;
+    ball.vx = side * 7;
+    ball.vy = -18;
+    ball.stuckSince = null;
+    ball.noBallCollisionFrames = 32;
+    ball.sonicCooldown = 45;
+    keepBallInLane(ball);
+
+    sonicBooms.push({
+      x: ball.x, y: ball.y, r: 0, alpha: 1.0,
+    });
+    playBumperBeep();
+  }
+
   // ── 게임 상태 ──
 
   const winners = [];
@@ -480,6 +503,13 @@ export function drawNumbersPinball({
 
     for (const ball of active) {
 
+      const prevX = ball.x;
+      const prevY = ball.y;
+
+      if (ball.noBallCollisionFrames > 0) {
+        ball.noBallCollisionFrames--;
+      }
+
       ball.vy += 0.28;
 
       const spd =
@@ -509,9 +539,14 @@ export function drawNumbersPinball({
 
       keepBallInLane(ball);
 
-      // 5초 이상 멈춤 → 소닉붐
+      // 끼임 감지 → 위치 분리와 짧은 충돌 무시로 탈출
       const bSpeed =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      const moved =
+        Math.sqrt(
+          (ball.x - prevX) * (ball.x - prevX) +
+          (ball.y - prevY) * (ball.y - prevY)
+        );
       const nowMs = Date.now();
       if (ball.sonicCooldown > 0) {
         ball.sonicCooldown--;
@@ -529,16 +564,13 @@ export function drawNumbersPinball({
           x: ball.x, y: ball.y, r: 0, alpha: 1.0,
         });
         playBumperBeep();
-      } else if (bSpeed < 0.8) {
+      } else if (
+        !ball.isForced &&
+        (bSpeed < 1.05 || moved < 0.35)
+      ) {
         if (ball.stuckSince === null) ball.stuckSince = nowMs;
-        else if (nowMs - ball.stuckSince > 5000) {
-          ball.vx = (Math.random() - 0.5) * 8;
-          ball.vy = -22;
-          ball.stuckSince = null;
-          sonicBooms.push({
-            x: ball.x, y: ball.y, r: 0, alpha: 1.0,
-          });
-          playBumperBeep();
+        else if (nowMs - ball.stuckSince > 1400) {
+          releaseStuckBall(ball);
         }
       } else {
         ball.stuckSince = null;
@@ -566,6 +598,13 @@ export function drawNumbersPinball({
     for (let i = 0; i < active.length; i++) {
       for (let j = i + 1; j < active.length; j++) {
         if (active[i].isForced || active[j].isForced) {
+          continue;
+        }
+
+        if (
+          active[i].noBallCollisionFrames > 0 ||
+          active[j].noBallCollisionFrames > 0
+        ) {
           continue;
         }
 
