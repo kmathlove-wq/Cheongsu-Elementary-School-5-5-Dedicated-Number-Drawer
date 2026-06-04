@@ -154,8 +154,8 @@ export function drawNumbersPinball({
         )
         : PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
       y: PLAY_TOP + BALL_R + row * BALL_GAP,
-      vx: isForced ? forceSide * 5 : 0,
-      vy: isForced ? 4 : 0,
+      vx: 0,
+      vy: 0,
       r: BALL_R,
       color: isTeacher ? '#ffe066' : PALETTE[i % PALETTE.length],
       active: true,
@@ -456,16 +456,11 @@ export function drawNumbersPinball({
       const spd =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
 
-      const maxSpeed = ball.isForced ? 22 : 14;
+      const maxSpeed = 14;
 
       if (spd > maxSpeed) {
         ball.vx = ball.vx / spd * maxSpeed;
         ball.vy = ball.vy / spd * maxSpeed;
-      }
-
-      if (ball.isForced) {
-        ball.vx += ball.forceSide * 0.18;
-        ball.vy += 0.08;
       }
 
       ball.x += ball.vx;
@@ -473,16 +468,12 @@ export function drawNumbersPinball({
 
       if (ball.x - ball.r < PLAY_X) {
         ball.x = PLAY_X + ball.r;
-        ball.vx = ball.isForced && ball.forceSide < 0
-          ? -Math.abs(ball.vx) * 0.35
-          : Math.abs(ball.vx) * 0.65;
+        ball.vx = Math.abs(ball.vx) * 0.65;
       }
 
       if (ball.x + ball.r > PLAY_X2) {
         ball.x = PLAY_X2 - ball.r;
-        ball.vx = ball.isForced && ball.forceSide > 0
-          ? Math.abs(ball.vx) * 0.35
-          : -Math.abs(ball.vx) * 0.65;
+        ball.vx = -Math.abs(ball.vx) * 0.65;
       }
 
       for (const peg of pegs) hitPeg(ball, peg);
@@ -503,8 +494,8 @@ export function drawNumbersPinball({
         bSpeed < 1.8 &&
         ball.sonicCooldown === 0
       ) {
-        ball.vx = ball.forceSide * 10;
-        ball.vy = -24;
+        ball.vx = ball.forceSide * 5;
+        ball.vy = -14;
         ball.stuckSince = null;
         ball.sonicCooldown = 60;
         sonicBooms.push({

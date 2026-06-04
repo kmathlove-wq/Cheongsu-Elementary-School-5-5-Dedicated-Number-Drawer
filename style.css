@@ -651,6 +651,8 @@ button:hover {
   min-height: 36px;
 
   font-weight: 800;
+
+  white-space: nowrap;
 }
 
 .admin-option input,
@@ -672,7 +674,7 @@ button:hover {
   display: grid;
 
   grid-template-columns:
-    minmax(0, 1fr) 70px 58px 62px;
+    minmax(0, 1fr) 84px 62px 62px;
 
   gap: 8px;
 
@@ -764,7 +766,13 @@ button:hover {
 
   .admin-row {
 
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns:
+      minmax(0, 1fr) 84px 62px 62px;
+  }
+
+  .admin-row .admin-item-input {
+
+    grid-column: 1 / -1;
   }
 
   .admin-row button,
