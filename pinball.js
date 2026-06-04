@@ -485,11 +485,13 @@ export function drawNumbersPinball({
         ball.vx = -Math.abs(ball.vx) * 0.65;
       }
 
-      for (const peg of pegs) hitPeg(ball, peg);
+      if (!ball.isForced) {
+        for (const peg of pegs) hitPeg(ball, peg);
 
-      for (const bumper of bumpers) hitBumper(ball, bumper);
+        for (const bumper of bumpers) hitBumper(ball, bumper);
 
-      for (const sp of spinners) hitPeg(ball, sp);
+        for (const sp of spinners) hitPeg(ball, sp);
+      }
 
       if (ball.isForced) {
         ball.x = ball.forceSide < 0
