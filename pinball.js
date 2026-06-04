@@ -403,6 +403,35 @@ export function drawNumbersPinball({
     }
   }
 
+  function keepBallInLane(ball) {
+
+    if (ball.isForced) {
+      ball.x = ball.forceSide < 0
+        ? PLAY_X + ball.r
+        : PLAY_X2 - ball.r;
+      ball.vx = 0;
+      return;
+    }
+
+    const laneInset =
+      Math.min(
+        PLAY_W / 2 - ball.r,
+        Math.max(ball.r * 2.2, PEG_LEN * 0.45)
+      );
+    const laneLeft = PLAY_X + laneInset;
+    const laneRight = PLAY_X2 - laneInset;
+
+    if (ball.x < laneLeft) {
+      ball.x = laneLeft;
+      ball.vx = Math.abs(ball.vx) * 0.65 + 0.25;
+    }
+
+    if (ball.x > laneRight) {
+      ball.x = laneRight;
+      ball.vx = -Math.abs(ball.vx) * 0.65 - 0.25;
+    }
+  }
+
   // ── 게임 상태 ──
 
   const winners = [];
@@ -463,27 +492,12 @@ export function drawNumbersPinball({
         ball.vy = ball.vy / spd * maxSpeed;
       }
 
-      if (ball.isForced) {
-        const railX = ball.forceSide < 0
-          ? PLAY_X + ball.r
-          : PLAY_X2 - ball.r;
-
-        ball.x += (railX - ball.x) * 0.55;
-        ball.vx = 0;
-      }
+      keepBallInLane(ball);
 
       ball.x += ball.vx;
       ball.y += ball.vy;
 
-      if (ball.x - ball.r < PLAY_X) {
-        ball.x = PLAY_X + ball.r;
-        ball.vx = Math.abs(ball.vx) * 0.65;
-      }
-
-      if (ball.x + ball.r > PLAY_X2) {
-        ball.x = PLAY_X2 - ball.r;
-        ball.vx = -Math.abs(ball.vx) * 0.65;
-      }
+      keepBallInLane(ball);
 
       if (!ball.isForced) {
         for (const peg of pegs) hitPeg(ball, peg);
@@ -493,11 +507,7 @@ export function drawNumbersPinball({
         for (const sp of spinners) hitPeg(ball, sp);
       }
 
-      if (ball.isForced) {
-        ball.x = ball.forceSide < 0
-          ? PLAY_X + ball.r
-          : PLAY_X2 - ball.r;
-      }
+      keepBallInLane(ball);
 
       // 5초 이상 멈춤 → 소닉붐
       const bSpeed =
