@@ -463,6 +463,15 @@ export function drawNumbersPinball({
         ball.vy = ball.vy / spd * maxSpeed;
       }
 
+      if (ball.isForced) {
+        const railX = ball.forceSide < 0
+          ? PLAY_X + ball.r
+          : PLAY_X2 - ball.r;
+
+        ball.x += (railX - ball.x) * 0.55;
+        ball.vx = 0;
+      }
+
       ball.x += ball.vx;
       ball.y += ball.vy;
 
@@ -481,6 +490,12 @@ export function drawNumbersPinball({
       for (const bumper of bumpers) hitBumper(ball, bumper);
 
       for (const sp of spinners) hitPeg(ball, sp);
+
+      if (ball.isForced) {
+        ball.x = ball.forceSide < 0
+          ? PLAY_X + ball.r
+          : PLAY_X2 - ball.r;
+      }
 
       // 5초 이상 멈춤 → 소닉붐
       const bSpeed =
@@ -538,6 +553,10 @@ export function drawNumbersPinball({
 
     for (let i = 0; i < active.length; i++) {
       for (let j = i + 1; j < active.length; j++) {
+        if (active[i].isForced || active[j].isForced) {
+          continue;
+        }
+
         hitBall(active[i], active[j]);
       }
     }
