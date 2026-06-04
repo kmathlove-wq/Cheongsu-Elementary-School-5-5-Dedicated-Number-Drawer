@@ -20,7 +20,7 @@ export function stopPinballMode() {
 }
 
 export function drawNumbersPinball({
-  remainingNumbers,
+  remainingEntries,
   drawCountSelect,
   numberDisplay,
   drawButton,
@@ -32,7 +32,7 @@ export function drawNumbersPinball({
   applyPinballResult,
 }) {
 
-  if (remainingNumbers.length === 0) {
+  if (remainingEntries.length === 0) {
 
     numberDisplay.textContent =
       '모든 번호를 이미 뽑았습니다!';
@@ -46,7 +46,7 @@ export function drawNumbersPinball({
 
   const count = Math.min(
     Number(drawCountSelect.value),
-    remainingNumbers.length
+    remainingEntries.length
   );
 
   drawButton.disabled = true;
@@ -111,13 +111,13 @@ export function drawNumbersPinball({
   const forcedSet = new Set(forcedItems);
 
   const shuffledItems =
-    [...remainingNumbers]
-      .map((item) => ({
-        item,
+    [...remainingEntries]
+      .map((entry) => ({
+        entry,
         sort: Math.random(),
       }))
       .sort((a, b) => a.sort - b.sort)
-      .map(({ item }) => item);
+      .map(({ entry }) => entry);
 
   const dropItems =
     shuffledItems;
@@ -133,9 +133,10 @@ export function drawNumbersPinball({
       )
     );
 
-  const balls = dropItems.map((num, i) => {
+  const balls = dropItems.map((entry, i) => {
+    const num = entry.item;
     const isTeacher = num === '선생님';
-    const isForced = forcedSet.has(num);
+    const isForced = forcedSet.has(entry.key);
     const forceSide = i % 2 === 0 ? -1 : 1;
     const col = i % DROP_COLS;
     const row = Math.floor(i / DROP_COLS);
@@ -144,6 +145,7 @@ export function drawNumbersPinball({
     const rowW = (rowCount - 1) * BALL_GAP;
     return {
       num,
+      key: entry.key,
       x: isForced
         ? (
           forceSide < 0
@@ -986,37 +988,49 @@ export function drawNumbersPinball({
 
     overlay.classList.remove('show');
 
-    const selected = winners.map(b => b.num);
+    const selectedBalls = [...winners];
 
     const forcedAvailable =
-      forcedItems.filter((item) =>
-        remainingNumbers.includes(item)
-      );
+      forcedItems
+        .map((key) =>
+          balls.find((ball) => ball.key === key)
+        )
+        .filter(Boolean);
 
-    for (const forced of forcedAvailable) {
+    for (const forcedBall of forcedAvailable) {
 
-      if (selected.includes(forced)) {
+      if (
+        selectedBalls.some((ball) => ball.key === forcedBall.key)
+      ) {
         continue;
       }
 
-      if (selected.length < count) {
-        selected.push(forced);
+      if (selectedBalls.length < count) {
+        selectedBalls.push(forcedBall);
         continue;
       }
 
       const replaceIndex =
-        selected.findIndex((item) => !forcedSet.has(item));
+        selectedBalls.findIndex((ball) =>
+          !forcedSet.has(ball.key)
+        );
 
       if (replaceIndex !== -1) {
-        selected[replaceIndex] = forced;
+        selectedBalls[replaceIndex] = forcedBall;
       }
     }
 
-    selected.splice(count);
+    selectedBalls.splice(count);
 
-    selected.sort(compareItems);
+    const selectedEntries =
+      selectedBalls
+        .map((ball) => ({
+          item: ball.num,
+          key: ball.key,
+        }))
+        .sort((a, b) => compareItems(a.item, b.item));
 
-    applyPinballResult(selected);
+    applyPinballResult(selectedEntries);
 
     drawButton.disabled = false;
   }

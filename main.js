@@ -181,7 +181,11 @@ function normalizeItems(items, allowDuplicates = false) {
 
 function normalizeOptionItems(items, mode) {
 
-  const available = new Set(modePools[mode] || []);
+  const available =
+    new Set(
+      (modePools[mode] || [])
+        .map((_, index) => String(index))
+    );
 
   return uniqueItems(items)
     .filter((item) => available.has(item));
@@ -250,6 +254,20 @@ function getDisplayLabel(item, maxLength = 6) {
   return `${text.slice(0, maxLength)}...`;
 }
 
+function getEntryItem(entry) {
+
+  return typeof entry === 'string'
+    ? entry
+    : entry.item;
+}
+
+function getEntryKey(entry) {
+
+  return typeof entry === 'string'
+    ? ''
+    : entry.key;
+}
+
 function isDefaultModePool(mode) {
 
   const currentItems = modePools[mode];
@@ -265,21 +283,32 @@ function isDefaultModePool(mode) {
 }
 
 // 모드별 풀 반환 (모두 문자열로 통일)
+function getValidEntries(mode = currentMode) {
+
+  return modePools[mode]
+    .map((item, index) => ({
+      item,
+      key: String(index),
+    }))
+    .sort((a, b) =>
+      compareItems(a.item, b.item) ||
+      Number(a.key) - Number(b.key)
+    );
+}
+
 function getValidItems() {
 
-  return [...modePools[currentMode]].sort(compareItems);
+  return getValidEntries()
+    .map((entry) => entry.item);
 }
 
-function getDrawableItems(mode = currentMode, items = getValidItems()) {
-
-  const blocked = new Set(modeOptions[mode].blockedItems);
-
-  return items.filter((item) => !blocked.has(item));
-}
+let validEntries = getValidEntries();
 
 let validItems = getValidItems();
 
-let remainingNumbers = [...validItems];
+let remainingEntries = [...validEntries];
+
+let remainingNumbers = remainingEntries.map((entry) => entry.item);
 
 let pickedNumbers = [];
 
@@ -306,7 +335,9 @@ function renderGrid() {
 
   numberGrid.innerHTML = '';
 
-  validItems.forEach((item) => {
+  validEntries.forEach((entry) => {
+
+    const item = entry.item;
 
     const cell =
       document.createElement('div');
@@ -318,6 +349,8 @@ function renderGrid() {
     }
 
     cell.dataset.num = item;
+
+    cell.dataset.key = entry.key;
 
     cell.title = item;
 
@@ -546,6 +579,8 @@ function renderAdminList() {
 
     row.className = 'admin-row';
 
+    row.dataset.key = String(index);
+
     const input =
       document.createElement('input');
 
@@ -569,7 +604,7 @@ function renderAdminList() {
 
     forcedInput.className = 'admin-force-input';
 
-    forcedInput.checked = forced.has(item);
+    forcedInput.checked = forced.has(String(index));
 
     forcedLabel.append(forcedInput, '무조건');
 
@@ -585,7 +620,7 @@ function renderAdminList() {
 
     blockedInput.className = 'admin-block-input';
 
-    blockedInput.checked = blocked.has(item);
+    blockedInput.checked = blocked.has(String(index));
 
     blockedInput.disabled = pinballMode;
 
@@ -607,17 +642,6 @@ function renderAdminList() {
         forcedInput.checked = false;
       }
       saveAdminListInputs(mode);
-    });
-
-    const saveButton =
-      document.createElement('button');
-
-    saveButton.type = 'button';
-
-    saveButton.textContent = '변경';
-
-    saveButton.addEventListener('click', () => {
-      renameAdminItem(index, input.value);
     });
 
     const deleteButton =
@@ -650,7 +674,6 @@ function renderAdminList() {
       input,
       forcedLabel,
       blockedLabel,
-      saveButton,
       deleteButton
     );
 
@@ -702,18 +725,12 @@ function renderAdminOptions() {
   adminOptions.appendChild(duplicateLabel);
 }
 
-function getAdminListInputValues() {
-
-  return Array.from(
-    adminList.querySelectorAll('.admin-item-input')
-  ).map((input) => input.value.trim());
-}
-
 function getAdminListRows() {
 
   return Array.from(
     adminList.querySelectorAll('.admin-row')
   ).map((row) => ({
+    key: row.dataset.key,
     item: row.querySelector('.admin-item-input').value.trim(),
     forced: row.querySelector('.admin-force-input').checked,
     blocked:
@@ -765,6 +782,26 @@ function syncModeOptions(mode) {
       );
 }
 
+function removeOptionIndex(mode, removedIndex) {
+
+  const shiftKeys = (keys) =>
+    keys
+      .map((key) => Number(key))
+      .filter((index) => Number.isFinite(index))
+      .filter((index) => index !== removedIndex)
+      .map((index) =>
+        index > removedIndex
+          ? String(index - 1)
+          : String(index)
+      );
+
+  modeOptions[mode].forcedItems =
+    shiftKeys(modeOptions[mode].forcedItems);
+
+  modeOptions[mode].blockedItems =
+    shiftKeys(modeOptions[mode].blockedItems);
+}
+
 function saveAdminListInputs(mode) {
 
   if (!mode || !modePools[mode]) {
@@ -790,7 +827,7 @@ function saveAdminListInputs(mode) {
     uniqueItems(
       rows
         .filter((row) => row.forced)
-        .map((row) => row.item)
+        .map((row) => row.key)
     );
 
   const blockedItems =
@@ -799,7 +836,7 @@ function saveAdminListInputs(mode) {
       : uniqueItems(
         rows
           .filter((row) => row.blocked && !row.forced)
-          .map((row) => row.item)
+          .map((row) => row.key)
       );
 
   const optionsChanged =
@@ -923,6 +960,8 @@ function deleteAdminItem(index) {
 
   modePools[mode].splice(index, 1);
 
+  removeOptionIndex(mode, index);
+
   setAdminManageError('');
 
   commitAdminPoolChange(mode);
@@ -1015,10 +1054,7 @@ function drawNumbers() {
 
   if (currentMode === 'pinball' || currentMode === 'pinball-teacher') {
     drawNumbersPinball({
-      remainingNumbers:
-        modeOptions[currentMode].allowDuplicates
-          ? [...validItems]
-          : remainingNumbers,
+      remainingEntries,
       drawCountSelect,
       numberDisplay,
       drawButton,
@@ -1034,17 +1070,14 @@ function drawNumbers() {
 
   const options = modeOptions[currentMode];
 
-  const sourceNumbers =
-    options.allowDuplicates
-      ? [...validItems]
-      : remainingNumbers;
-
   const blocked = new Set(options.blockedItems);
 
-  const eligibleNumbers =
-    sourceNumbers.filter((num) => !blocked.has(num));
+  const sourceEntries = remainingEntries;
 
-  if (sourceNumbers.length === 0) {
+  const eligibleEntries =
+    sourceEntries.filter((entry) => !blocked.has(entry.key));
+
+  if (sourceEntries.length === 0) {
 
     numberDisplay.textContent =
       '모든 번호를 이미 뽑았습니다!';
@@ -1061,11 +1094,11 @@ function drawNumbers() {
   const count =
     Math.min(
       Number(drawCountSelect.value),
-      sourceNumbers.length
+      sourceEntries.length
     );
 
-  if (eligibleNumbers.length === 0 ||
-      (!options.allowDuplicates && count > eligibleNumbers.length)) {
+  if (eligibleEntries.length === 0 ||
+      count > eligibleEntries.length) {
     terminateProgram();
     return;
   }
@@ -1090,7 +1123,9 @@ function drawNumbers() {
     // dataset.num은 항상 문자열이므로 문자열로 비교
     const availableCells =
       cells.filter((cell) =>
-        eligibleNumbers.includes(cell.dataset.num)
+        eligibleEntries.some((entry) =>
+          entry.key === cell.dataset.key
+        )
       );
 
     const randomCell =
@@ -1119,23 +1154,33 @@ function drawNumbers() {
       }
 
       const selected = [];
+      const selectedEntries = [];
       const selectedForHistory = [];
       const selectedSet = new Set();
 
-      const pickItem = (picked) => {
+      const pickEntry = (entry) => {
+
+        const picked = entry.item;
 
         selected.push(picked);
+        selectedEntries.push(entry);
         selectedForHistory.push(picked);
-        selectedSet.add(picked);
+        selectedSet.add(entry.key);
 
-        if (!options.allowDuplicates) {
-          const idx = remainingNumbers.indexOf(picked);
-          if (idx !== -1) remainingNumbers.splice(idx, 1);
+        const idx =
+          remainingEntries.findIndex((remaining) =>
+            remaining.key === entry.key
+          );
+
+        if (idx !== -1) {
+          remainingEntries.splice(idx, 1);
+          remainingNumbers =
+            remainingEntries.map((remaining) => remaining.item);
         }
 
         const pickedCell =
           cells.find(
-            (cell) => cell.dataset.num === picked
+            (cell) => cell.dataset.key === entry.key
           );
 
         if (pickedCell) {
@@ -1146,40 +1191,45 @@ function drawNumbers() {
       // 선생님(?) 모드: 선생님이 남아있으면 무조건 첫 번째로 추출
       if (
         currentMode === 'teacher-mystery' &&
-        sourceNumbers.includes('선생님') &&
-        !blocked.has('선생님') &&
         selected.length < count
       ) {
-        pickItem('선생님');
+
+        const teacherEntry =
+          sourceEntries.find((entry) =>
+            entry.item === '선생님' &&
+            !blocked.has(entry.key)
+          );
+
+        if (teacherEntry) {
+          pickEntry(teacherEntry);
+        }
       }
 
-      for (const forced of options.forcedItems) {
+      for (const forcedKey of options.forcedItems) {
+
+        const forcedEntry =
+          sourceEntries.find((entry) =>
+            entry.key === forcedKey
+          );
 
         if (
           selected.length >= count ||
-          blocked.has(forced) ||
-          selectedSet.has(forced) ||
-          !sourceNumbers.includes(forced)
+          !forcedEntry ||
+          blocked.has(forcedEntry.key) ||
+          selectedSet.has(forcedEntry.key)
         ) {
           continue;
         }
 
-        pickItem(forced);
+        pickEntry(forcedEntry);
       }
 
       while (selected.length < count) {
 
         const drawPool =
-          (
-            options.allowDuplicates
-              ? validItems
-              : remainingNumbers
-          ).filter((num) =>
-            !blocked.has(num) &&
-            (
-              options.allowDuplicates ||
-              !selectedSet.has(num)
-            )
+          remainingEntries.filter((entry) =>
+            !blocked.has(entry.key) &&
+            !selectedSet.has(entry.key)
           );
 
         if (drawPool.length === 0) {
@@ -1187,7 +1237,7 @@ function drawNumbers() {
           return;
         }
 
-        const picked =
+        const pickedEntry =
           drawPool[
             Math.floor(
               Math.random() *
@@ -1195,13 +1245,13 @@ function drawNumbers() {
             )
           ];
 
-        pickItem(picked);
+        pickEntry(pickedEntry);
       }
 
       pickedNumbers.push(...selectedForHistory);
 
       if (
-        selected.some((num) => blocked.has(num))
+        selectedEntries.some((entry) => blocked.has(entry.key))
       ) {
         terminateProgram();
         return;
@@ -1256,15 +1306,20 @@ function drawNumbers() {
 
 function applyPinballResult(selected) {
 
-  for (const num of selected) {
+  for (const entry of selected) {
 
-    if (!modeOptions[currentMode].allowDuplicates) {
+    const num = getEntryItem(entry);
+    const key = getEntryKey(entry);
 
-      const idx = remainingNumbers.indexOf(num);
+    const idx =
+      remainingEntries.findIndex((remaining) =>
+        remaining.key === key
+      );
 
-      if (idx !== -1) {
-        remainingNumbers.splice(idx, 1);
-      }
+    if (idx !== -1) {
+      remainingEntries.splice(idx, 1);
+      remainingNumbers =
+        remainingEntries.map((remaining) => remaining.item);
     }
 
     pickedNumbers.push(num);
@@ -1276,15 +1331,25 @@ function applyPinballResult(selected) {
 
   for (const num of selected) {
 
+    const key = getEntryKey(num);
+    const item = getEntryItem(num);
+
     const cell =
-      cells.find(c => c.dataset.num === num);
+      cells.find(c =>
+        key
+          ? c.dataset.key === key
+          : c.dataset.num === item
+      );
 
     if (cell) {
       cell.classList.add('picked');
     }
   }
 
-  const resultText = selected.join(', ');
+  const resultText =
+    selected
+      .map((entry) => getEntryItem(entry))
+      .join(', ');
 
   numberDisplay.textContent = resultText;
 
@@ -1311,9 +1376,14 @@ function resetDraw() {
 
   stopPinballMode();
 
-  validItems = getValidItems();
+  validEntries = getValidEntries();
 
-  remainingNumbers = [...validItems];
+  validItems = validEntries.map((entry) => entry.item);
+
+  remainingEntries = [...validEntries];
+
+  remainingNumbers =
+    remainingEntries.map((entry) => entry.item);
 
   pickedNumbers = [];
 

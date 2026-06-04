@@ -672,7 +672,7 @@ button:hover {
   display: grid;
 
   grid-template-columns:
-    minmax(0, 1fr) 70px 58px 62px 62px;
+    minmax(0, 1fr) 70px 58px 62px;
 
   gap: 8px;
 
