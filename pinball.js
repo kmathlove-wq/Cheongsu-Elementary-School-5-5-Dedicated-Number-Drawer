@@ -137,7 +137,6 @@ export function drawNumbersPinball({
     const num = entry.item;
     const isTeacher = num === '선생님';
     const isForced = forcedSet.has(entry.key);
-    const forceSide = i % 2 === 0 ? -1 : 1;
     const col = i % DROP_COLS;
     const row = Math.floor(i / DROP_COLS);
     const rowCount =
@@ -146,13 +145,7 @@ export function drawNumbersPinball({
     return {
       num,
       key: entry.key,
-      x: isForced
-        ? (
-          forceSide < 0
-            ? PLAY_X + BALL_R * 1.1
-            : PLAY_X2 - BALL_R * 1.1
-        )
-        : PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
+      x: PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
       y: PLAY_TOP + BALL_R + row * BALL_GAP,
       vx: 0,
       vy: 0,
@@ -165,7 +158,6 @@ export function drawNumbersPinball({
       sonicCooldown: 0,
       isTeacher,
       isForced,
-      forceSide,
     };
   });
 
@@ -409,14 +401,6 @@ export function drawNumbersPinball({
 
   function keepBallInPlayArea(ball) {
 
-    if (ball.isForced) {
-      ball.x = ball.forceSide < 0
-        ? PLAY_X + ball.r
-        : PLAY_X2 - ball.r;
-      ball.vx = 0;
-      return;
-    }
-
     if (ball.x - ball.r < PLAY_X) {
       ball.x = PLAY_X + ball.r;
       ball.vx = Math.abs(ball.vx) * 0.65;
@@ -547,19 +531,6 @@ export function drawNumbersPinball({
         ball.sonicCooldown--;
       }
       if (
-        ball.isForced &&
-        bSpeed < 1.8 &&
-        ball.sonicCooldown === 0
-      ) {
-        ball.vx = ball.forceSide * 5;
-        ball.vy = -14;
-        ball.stuckSince = null;
-        ball.sonicCooldown = 60;
-        sonicBooms.push({
-          x: ball.x, y: ball.y, r: 0, alpha: 1.0,
-        });
-        playBumperBeep();
-      } else if (
         !ball.isForced &&
         (bSpeed < 1.05 || moved < 0.35)
       ) {
