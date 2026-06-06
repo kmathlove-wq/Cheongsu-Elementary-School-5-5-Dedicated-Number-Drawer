@@ -213,11 +213,6 @@ export function drawNumbersPinball({
         + (isOdd ? -colW * 0.5 : 0)
         + colW * col + colW * 0.5;
 
-      if (
-        cx < PLAY_X + PEG_LEN * 0.4 ||
-        cx > PLAY_X2 - PEG_LEN * 0.4
-      ) continue;
-
       const cos = Math.cos(ang);
 
       const sin = Math.sin(ang);
@@ -404,7 +399,7 @@ export function drawNumbersPinball({
     }
   }
 
-  function keepBallInLane(ball) {
+  function keepBallInPlayArea(ball) {
 
     if (ball.isForced) {
       ball.x = ball.forceSide < 0
@@ -414,22 +409,14 @@ export function drawNumbersPinball({
       return;
     }
 
-    const laneInset =
-      Math.min(
-        PLAY_W / 2 - ball.r,
-        Math.max(ball.r * 2.2, PEG_LEN * 0.45)
-      );
-    const laneLeft = PLAY_X + laneInset;
-    const laneRight = PLAY_X2 - laneInset;
-
-    if (ball.x < laneLeft) {
-      ball.x = laneLeft;
-      ball.vx = Math.abs(ball.vx) * 0.65 + 0.25;
+    if (ball.x - ball.r < PLAY_X) {
+      ball.x = PLAY_X + ball.r;
+      ball.vx = Math.abs(ball.vx) * 0.65;
     }
 
-    if (ball.x > laneRight) {
-      ball.x = laneRight;
-      ball.vx = -Math.abs(ball.vx) * 0.65 - 0.25;
+    if (ball.x + ball.r > PLAY_X2) {
+      ball.x = PLAY_X2 - ball.r;
+      ball.vx = -Math.abs(ball.vx) * 0.65;
     }
   }
 
@@ -447,7 +434,7 @@ export function drawNumbersPinball({
     ball.stuckSince = null;
     ball.noBallCollisionFrames = 32;
     ball.sonicCooldown = 45;
-    keepBallInLane(ball);
+    keepBallInPlayArea(ball);
 
     sonicBooms.push({
       x: ball.x, y: ball.y, r: 0, alpha: 1.0,
@@ -522,12 +509,12 @@ export function drawNumbersPinball({
         ball.vy = ball.vy / spd * maxSpeed;
       }
 
-      keepBallInLane(ball);
+      keepBallInPlayArea(ball);
 
       ball.x += ball.vx;
       ball.y += ball.vy;
 
-      keepBallInLane(ball);
+      keepBallInPlayArea(ball);
 
       if (!ball.isForced) {
         for (const peg of pegs) hitPeg(ball, peg);
@@ -537,7 +524,7 @@ export function drawNumbersPinball({
         for (const sp of spinners) hitPeg(ball, sp);
       }
 
-      keepBallInLane(ball);
+      keepBallInPlayArea(ball);
 
       // 끼임 감지 → 위치 분리와 짧은 충돌 무시로 탈출
       const bSpeed =
