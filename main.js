@@ -302,6 +302,20 @@ function getValidItems() {
     .map((entry) => entry.item);
 }
 
+function getSortedAdminEntries(mode) {
+
+  return modePools[mode]
+    .map((item, index) => ({
+      item,
+      index,
+      key: String(index),
+    }))
+    .sort((a, b) =>
+      compareItems(a.item, b.item) ||
+      a.index - b.index
+    );
+}
+
 let validEntries = getValidEntries();
 
 let validItems = getValidItems();
@@ -572,14 +586,14 @@ function renderAdminList() {
 
   adminList.innerHTML = '';
 
-  items.forEach((item, index) => {
+  getSortedAdminEntries(mode).forEach(({ item, index, key }) => {
 
     const row =
       document.createElement('div');
 
     row.className = 'admin-row';
 
-    row.dataset.key = String(index);
+    row.dataset.key = key;
 
     const input =
       document.createElement('input');
@@ -604,7 +618,7 @@ function renderAdminList() {
 
     forcedInput.className = 'admin-force-input';
 
-    forcedInput.checked = forced.has(String(index));
+    forcedInput.checked = forced.has(key);
 
     forcedLabel.append(forcedInput, '무조건');
 
@@ -620,7 +634,7 @@ function renderAdminList() {
 
     blockedInput.className = 'admin-block-input';
 
-    blockedInput.checked = blocked.has(String(index));
+    blockedInput.checked = blocked.has(key);
 
     blockedInput.disabled = pinballMode;
 
@@ -810,7 +824,16 @@ function saveAdminListInputs(mode) {
 
   const rows = getAdminListRows();
 
-  const items = rows.map((row) => row.item);
+  const items = [...modePools[mode]];
+
+  rows.forEach((row) => {
+
+    const index = Number(row.key);
+
+    if (Number.isInteger(index) && index >= 0) {
+      items[index] = row.item;
+    }
+  });
 
   const error = validateAdminItems(items, mode);
 
