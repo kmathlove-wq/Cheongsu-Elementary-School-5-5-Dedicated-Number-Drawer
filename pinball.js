@@ -208,7 +208,7 @@ export function drawNumbersPinball({
 
     for (let col = 0; col < cnt; col++) {
 
-      const cx =
+      const rawCx =
         PLAY_X
         + (isOdd ? -colW * 0.5 : 0)
         + colW * col + colW * 0.5;
@@ -218,6 +218,14 @@ export function drawNumbersPinball({
       const sin = Math.sin(ang);
 
       const h = PEG_LEN / 2;
+
+      const edgePad = Math.abs(cos * h) + PEG_R;
+
+      const cx =
+        Math.max(
+          PLAY_X + edgePad,
+          Math.min(PLAY_X2 - edgePad, rawCx)
+        );
 
       pegs.push({
         x1: cx - cos * h,
