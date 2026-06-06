@@ -316,6 +316,17 @@ function getSortedAdminEntries(mode) {
     );
 }
 
+function isProtectedBlockedItem(mode, item) {
+
+  return (
+    mode === 'teacher-mystery' &&
+    item === '선생님'
+  ) || (
+    mode === 'mystery' &&
+    item === '5'
+  );
+}
+
 let validEntries = getValidEntries();
 
 let validItems = getValidItems();
@@ -634,14 +645,23 @@ function renderAdminList() {
 
     blockedInput.className = 'admin-block-input';
 
-    blockedInput.checked = blocked.has(key);
+    const protectedBlocked =
+      isProtectedBlockedItem(mode, item);
 
-    blockedInput.disabled = pinballMode;
+    blockedInput.checked =
+      blocked.has(key) && !protectedBlocked;
+
+    blockedInput.disabled =
+      pinballMode || protectedBlocked;
 
     blockedLabel.append(blockedInput, '제외');
 
     if (pinballMode) {
       blockedLabel.hidden = true;
+    }
+
+    if (protectedBlocked) {
+      blockedLabel.title = '이 항목은 제외할 수 없습니다.';
     }
 
     forcedInput.addEventListener('change', () => {
@@ -791,8 +811,9 @@ function syncModeOptions(mode) {
       : normalizeOptionItems(
         modeOptions[mode].blockedItems,
         mode
-      ).filter((item) =>
-        !modeOptions[mode].forcedItems.includes(item)
+      ).filter((key) =>
+        !modeOptions[mode].forcedItems.includes(key) &&
+        !isProtectedBlockedItem(mode, modePools[mode][Number(key)])
       );
 }
 
@@ -858,7 +879,11 @@ function saveAdminListInputs(mode) {
       ? []
       : uniqueItems(
         rows
-          .filter((row) => row.blocked && !row.forced)
+          .filter((row) =>
+            row.blocked &&
+            !row.forced &&
+            !isProtectedBlockedItem(mode, row.item)
+          )
           .map((row) => row.key)
       );
 
