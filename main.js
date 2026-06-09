@@ -1170,6 +1170,24 @@ function compactSongText(text) {
   return normalizeSongText(text).replace(/\s+/g, '');
 }
 
+const SONG_TITLE_ALIASES = {
+  '버터플라이': ['butterfly'],
+};
+
+function getSongTitleQueries(songName) {
+
+  const queries = [songName];
+  const compactSong = compactSongText(songName);
+
+  Object.entries(SONG_TITLE_ALIASES).forEach(([keyword, aliases]) => {
+    if (compactSong.includes(compactSongText(keyword))) {
+      queries.push(...aliases);
+    }
+  });
+
+  return queries;
+}
+
 function getTextSimilarity(a, b) {
 
   const source = normalizeSongText(a);
@@ -1220,6 +1238,14 @@ function getTextSimilarity(a, b) {
   );
 }
 
+function getBestTitleSimilarity(songName, title) {
+
+  return Math.max(
+    ...getSongTitleQueries(songName)
+      .map((query) => getTextSimilarity(query, title))
+  );
+}
+
 function isBlockedSongVideo(video) {
 
   const title =
@@ -1249,7 +1275,7 @@ function scoreSongVideo(video, songName) {
   const title = video.snippet?.title || '';
   const channel = video.snippet?.channelTitle || '';
   const views = Number(video.statistics?.viewCount || 0);
-  const similarity = getTextSimilarity(songName, title);
+  const similarity = getBestTitleSimilarity(songName, title);
   const normalizedSong = normalizeSongText(songName);
   const normalizedTitle = normalizeSongText(title);
   const compactSong = compactSongText(songName);
@@ -1264,8 +1290,6 @@ function scoreSongVideo(video, songName) {
     compactTitle.includes(compactSong)
       ? 12
       : 0;
-  const extraTitlePenalty =
-    Math.max(0, compactTitle.length - compactSong.length) * 6;
   const modifierPenalty =
     compactTitle !== compactSong &&
     /(전설의|괴담|퇴마사|공포|무서운|무서움|버전|cover|커버)/i.test(title)
@@ -1277,9 +1301,8 @@ function scoreSongVideo(video, songName) {
   return exactTitleBonus +
     phraseTitleBonus +
     similarity * 90 +
-    Math.log10(Math.max(views, 1)) * 6 +
+    Math.log10(Math.max(views, 1)) * 20 +
     officialBonus -
-    extraTitlePenalty -
     modifierPenalty;
 }
 
@@ -1336,28 +1359,40 @@ async function findYouTubeVideo(songName) {
     await fetchYouTubeJson(
       `https://www.googleapis.com/youtube/v3/videos?${detailParams}`
     );
+  const idRanks =
+    new Map(ids.map((id, index) => [id, index]));
 
   const candidates =
     (detailData.items || [])
       .map((video) => ({
         ...video,
+        _searchRank: idRanks.get(video.id) ?? 999,
         _seconds:
           parseYouTubeDuration(video.contentDetails?.duration || ''),
         _views: Number(video.statistics?.viewCount || 0),
         _similarity:
-          getTextSimilarity(songName, video.snippet?.title || ''),
+          getBestTitleSimilarity(songName, video.snippet?.title || ''),
       }))
       .filter((video) =>
         video._views >= 100000 &&
         video._seconds >= 60 &&
         video._seconds <= 720 &&
-        video._similarity >= 0.55 &&
+        video._similarity >= 0.45 &&
         !isBlockedSongVideo(video)
       )
-      .sort((a, b) =>
-        scoreSongVideo(b, songName) -
-        scoreSongVideo(a, songName)
-      );
+      .sort((a, b) => {
+        const viewDiff = b._views - a._views;
+
+        if (viewDiff !== 0) return viewDiff;
+
+        const scoreDiff =
+          scoreSongVideo(b, songName) -
+          scoreSongVideo(a, songName);
+
+        if (scoreDiff !== 0) return scoreDiff;
+
+        return a._searchRank - b._searchRank;
+      });
 
   if (candidates.length === 0) {
     throw new Error('조건에 맞는 YouTube 영상을 찾지 못했습니다.');
