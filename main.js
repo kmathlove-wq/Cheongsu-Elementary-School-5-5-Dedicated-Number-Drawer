@@ -1182,6 +1182,14 @@ function getTextSimilarity(a, b) {
   if (target === source ||
       compactTarget === compactSource) return 1;
 
+  if (compactTarget.includes(compactSource)) {
+    return Math.min(
+      1,
+      0.65 +
+      compactSource.length / compactTarget.length * 0.25
+    );
+  }
+
   const sourceTokens = source.split(' ');
   const targetTokenList = target.split(' ');
   const targetTokens = new Set(targetTokenList);
