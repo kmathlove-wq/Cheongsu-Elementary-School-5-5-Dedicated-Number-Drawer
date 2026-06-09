@@ -109,8 +109,8 @@ let currentMode = 'basic';
 
 const ADMIN_PASSWORD = '1+1=1';
 
-// YouTube Data API v3 키를 따옴표 안에 넣어 주세요.
-const YOUTUBE_API_KEY = '';
+// 배포 시 GitHub Actions Secret YOUTUBE_API_KEY로 대체됩니다.
+const YOUTUBE_API_KEY = '__YOUTUBE_API_KEY__';
 
 const MODE_LABELS = {
   basic: '기본',
@@ -1227,7 +1227,8 @@ async function fetchYouTubeJson(url) {
 
 async function findYouTubeVideo(songName) {
 
-  if (!YOUTUBE_API_KEY) {
+  if (!YOUTUBE_API_KEY ||
+      YOUTUBE_API_KEY === '__YOUTUBE_API_KEY__') {
     throw new Error('YouTube API 키를 먼저 입력해 주세요.');
   }
 

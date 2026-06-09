@@ -53,7 +53,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 핀볼 일반 공이 핀/공 사이에 끼면 빠르게 위치를 분리하고 잠깐 공끼리 충돌을 무시해 탈출시킨다.
 - 중복 이름이 있을 때 `무조건`/`제외`는 값이 아니라 관리자 행 단위로 적용한다.
 - 각 모드에는 최소 1개 항목이 필요하다.
-- 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 `YOUTUBE_API_KEY`로 YouTube Data API를 호출한다.
+- 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 배포 시 주입된 `YOUTUBE_API_KEY`로 YouTube Data API를 호출한다.
 - YouTube 후보는 조회수 10만 이상, 길이 40초~12분, 제목 유사도, 학교 영상/반복 영상 제외 조건으로 고른다.
 
 ## 주요 파일별 책임
@@ -101,6 +101,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 
 ## 배포/인증 주의
 - `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포.
+- YouTube API 키는 코드에 커밋하지 않고 GitHub Actions Secret `YOUTUBE_API_KEY`로 설정한다.
 - GitHub push 인증은 PAT가 설정된 remote를 사용할 수 있다.
 - PAT를 채팅이나 출력에 노출하지 않는다. 토큰이 보일 가능성이 있는 명령 출력은 공유하지 않는다.
 

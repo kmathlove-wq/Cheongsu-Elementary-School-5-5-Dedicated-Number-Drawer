@@ -15,10 +15,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare Pages artifact
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          if [ -z "$YOUTUBE_API_KEY" ]; then
+            echo "Missing GitHub secret: YOUTUBE_API_KEY" >&2
+            exit 1
+          fi
+          mkdir dist
+          rsync -a --exclude='.git' --exclude='dist' ./ dist/
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'dist/main.js';
+          const key = process.env.YOUTUBE_API_KEY;
+          let source = fs.readFileSync(path, 'utf8');
+          source = source.replace(
+            "const YOUTUBE_API_KEY = '__YOUTUBE_API_KEY__';",
+            `const YOUTUBE_API_KEY = ${JSON.stringify(key)};`
+          );
+          fs.writeFileSync(path, source);
+          NODE
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: .
+          path: dist
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v1
