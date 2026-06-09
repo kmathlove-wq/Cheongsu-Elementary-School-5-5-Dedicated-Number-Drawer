@@ -770,13 +770,13 @@ button:hover {
 
   position: fixed;
 
-  right: 18px;
+  left: 50%;
 
-  bottom: 18px;
+  top: 50%;
 
-  z-index: 850;
+  z-index: 1250;
 
-  width: min(420px, calc(100vw - 36px));
+  width: min(920px, calc(100vw - 32px));
 
   overflow: hidden;
 
@@ -788,7 +788,9 @@ button:hover {
   background: white;
 
   box-shadow:
-    0 18px 45px rgba(16, 24, 40, 0.24);
+    0 28px 90px rgba(16, 24, 40, 0.34);
+
+  transform: translate(-50%, -50%);
 }
 
 .youtube-player-header {

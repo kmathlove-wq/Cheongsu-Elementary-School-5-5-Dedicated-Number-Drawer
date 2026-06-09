@@ -1188,7 +1188,9 @@ function isBlockedSongVideo(video) {
     normalizeSongText(video.snippet?.title || '');
   const channel =
     normalizeSongText(video.snippet?.channelTitle || '');
-  const text = `${title} ${channel}`;
+  const description =
+    normalizeSongText(video.snippet?.description || '');
+  const text = `${title} ${channel} ${description}`;
 
   const schoolLike =
     /(초등학교|중학교|고등학교|학교|학년|반|수업|학예회|축제|졸업)/.test(text);
@@ -1196,8 +1198,12 @@ function isBlockedSongVideo(video) {
     /(뮤직비디오|music video|mv|m v)/.test(text);
   const longLoopLike =
     /(1시간|한시간|hour|hours|loop|반복|연속재생|playlist|모음)/.test(text);
+  const shortsLike =
+    /(#shorts|shorts|쇼츠|유튜브쇼츠|ytshorts)/.test(text);
 
-  return (schoolLike && classVideoLike) || longLoopLike;
+  return (schoolLike && classVideoLike) ||
+    longLoopLike ||
+    shortsLike;
 }
 
 function scoreSongVideo(video, songName) {
