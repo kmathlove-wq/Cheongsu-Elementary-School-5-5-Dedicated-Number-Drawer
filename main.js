@@ -1341,7 +1341,7 @@ async function findYouTubeVideo(songName) {
       }))
       .filter((video) =>
         video._views >= 100000 &&
-        video._seconds >= 40 &&
+        video._seconds >= 60 &&
         video._seconds <= 720 &&
         video._similarity >= 0.55 &&
         !isBlockedSongVideo(video)
