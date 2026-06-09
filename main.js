@@ -1170,6 +1170,11 @@ function compactSongText(text) {
   return normalizeSongText(text).replace(/\s+/g, '');
 }
 
+function hasKoreanText(text) {
+
+  return /[가-힣]/.test(String(text));
+}
+
 const SONG_TITLE_ALIASES = {
   '버터플라이': ['butterfly'],
 };
@@ -1330,6 +1335,8 @@ async function findYouTubeVideo(songName) {
       type: 'video',
       maxResults: '50',
       order: 'viewCount',
+      regionCode: 'KR',
+      relevanceLanguage: 'ko',
       q: songName,
       key: YOUTUBE_API_KEY,
     });
@@ -1372,6 +1379,12 @@ async function findYouTubeVideo(songName) {
         _views: Number(video.statistics?.viewCount || 0),
         _similarity:
           getBestTitleSimilarity(songName, video.snippet?.title || ''),
+        _hasKoreanText:
+          hasKoreanText(
+            `${video.snippet?.title || ''} ` +
+            `${video.snippet?.channelTitle || ''} ` +
+            `${video.snippet?.description || ''}`
+          ),
       }))
       .filter((video) =>
         video._views >= 100000 &&
@@ -1380,6 +1393,14 @@ async function findYouTubeVideo(songName) {
         video._similarity >= 0.45 &&
         !isBlockedSongVideo(video)
       )
+      .filter((video, index, videos) => {
+        if (!hasKoreanText(songName)) return true;
+
+        const koreanCandidates =
+          videos.some((candidate) => candidate._hasKoreanText);
+
+        return !koreanCandidates || video._hasKoreanText;
+      })
       .sort((a, b) => {
         const viewDiff = b._views - a._views;
 
