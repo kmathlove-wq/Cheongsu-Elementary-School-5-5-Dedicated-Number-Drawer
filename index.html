@@ -29,6 +29,7 @@
       <button class="mode-btn" data-mode="mystery">???</button>
       <button class="mode-btn" data-mode="pinball">핀볼</button>
       <button class="mode-btn" data-mode="pinball-teacher">핀볼(선생님)</button>
+      <button class="mode-btn" data-mode="song-pinball">노래추첨 핀볼</button>
     </div>
 
     <div class="card">
@@ -98,6 +99,52 @@
   <div class="pinball-overlay" id="pinballOverlay">
     <canvas id="pinballCanvas"></canvas>
   </div>
+
+  <div class="admin-overlay" id="songRequestOverlay" aria-hidden="true">
+    <section class="admin-panel song-panel" role="dialog" aria-modal="true">
+      <h2 id="songRequestTitle">노래 입력</h2>
+      <form id="songRequestForm" class="admin-login-form">
+        <label for="songRequestInput">노래 이름</label>
+        <input
+          id="songRequestInput"
+          type="text"
+          maxlength="80"
+          autocomplete="off"
+        />
+        <p class="admin-error" id="songRequestError"></p>
+        <div class="song-actions">
+          <button type="submit">재생</button>
+          <button
+            class="secondary"
+            id="songRequestSkipButton"
+            type="button"
+          >
+            건너뛰기
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <section class="youtube-player" id="youtubePlayer" hidden>
+    <div class="youtube-player-header">
+      <strong id="youtubePlayerTitle">노래 재생</strong>
+      <button
+        class="admin-close"
+        id="youtubePlayerClose"
+        type="button"
+        aria-label="노래 닫기"
+      >
+        ×
+      </button>
+    </div>
+    <iframe
+      id="youtubePlayerFrame"
+      title="YouTube player"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen
+    ></iframe>
+  </section>
 
   <div class="admin-overlay" id="adminOverlay" aria-hidden="true">
     <section class="admin-panel" role="dialog" aria-modal="true">

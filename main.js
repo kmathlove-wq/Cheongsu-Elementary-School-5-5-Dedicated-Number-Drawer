@@ -73,11 +73,44 @@ const adminManageError =
 const adminResetButton =
   document.getElementById('adminResetButton');
 
+const songRequestOverlay =
+  document.getElementById('songRequestOverlay');
+
+const songRequestForm =
+  document.getElementById('songRequestForm');
+
+const songRequestTitle =
+  document.getElementById('songRequestTitle');
+
+const songRequestInput =
+  document.getElementById('songRequestInput');
+
+const songRequestError =
+  document.getElementById('songRequestError');
+
+const songRequestSkipButton =
+  document.getElementById('songRequestSkipButton');
+
+const youtubePlayer =
+  document.getElementById('youtubePlayer');
+
+const youtubePlayerTitle =
+  document.getElementById('youtubePlayerTitle');
+
+const youtubePlayerFrame =
+  document.getElementById('youtubePlayerFrame');
+
+const youtubePlayerClose =
+  document.getElementById('youtubePlayerClose');
+
 let _pinballAudioCtx = null;
 
 let currentMode = 'basic';
 
 const ADMIN_PASSWORD = '1+1=1';
+
+// YouTube Data API v3 키를 따옴표 안에 넣어 주세요.
+const YOUTUBE_API_KEY = '';
 
 const MODE_LABELS = {
   basic: '기본',
@@ -86,6 +119,7 @@ const MODE_LABELS = {
   mystery: '???',
   pinball: '핀볼',
   'pinball-teacher': '핀볼(선생님)',
+  'song-pinball': '노래추첨 핀볼',
 };
 
 const baseNumbers =
@@ -101,6 +135,7 @@ const DEFAULT_MODE_POOLS = {
   mystery: [...baseNumbers],
   pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
+  'song-pinball': [...baseNumbers],
 };
 
 const DEFAULT_MODE_OPTIONS =
@@ -151,7 +186,9 @@ function cloneDefaultModeOptions() {
 
 function isPinballMode(mode) {
 
-  return mode === 'pinball' || mode === 'pinball-teacher';
+  return mode === 'pinball' ||
+    mode === 'pinball-teacher' ||
+    mode === 'song-pinball';
 }
 
 function uniqueItems(items) {
@@ -421,8 +458,7 @@ function updateDescription() {
       text += ' 단, 5번이 나오면...?';
     }
 
-    if (currentMode === 'pinball' ||
-        currentMode === 'pinball-teacher') {
+    if (isPinballMode(currentMode)) {
       text += ' 핀볼 방식으로 진행됩니다.';
     }
 
@@ -455,6 +491,11 @@ function updateDescription() {
 
     descriptionEl.textContent =
       '핀볼(선생님) 모드: 선생님 공 포함! 선생님이 당첨될 수도?';
+
+  } else if (currentMode === 'song-pinball') {
+
+    descriptionEl.textContent =
+      '노래추첨 핀볼 모드: 당첨 번호가 원하는 노래를 입력하면 YouTube에서 찾아 재생합니다.';
 
   } else {
 
@@ -1098,9 +1139,273 @@ function terminateProgram() {
   }, 300);
 }
 
+function parseYouTubeDuration(duration) {
+
+  const match =
+    duration.match(
+      /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/
+    );
+
+  if (!match) return 0;
+
+  const hours = Number(match[1] || 0);
+  const minutes = Number(match[2] || 0);
+  const seconds = Number(match[3] || 0);
+
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function normalizeSongText(text) {
+
+  return String(text)
+    .toLowerCase()
+    .replace(/[()[\]{}'"“”‘’]/g, ' ')
+    .replace(/[^0-9a-z가-힣\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getTextSimilarity(a, b) {
+
+  const source = normalizeSongText(a);
+  const target = normalizeSongText(b);
+
+  if (!source || !target) return 0;
+
+  if (target.includes(source)) return 1;
+
+  const sourceTokens = source.split(' ');
+  const targetTokens = new Set(target.split(' '));
+  const hits =
+    sourceTokens.filter((token) => targetTokens.has(token)).length;
+
+  return hits / sourceTokens.length;
+}
+
+function isBlockedSongVideo(video) {
+
+  const title =
+    normalizeSongText(video.snippet?.title || '');
+  const channel =
+    normalizeSongText(video.snippet?.channelTitle || '');
+  const text = `${title} ${channel}`;
+
+  const schoolLike =
+    /(초등학교|중학교|고등학교|학교|학년|반|수업|학예회|축제|졸업)/.test(text);
+  const classVideoLike =
+    /(뮤직비디오|music video|mv|m v)/.test(text);
+  const longLoopLike =
+    /(1시간|한시간|hour|hours|loop|반복|연속재생|playlist|모음)/.test(text);
+
+  return (schoolLike && classVideoLike) || longLoopLike;
+}
+
+function scoreSongVideo(video, songName) {
+
+  const title = video.snippet?.title || '';
+  const channel = video.snippet?.channelTitle || '';
+  const views = Number(video.statistics?.viewCount || 0);
+  const similarity = getTextSimilarity(songName, title);
+  const officialBonus =
+    /(official|topic|vevo|오피셜|공식)/i.test(channel) ? 12 : 0;
+
+  return similarity * 70 +
+    Math.log10(Math.max(views, 1)) * 6 +
+    officialBonus;
+}
+
+async function fetchYouTubeJson(url) {
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error('YouTube API 요청에 실패했습니다.');
+  }
+
+  return response.json();
+}
+
+async function findYouTubeVideo(songName) {
+
+  if (!YOUTUBE_API_KEY) {
+    throw new Error('YouTube API 키를 먼저 입력해 주세요.');
+  }
+
+  const params =
+    new URLSearchParams({
+      part: 'snippet',
+      type: 'video',
+      maxResults: '50',
+      order: 'viewCount',
+      q: songName,
+      key: YOUTUBE_API_KEY,
+    });
+
+  const searchData =
+    await fetchYouTubeJson(
+      `https://www.googleapis.com/youtube/v3/search?${params}`
+    );
+
+  const ids =
+    (searchData.items || [])
+      .map((item) => item.id?.videoId)
+      .filter(Boolean);
+
+  if (ids.length === 0) {
+    throw new Error('검색 결과가 없습니다.');
+  }
+
+  const detailParams =
+    new URLSearchParams({
+      part: 'snippet,contentDetails,statistics',
+      id: ids.join(','),
+      key: YOUTUBE_API_KEY,
+    });
+
+  const detailData =
+    await fetchYouTubeJson(
+      `https://www.googleapis.com/youtube/v3/videos?${detailParams}`
+    );
+
+  const candidates =
+    (detailData.items || [])
+      .map((video) => ({
+        ...video,
+        _seconds:
+          parseYouTubeDuration(video.contentDetails?.duration || ''),
+        _views: Number(video.statistics?.viewCount || 0),
+        _similarity:
+          getTextSimilarity(songName, video.snippet?.title || ''),
+      }))
+      .filter((video) =>
+        video._views >= 100000 &&
+        video._seconds >= 40 &&
+        video._seconds <= 720 &&
+        video._similarity >= 0.45 &&
+        !isBlockedSongVideo(video)
+      )
+      .sort((a, b) =>
+        scoreSongVideo(b, songName) -
+        scoreSongVideo(a, songName)
+      );
+
+  if (candidates.length === 0) {
+    throw new Error('조건에 맞는 YouTube 영상을 찾지 못했습니다.');
+  }
+
+  return candidates[0];
+}
+
+function playYouTubeVideo(video, songName) {
+
+  const title = video.snippet?.title || songName;
+
+  youtubePlayerTitle.textContent = title;
+
+  youtubePlayerFrame.src =
+    `https://www.youtube.com/embed/${video.id}` +
+    '?autoplay=1&rel=0';
+
+  youtubePlayer.hidden = false;
+}
+
+function closeYouTubePlayer() {
+
+  youtubePlayerFrame.src = '';
+  youtubePlayer.hidden = true;
+}
+
+function closeSongRequest() {
+
+  songRequestOverlay.classList.remove('show');
+  songRequestOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function requestSongForResult(selected) {
+
+  return new Promise((resolve) => {
+
+    const firstItem = getEntryItem(selected[0]);
+    const studentLabel = getResultLabel(firstItem);
+
+    songRequestTitle.textContent =
+      `${studentLabel}이 하고 싶은 노래를 입력하세요`;
+    songRequestInput.value = '';
+    songRequestError.textContent = '';
+    songRequestOverlay.classList.add('show');
+    songRequestOverlay.setAttribute('aria-hidden', 'false');
+
+    const finish = () => {
+      songRequestForm.removeEventListener('submit', onSubmit);
+      songRequestSkipButton.removeEventListener('click', onSkip);
+      closeSongRequest();
+      resolve();
+    };
+
+    const onSubmit = async (event) => {
+
+      event.preventDefault();
+
+      const songName = songRequestInput.value.trim();
+
+      if (!songName) {
+        songRequestError.textContent = '노래 이름을 입력해 주세요.';
+        return;
+      }
+
+      songRequestError.textContent = 'YouTube에서 찾는 중입니다...';
+
+      try {
+        const video = await findYouTubeVideo(songName);
+        playYouTubeVideo(video, songName);
+        finish();
+      } catch (error) {
+        songRequestError.textContent = error.message;
+      }
+    };
+
+    const onSkip = () => {
+      finish();
+    };
+
+    songRequestForm.addEventListener('submit', onSubmit);
+    songRequestSkipButton.addEventListener('click', onSkip);
+
+    setTimeout(() => songRequestInput.focus(), 0);
+  });
+}
+
+function showPinballResult(selected) {
+
+  const resultText =
+    selected
+      .map((entry) => getEntryItem(entry))
+      .join(', ');
+
+  numberDisplay.textContent = resultText;
+
+  numberDisplay.style.fontSize =
+    adjustFontSize(resultText);
+
+  numberDisplay.classList.remove(
+    'placeholder', 'notice'
+  );
+
+  bigNumber.textContent = resultText;
+
+  bigNumber.style.fontSize =
+    adjustFontSize(resultText);
+
+  bigOverlay.classList.add('show');
+
+  updatePickedNumbers();
+
+  playSound();
+}
+
 function drawNumbers() {
 
-  if (currentMode === 'pinball' || currentMode === 'pinball-teacher') {
+  if (isPinballMode(currentMode)) {
     drawNumbersPinball({
       remainingEntries,
       drawCountSelect,
@@ -1394,35 +1699,24 @@ function applyPinballResult(selected) {
     }
   }
 
-  const resultText =
-    selected
-      .map((entry) => getEntryItem(entry))
-      .join(', ');
+  if (currentMode === 'song-pinball') {
+    requestSongForResult(selected)
+      .then(() => {
+        showPinballResult(selected);
+      });
+    return;
+  }
 
-  numberDisplay.textContent = resultText;
-
-  numberDisplay.style.fontSize =
-    adjustFontSize(resultText);
-
-  numberDisplay.classList.remove(
-    'placeholder', 'notice'
-  );
-
-  bigNumber.textContent = resultText;
-
-  bigNumber.style.fontSize =
-    adjustFontSize(resultText);
-
-  bigOverlay.classList.add('show');
-
-  updatePickedNumbers();
-
-  playSound();
+  showPinballResult(selected);
 }
 
 function resetDraw() {
 
   stopPinballMode();
+
+  closeSongRequest();
+
+  songRequestError.textContent = '';
 
   validEntries = getValidEntries();
 
@@ -1495,6 +1789,7 @@ document.addEventListener('keydown', (event) => {
       adminOverlay.classList.contains('show')) {
     closeAdminMode();
   }
+
 });
 
 adminLoginForm.addEventListener('submit', (event) => {
@@ -1561,6 +1856,11 @@ adminOverlay.addEventListener('click', (event) => {
     closeAdminMode();
   }
 });
+
+youtubePlayerClose.addEventListener(
+  'click',
+  closeYouTubePlayer
+);
 
 bigOverlay.addEventListener(
   'click',

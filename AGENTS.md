@@ -34,6 +34,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `mystery` | 5번 당첨 시 `window.close()` 실행 |
 | `pinball` | 캔버스 갈튼 보드 물리 시뮬레이션 |
 | `pinball-teacher` | 핀볼 + 선생님 공 포함, 금색 렌더링 |
+| `song-pinball` | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
 
 ## 관리자 모드
 - 일반 UI에는 표시하지 않는다.
@@ -52,6 +53,8 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 핀볼 일반 공이 핀/공 사이에 끼면 빠르게 위치를 분리하고 잠깐 공끼리 충돌을 무시해 탈출시킨다.
 - 중복 이름이 있을 때 `무조건`/`제외`는 값이 아니라 관리자 행 단위로 적용한다.
 - 각 모드에는 최소 1개 항목이 필요하다.
+- 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 `YOUTUBE_API_KEY`로 YouTube Data API를 호출한다.
+- YouTube 후보는 조회수 10만 이상, 길이 40초~12분, 제목 유사도, 학교 영상/반복 영상 제외 조건으로 고른다.
 
 ## 주요 파일별 책임
 - `index.html`: 모드 버튼, 뽑기 설정, 번호 표시, 결과 기록, 오버레이, 핀볼 캔버스.
@@ -72,6 +75,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `playBumperBeep()` | 핀볼 충돌 효과음 |
 | `adjustFontSize(text)` | 결과 문자열 길이에 따른 폰트 크기 조정 |
 | `terminateProgram()` | `mystery` 모드 5번 당첨 처리 |
+| `findYouTubeVideo(songName)` | 노래추첨 핀볼용 YouTube 후보 검색/점수화 |
 
 ## 핀볼 구현 메모
 - 가상 월드는 화면 높이의 4배(`WORLD_H = H * 4`).

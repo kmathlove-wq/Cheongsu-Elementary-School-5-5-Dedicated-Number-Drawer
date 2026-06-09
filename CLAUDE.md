@@ -29,7 +29,7 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 
 ---
 
-## 모드 시스템 (6가지)
+## 모드 시스템 (7가지)
 
 | 모드 | 설명 |
 |------|------|
@@ -39,6 +39,7 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 | ??? (mystery) | 5번 당첨 시 `window.close()` 실행 (장난 모드) |
 | 핀볼 (pinball) | 갈튼 보드 물리 시뮬레이션, 결승선 통과 N개 당첨, 좌측 미니맵 |
 | 핀볼(선생님) (pinball-teacher) | 핀볼 + 선생님 공 포함 (금색 `#ffe066` 특별 렌더링) |
+| 노래추첨 핀볼 (song-pinball) | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
 
 ---
 
@@ -59,6 +60,8 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 - 핀볼 일반 공이 핀/공 사이에 끼면 빠르게 위치를 분리하고 잠깐 공끼리 충돌을 무시해 탈출시킴
 - 중복 이름이 있을 때 `무조건`/`제외`는 값이 아니라 관리자 행 단위로 적용
 - 각 모드는 최소 1개 항목을 유지해야 함
+- 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 `YOUTUBE_API_KEY`로 YouTube Data API 호출
+- YouTube 후보는 조회수 10만 이상, 길이 40초~12분, 제목 유사도, 학교 영상/반복 영상 제외 조건으로 선택
 
 ---
 
@@ -75,6 +78,7 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 | `playBumperBeep()` | 핀/범퍼 충돌 효과음 (Web Audio API) |
 | `adjustFontSize(text)` | 글자 수에 따라 폰트 크기 자동 조절 |
 | `terminateProgram()` | ??? 모드 5번 당첨 시 창 닫기 |
+| `findYouTubeVideo(songName)` | 노래추첨 핀볼용 YouTube 후보 검색/점수화 |
 
 ---
 
