@@ -1172,14 +1172,33 @@ function getTextSimilarity(a, b) {
 
   if (!source || !target) return 0;
 
-  if (target.includes(source)) return 1;
+  if (target === source) return 1;
 
   const sourceTokens = source.split(' ');
-  const targetTokens = new Set(target.split(' '));
+  const targetTokenList = target.split(' ');
+  const targetTokens = new Set(targetTokenList);
   const hits =
     sourceTokens.filter((token) => targetTokens.has(token)).length;
+  const coverage = hits / sourceTokens.length;
 
-  return hits / sourceTokens.length;
+  if (coverage === 0) return 0;
+
+  const lengthRatio =
+    Math.min(source.length, target.length) /
+    Math.max(source.length, target.length);
+  const tokenRatio =
+    Math.min(sourceTokens.length, targetTokenList.length) /
+    Math.max(sourceTokens.length, targetTokenList.length);
+  const phraseBonus =
+    target.includes(source) ? 0.2 : 0;
+
+  return Math.min(
+    1,
+    coverage * 0.5 +
+    lengthRatio * 0.3 +
+    tokenRatio * 0.2 +
+    phraseBonus
+  );
 }
 
 function isBlockedSongVideo(video) {
@@ -1212,12 +1231,23 @@ function scoreSongVideo(video, songName) {
   const channel = video.snippet?.channelTitle || '';
   const views = Number(video.statistics?.viewCount || 0);
   const similarity = getTextSimilarity(songName, title);
+  const normalizedSong = normalizeSongText(songName);
+  const normalizedTitle = normalizeSongText(title);
+  const exactTitleBonus =
+    normalizedTitle === normalizedSong ? 80 : 0;
+  const phraseTitleBonus =
+    normalizedTitle.includes(normalizedSong) ? 16 : 0;
+  const extraTitlePenalty =
+    Math.max(0, normalizedTitle.length - normalizedSong.length) * 1.6;
   const officialBonus =
     /(official|topic|vevo|오피셜|공식)/i.test(channel) ? 12 : 0;
 
-  return similarity * 70 +
+  return exactTitleBonus +
+    phraseTitleBonus +
+    similarity * 90 +
     Math.log10(Math.max(views, 1)) * 6 +
-    officialBonus;
+    officialBonus -
+    extraTitlePenalty;
 }
 
 async function fetchYouTubeJson(url) {
@@ -1288,7 +1318,7 @@ async function findYouTubeVideo(songName) {
         video._views >= 100000 &&
         video._seconds >= 40 &&
         video._seconds <= 720 &&
-        video._similarity >= 0.45 &&
+        video._similarity >= 0.55 &&
         !isBlockedSongVideo(video)
       )
       .sort((a, b) =>
