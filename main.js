@@ -1165,14 +1165,22 @@ function normalizeSongText(text) {
     .trim();
 }
 
+function compactSongText(text) {
+
+  return normalizeSongText(text).replace(/\s+/g, '');
+}
+
 function getTextSimilarity(a, b) {
 
   const source = normalizeSongText(a);
   const target = normalizeSongText(b);
+  const compactSource = compactSongText(a);
+  const compactTarget = compactSongText(b);
 
   if (!source || !target) return 0;
 
-  if (target === source) return 1;
+  if (target === source ||
+      compactTarget === compactSource) return 1;
 
   const sourceTokens = source.split(' ');
   const targetTokenList = target.split(' ');
@@ -1190,7 +1198,10 @@ function getTextSimilarity(a, b) {
     Math.min(sourceTokens.length, targetTokenList.length) /
     Math.max(sourceTokens.length, targetTokenList.length);
   const phraseBonus =
-    target.includes(source) ? 0.2 : 0;
+    target.includes(source) ||
+    compactTarget.includes(compactSource)
+      ? 0.2
+      : 0;
 
   return Math.min(
     1,
@@ -1233,12 +1244,25 @@ function scoreSongVideo(video, songName) {
   const similarity = getTextSimilarity(songName, title);
   const normalizedSong = normalizeSongText(songName);
   const normalizedTitle = normalizeSongText(title);
+  const compactSong = compactSongText(songName);
+  const compactTitle = compactSongText(title);
   const exactTitleBonus =
-    normalizedTitle === normalizedSong ? 80 : 0;
+    normalizedTitle === normalizedSong ||
+    compactTitle === compactSong
+      ? 140
+      : 0;
   const phraseTitleBonus =
-    normalizedTitle.includes(normalizedSong) ? 16 : 0;
+    normalizedTitle.includes(normalizedSong) ||
+    compactTitle.includes(compactSong)
+      ? 12
+      : 0;
   const extraTitlePenalty =
-    Math.max(0, normalizedTitle.length - normalizedSong.length) * 1.6;
+    Math.max(0, compactTitle.length - compactSong.length) * 6;
+  const modifierPenalty =
+    compactTitle !== compactSong &&
+    /(전설의|괴담|퇴마사|공포|무서운|무서움|버전|cover|커버)/i.test(title)
+      ? 45
+      : 0;
   const officialBonus =
     /(official|topic|vevo|오피셜|공식)/i.test(channel) ? 12 : 0;
 
@@ -1247,7 +1271,8 @@ function scoreSongVideo(video, songName) {
     similarity * 90 +
     Math.log10(Math.max(views, 1)) * 6 +
     officialBonus -
-    extraTitlePenalty;
+    extraTitlePenalty -
+    modifierPenalty;
 }
 
 async function fetchYouTubeJson(url) {
