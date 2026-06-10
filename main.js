@@ -1498,11 +1498,17 @@ function renderSongCandidates(videos, options = {}) {
     button.type = 'button';
     button.className = 'song-candidate';
     button.dataset.videoId = video.id;
+    button.title = title;
+    button.setAttribute(
+      'aria-label',
+      `${rankLabel}. ${title}`
+    );
 
     const titleEl = document.createElement('strong');
     const metaEl = document.createElement('span');
 
     titleEl.textContent = `${rankLabel}. ${title}`;
+    titleEl.title = title;
     metaEl.textContent =
       `${channel} · ${formatViewCount(video._views)} · ` +
       formatDuration(video._seconds);
