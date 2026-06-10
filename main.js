@@ -1419,8 +1419,7 @@ async function findYouTubeCandidates(songName) {
             `${video.snippet?.channelTitle || ''} ` +
             `${video.snippet?.description || ''}`
           ),
-      }))
-      .filter((video) => !isBlockedSongVideo(video));
+      }));
 
   const candidates =
     allCandidates
@@ -1428,7 +1427,8 @@ async function findYouTubeCandidates(songName) {
         video._views >= 100000 &&
         video._seconds >= 60 &&
         video._seconds <= 720 &&
-        video._similarity >= 0.45
+        video._similarity >= 0.45 &&
+        !isBlockedSongVideo(video)
       )
       .filter((video, index, videos) => {
         if (!hasKoreanText(songName)) return true;
