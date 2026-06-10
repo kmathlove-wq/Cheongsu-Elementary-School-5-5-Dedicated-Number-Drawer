@@ -10,6 +10,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 ├── index.html      # UI 마크업
 ├── main.js         # 공통 UI·일반 뽑기·관리자 로직
 ├── pinball.js      # 핀볼 모드 물리/렌더링
+├── song.js         # 노래추첨 핀볼 YouTube 검색/선택/재생
 ├── style.css       # 스타일
 ├── 사진/logo.png   # 파비콘 및 로고
 ├── CNAME           # 커스텀 도메인 설정
@@ -60,12 +61,13 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 검색 후 추천 1등/2등 후보를 먼저 보여주고, `직접 찾기`를 누르면 검색 상위 10개 전체를 선택지로 보여준다.
 - 일부 한글 검색어는 영어 제목 별칭으로도 비교한다. 예: `버터플라이`→`butterfly`, `뱅뱅`→`bang bang`.
 - 관리자/노래 입력 모달이 열려 있으면 뒤쪽 화면의 뽑기, 리셋, 모드 전환을 실행하지 않는다.
-- YouTube 후보는 한국 지역/언어 검색의 관련도 상위 10개에서 조회수 10만 이상, 길이 60초~12분, 제목 유사도, 학교 영상/반복/Shorts/해석/방송 클립 제외 조건으로 거른 뒤 조회수 높은 순서로 고른다.
+- YouTube 후보는 한국 지역/언어 검색에서 오래된 영상(8년 초과)을 빼고 최대 10개를 보여주며, 추천 후보는 조회수 10만 이상, 길이 60초~12분, 제목 유사도, 학교 영상/반복/Shorts/해석/방송 클립 제외 조건으로 거른 뒤 조회수 높은 순서로 고른다.
 
 ## 주요 파일별 책임
 - `index.html`: 모드 버튼, 뽑기 설정, 번호 표시, 결과 기록, 오버레이, 핀볼 캔버스.
 - `main.js`: 번호 풀 생성, 모드 전환, 관리자 모드, 일반 뽑기, 효과음, 리셋.
 - `pinball.js`: 핀볼 모드 물리 시뮬레이션, 캔버스 렌더링, 핀볼 중단 처리.
+- `song.js`: 노래추첨 핀볼의 노래 입력, YouTube 후보 검색/필터링, 후보 선택, 재생창.
 - `style.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
 - `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
 
@@ -81,7 +83,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `playBumperBeep()` | 핀볼 충돌 효과음 |
 | `adjustFontSize(text)` | 결과 문자열 길이에 따른 폰트 크기 조정 |
 | `terminateProgram()` | `mystery` 모드 5번 당첨 처리 |
-| `findYouTubeCandidates(songName)` | 노래추첨 핀볼용 YouTube 후보 검색/점수화 |
+| `requestSongForResult(selected, helpers)` | 노래추첨 핀볼 결과의 노래 입력/후보 선택 처리 |
 
 ## 핀볼 구현 메모
 - 가상 월드는 화면 높이의 4배(`WORLD_H = H * 4`).
@@ -107,7 +109,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 
 ## 배포/인증 주의
 - `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포.
-- YouTube API 키는 코드에 커밋하지 않고 GitHub Actions Secret `YOUTUBE_API_KEY`로 설정한다.
+- YouTube API 키는 코드에 커밋하지 않고 GitHub Actions Secret `YOUTUBE_API_KEY`로 설정하며, 배포 시 `song.js`에 주입한다.
 - GitHub push 인증은 PAT가 설정된 remote를 사용할 수 있다.
 - PAT를 채팅이나 출력에 노출하지 않는다. 토큰이 보일 가능성이 있는 명령 출력은 공유하지 않는다.
 
