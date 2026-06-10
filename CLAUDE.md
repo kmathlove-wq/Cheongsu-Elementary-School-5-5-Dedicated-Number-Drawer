@@ -55,6 +55,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 각 모드에는 최소 1개 항목이 필요하다.
 - 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 배포 시 주입된 `YOUTUBE_API_KEY`로 YouTube Data API를 호출한다.
 - 노래 입력창은 `(뽑힌 항목)이 듣고 싶은 노래를 입력하세요` 문구를 사용한다.
+- 검색 후 추천 1등/2등 후보를 먼저 보여주고, `직접 찾기`를 누르면 검색 후보 전체를 선택지로 보여준다.
 - 관리자/노래 입력 모달이 열려 있으면 뒤쪽 화면의 뽑기, 리셋, 모드 전환을 실행하지 않는다.
 - YouTube 후보는 한국 지역/언어 검색의 관련도 상위 10개에서 조회수 10만 이상, 길이 60초~12분, 제목 유사도, 학교 영상/반복/Shorts/해석/방송 클립 제외 조건으로 거른 뒤 조회수 높은 순서로 고른다.
 
@@ -77,7 +78,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `playBumperBeep()` | 핀볼 충돌 효과음 |
 | `adjustFontSize(text)` | 결과 문자열 길이에 따른 폰트 크기 조정 |
 | `terminateProgram()` | `mystery` 모드 5번 당첨 처리 |
-| `findYouTubeVideo(songName)` | 노래추첨 핀볼용 YouTube 후보 검색/점수화 |
+| `findYouTubeCandidates(songName)` | 노래추첨 핀볼용 YouTube 후보 검색/점수화 |
 
 ## 핀볼 구현 메모
 - 가상 월드는 화면 높이의 4배(`WORLD_H = H * 4`).

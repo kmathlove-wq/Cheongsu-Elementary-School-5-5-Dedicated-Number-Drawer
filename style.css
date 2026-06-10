@@ -754,7 +754,10 @@ button:hover {
 
   display: grid;
 
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(130px, 1fr)
+  );
 
   gap: 10px;
 }
@@ -764,6 +767,54 @@ button:hover {
   background: #eef0ff;
 
   color: var(--text);
+}
+
+.song-candidates {
+
+  display: grid;
+
+  gap: 10px;
+
+  margin-top: 4px;
+}
+
+.song-candidate {
+
+  display: grid;
+
+  gap: 4px;
+
+  width: 100%;
+
+  padding: 12px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: #f8f9ff;
+
+  color: var(--text);
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.song-candidate strong {
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.song-candidate span {
+
+  color: var(--muted);
+
+  font-size: 0.9rem;
 }
 
 .youtube-player {

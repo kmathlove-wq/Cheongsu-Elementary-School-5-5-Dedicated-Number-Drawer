@@ -88,6 +88,12 @@ const songRequestInput =
 const songRequestError =
   document.getElementById('songRequestError');
 
+const songCandidateList =
+  document.getElementById('songCandidateList');
+
+const songSearchAllButton =
+  document.getElementById('songSearchAllButton');
+
 const songRequestSkipButton =
   document.getElementById('songRequestSkipButton');
 
@@ -1335,7 +1341,22 @@ async function fetchYouTubeJson(url) {
   return response.json();
 }
 
-async function findYouTubeVideo(songName) {
+function sortSongCandidates(a, b, songName) {
+
+  const viewDiff = b._views - a._views;
+
+  if (viewDiff !== 0) return viewDiff;
+
+  const scoreDiff =
+    scoreSongVideo(b, songName) -
+    scoreSongVideo(a, songName);
+
+  if (scoreDiff !== 0) return scoreDiff;
+
+  return a._searchRank - b._searchRank;
+}
+
+async function findYouTubeCandidates(songName) {
 
   if (!YOUTUBE_API_KEY ||
       YOUTUBE_API_KEY === '__YOUTUBE_API_KEY__') {
@@ -1382,7 +1403,7 @@ async function findYouTubeVideo(songName) {
   const idRanks =
     new Map(ids.map((id, index) => [id, index]));
 
-  const candidates =
+  const allCandidates =
     (detailData.items || [])
       .map((video) => ({
         ...video,
@@ -1399,12 +1420,15 @@ async function findYouTubeVideo(songName) {
             `${video.snippet?.description || ''}`
           ),
       }))
+      .filter((video) => !isBlockedSongVideo(video));
+
+  const candidates =
+    allCandidates
       .filter((video) =>
         video._views >= 100000 &&
         video._seconds >= 60 &&
         video._seconds <= 720 &&
-        video._similarity >= 0.45 &&
-        !isBlockedSongVideo(video)
+        video._similarity >= 0.45
       )
       .filter((video, index, videos) => {
         if (!hasKoreanText(songName)) return true;
@@ -1414,25 +1438,17 @@ async function findYouTubeVideo(songName) {
 
         return !koreanCandidates || video._hasKoreanText;
       })
-      .sort((a, b) => {
-        const viewDiff = b._views - a._views;
-
-        if (viewDiff !== 0) return viewDiff;
-
-        const scoreDiff =
-          scoreSongVideo(b, songName) -
-          scoreSongVideo(a, songName);
-
-        if (scoreDiff !== 0) return scoreDiff;
-
-        return a._searchRank - b._searchRank;
-      });
+      .sort((a, b) => sortSongCandidates(a, b, songName));
 
   if (candidates.length === 0) {
     throw new Error('조건에 맞는 YouTube 영상을 찾지 못했습니다.');
   }
 
-  return candidates[0];
+  return {
+    recommended: candidates.slice(0, 2),
+    all: allCandidates
+      .sort((a, b) => a._searchRank - b._searchRank),
+  };
 }
 
 function playYouTubeVideo(video, songName) {
@@ -1446,6 +1462,55 @@ function playYouTubeVideo(video, songName) {
     '?autoplay=1&rel=0';
 
   youtubePlayer.hidden = false;
+}
+
+function formatViewCount(views) {
+
+  if (views >= 10000) {
+    return `${Math.round(views / 10000)}만회`;
+  }
+
+  return `${views.toLocaleString('ko-KR')}회`;
+}
+
+function formatDuration(seconds) {
+
+  const minutes = Math.floor(seconds / 60);
+  const restSeconds = seconds % 60;
+
+  return `${minutes}:${String(restSeconds).padStart(2, '0')}`;
+}
+
+function renderSongCandidates(videos, options = {}) {
+
+  songCandidateList.innerHTML = '';
+
+  videos.forEach((video, index) => {
+
+    const button = document.createElement('button');
+    const title = video.snippet?.title || '제목 없음';
+    const channel = video.snippet?.channelTitle || '채널 정보 없음';
+    const rankLabel =
+      options.showRank
+        ? `${index + 1}등`
+        : `${index + 1}`;
+
+    button.type = 'button';
+    button.className = 'song-candidate';
+    button.dataset.videoId = video.id;
+
+    const titleEl = document.createElement('strong');
+    const metaEl = document.createElement('span');
+
+    titleEl.textContent = `${rankLabel}. ${title}`;
+    metaEl.textContent =
+      `${channel} · ${formatViewCount(video._views)} · ` +
+      formatDuration(video._seconds);
+
+    button.append(titleEl, metaEl);
+
+    songCandidateList.appendChild(button);
+  });
 }
 
 function closeYouTubePlayer() {
@@ -1477,14 +1542,26 @@ function requestSongForResult(selected) {
       `${studentLabel}이 듣고 싶은 노래를 입력하세요`;
     songRequestInput.value = '';
     songRequestError.textContent = '';
+    songCandidateList.innerHTML = '';
+    songSearchAllButton.hidden = true;
     songRequestOverlay.classList.add('show');
     songRequestOverlay.setAttribute('aria-hidden', 'false');
+    let currentSongName = '';
+    let recommendedVideos = [];
+    let allVideos = [];
 
     const finish = () => {
       songRequestForm.removeEventListener('submit', onSubmit);
       songRequestSkipButton.removeEventListener('click', onSkip);
+      songSearchAllButton.removeEventListener('click', onSearchAll);
+      songCandidateList.removeEventListener('click', onPickCandidate);
       closeSongRequest();
       resolve();
+    };
+
+    const playSelectedVideo = (video) => {
+      playYouTubeVideo(video, currentSongName);
+      finish();
     };
 
     const onSubmit = async (event) => {
@@ -1499,13 +1576,45 @@ function requestSongForResult(selected) {
       }
 
       songRequestError.textContent = 'YouTube에서 찾는 중입니다...';
+      songCandidateList.innerHTML = '';
+      songSearchAllButton.hidden = true;
 
       try {
-        const video = await findYouTubeVideo(songName);
-        playYouTubeVideo(video, songName);
-        finish();
+        const result = await findYouTubeCandidates(songName);
+
+        currentSongName = songName;
+        recommendedVideos = result.recommended;
+        allVideos = result.all;
+
+        renderSongCandidates(recommendedVideos, { showRank: true });
+        songSearchAllButton.hidden = allVideos.length === 0;
+        songRequestError.textContent =
+          '재생할 노래를 선택해 주세요.';
       } catch (error) {
         songRequestError.textContent = error.message;
+      }
+    };
+
+    const onSearchAll = () => {
+      if (allVideos.length === 0) return;
+
+      renderSongCandidates(allVideos, { showRank: false });
+      songRequestError.textContent =
+        '후보 중 재생할 노래를 선택해 주세요.';
+    };
+
+    const onPickCandidate = (event) => {
+      const button = event.target.closest('.song-candidate');
+
+      if (!button) return;
+
+      const videos =
+        [...recommendedVideos, ...allVideos];
+      const video =
+        videos.find((item) => item.id === button.dataset.videoId);
+
+      if (video) {
+        playSelectedVideo(video);
       }
     };
 
@@ -1515,6 +1624,8 @@ function requestSongForResult(selected) {
 
     songRequestForm.addEventListener('submit', onSubmit);
     songRequestSkipButton.addEventListener('click', onSkip);
+    songSearchAllButton.addEventListener('click', onSearchAll);
+    songCandidateList.addEventListener('click', onPickCandidate);
 
     setTimeout(() => songRequestInput.focus(), 0);
   });

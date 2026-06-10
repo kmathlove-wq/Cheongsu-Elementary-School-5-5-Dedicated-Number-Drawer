@@ -112,8 +112,17 @@
           autocomplete="off"
         />
         <p class="admin-error" id="songRequestError"></p>
+        <div class="song-candidates" id="songCandidateList"></div>
         <div class="song-actions">
-          <button type="submit">재생</button>
+          <button type="submit">찾기</button>
+          <button
+            class="secondary"
+            id="songSearchAllButton"
+            type="button"
+            hidden
+          >
+            직접 찾기
+          </button>
           <button
             class="secondary"
             id="songRequestSkipButton"
