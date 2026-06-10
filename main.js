@@ -1216,6 +1216,7 @@ function hasKoreanText(text) {
 
 const SONG_TITLE_ALIASES = {
   '버터플라이': ['butterfly'],
+  '뱅뱅': ['bang bang', 'bangbang'],
 };
 
 const YOUTUBE_SEARCH_LIMIT = 10;
@@ -1471,10 +1472,6 @@ async function findYouTubeCandidates(songName) {
       })
       .sort((a, b) => sortSongCandidates(a, b, songName));
 
-  if (candidates.length === 0) {
-    throw new Error('조건에 맞는 YouTube 영상을 찾지 못했습니다.');
-  }
-
   return {
     recommended: candidates.slice(0, 2),
     all: allCandidates
@@ -1631,7 +1628,11 @@ function requestSongForResult(selected) {
         renderSongCandidates(recommendedVideos, { showRank: true });
         songSearchAllButton.hidden = allVideos.length === 0;
         songRequestError.textContent =
-          '재생할 노래를 선택해 주세요.';
+          recommendedVideos.length > 0
+            ? '재생할 노래를 선택해 주세요.'
+            : allVideos.length > 0
+              ? '조건에 맞는 추천 영상은 없지만 직접 찾을 수 있습니다.'
+              : '조건에 맞는 YouTube 영상을 찾지 못했습니다.';
       } catch (error) {
         songRequestError.textContent = error.message;
       }
