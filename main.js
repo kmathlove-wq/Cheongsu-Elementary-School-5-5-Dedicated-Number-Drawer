@@ -1271,10 +1271,19 @@ function isBlockedSongVideo(video) {
     /(1시간|한시간|hour|hours|loop|반복|연속재생|playlist|모음)/.test(text);
   const shortsLike =
     /(#shorts|shorts|쇼츠|유튜브쇼츠|ytshorts)/.test(text);
+  const translationLike =
+    /(해석|번역|translation|translated)/.test(text);
+  const varietyClipLike =
+    /(놀면 뭐하니|예능|방영|방송분|full ver|풀버전|클립|clip)/.test(text);
+  const nostalgiaClipLike =
+    /(그 시절|선택받은 아이들|눈물|추억|90년생)/.test(text);
 
   return (schoolLike && classVideoLike) ||
     longLoopLike ||
-    shortsLike;
+    shortsLike ||
+    translationLike ||
+    varietyClipLike ||
+    nostalgiaClipLike;
 }
 
 function scoreSongVideo(video, songName) {
