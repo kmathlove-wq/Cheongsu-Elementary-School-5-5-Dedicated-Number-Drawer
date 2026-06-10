@@ -114,6 +114,11 @@ let _pinballAudioCtx = null;
 let currentMode = 'basic';
 
 const ADMIN_PASSWORD = '1+1=1';
+const MOBILE_ADMIN_TAP_WINDOW = 900;
+const MOBILE_ADMIN_TAP_COUNT = 3;
+
+let basicModeTapCount = 0;
+let lastBasicModeTap = 0;
 
 // 배포 시 GitHub Actions Secret YOUTUBE_API_KEY로 대체됩니다.
 const YOUTUBE_API_KEY = '__YOUTUBE_API_KEY__';
@@ -530,6 +535,30 @@ function switchMode(mode) {
   resetDraw();
 }
 
+function handleBasicModeAdminTap() {
+
+  if (window.matchMedia('(pointer: coarse)').matches === false) {
+    return;
+  }
+
+  if (isBlockingDialogOpen() || isYouTubePlayerOpen()) return;
+
+  const now = Date.now();
+
+  if (now - lastBasicModeTap > MOBILE_ADMIN_TAP_WINDOW) {
+    basicModeTapCount = 0;
+  }
+
+  basicModeTapCount += 1;
+  lastBasicModeTap = now;
+
+  if (basicModeTapCount >= MOBILE_ADMIN_TAP_COUNT) {
+    basicModeTapCount = 0;
+    lastBasicModeTap = 0;
+    openAdminMode();
+  }
+}
+
 function updatePickedNumbers() {
 
   if (pickedNumbers.length === 0) {
@@ -559,6 +588,8 @@ function setAdminManageError(message) {
 }
 
 function openAdminMode() {
+
+  if (isYouTubePlayerOpen()) return;
 
   adminOverlay.classList.add('show');
 
@@ -1464,6 +1495,11 @@ function playYouTubeVideo(video, songName) {
   youtubePlayer.hidden = false;
 }
 
+function isYouTubePlayerOpen() {
+
+  return !youtubePlayer.hidden;
+}
+
 function formatViewCount(views) {
 
   if (views >= 10000) {
@@ -2022,9 +2058,13 @@ function resetDraw(options = {}) {
 document
   .querySelectorAll('.mode-btn')
   .forEach((btn) => {
-    btn.addEventListener('click', () =>
-      switchMode(btn.dataset.mode)
-    );
+    btn.addEventListener('click', () => {
+      if (btn.dataset.mode === 'basic') {
+        handleBasicModeAdminTap();
+      }
+
+      switchMode(btn.dataset.mode);
+    });
   });
 
 drawButton.addEventListener(

@@ -929,6 +929,56 @@ button:hover {
 
     grid-template-columns: 1fr;
   }
+
+  .song-panel {
+
+    width: min(100%, calc(100vw - 24px));
+
+    max-height: 88vh;
+  }
+
+  .song-candidate {
+
+    padding: 14px;
+  }
+
+  .song-candidate strong {
+
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    white-space: normal;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+  }
+
+  .youtube-player {
+
+    width: calc(100vw - 16px);
+
+    border-radius: 10px;
+  }
+
+  .youtube-player-header {
+
+    grid-template-columns: minmax(0, 1fr) 36px;
+
+    padding: 9px 10px;
+  }
+
+  .youtube-player-header strong {
+
+    white-space: normal;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+  }
 }
 
 .pinball-overlay {
