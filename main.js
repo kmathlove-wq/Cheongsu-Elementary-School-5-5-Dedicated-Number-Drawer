@@ -495,7 +495,7 @@ function updateDescription() {
   } else if (currentMode === 'song-pinball') {
 
     descriptionEl.textContent =
-      '노래추첨 핀볼 모드: 당첨 번호가 원하는 노래를 입력하면 YouTube에서 찾아 재생합니다.';
+      '노래추첨 핀볼 모드: 당첨 번호가 듣고 싶은 노래를 입력하면 YouTube에서 찾아 재생합니다.';
 
   } else {
 
@@ -505,6 +505,8 @@ function updateDescription() {
 }
 
 function switchMode(mode) {
+
+  if (isBlockingDialogOpen()) return;
 
   currentMode = mode;
 
@@ -949,7 +951,7 @@ function saveAdminListInputs(mode) {
   saveModePools();
 
   if (mode === currentMode) {
-    resetDraw();
+    resetDraw({ force: true });
   }
 
   setAdminManageError('적용되었습니다.');
@@ -974,7 +976,7 @@ function commitAdminPoolChange(mode) {
   renderAdminList();
 
   if (mode === currentMode) {
-    resetDraw();
+    resetDraw({ force: true });
   }
 
   setAdminManageError('적용되었습니다.');
@@ -1458,6 +1460,12 @@ function closeSongRequest() {
   songRequestOverlay.setAttribute('aria-hidden', 'true');
 }
 
+function isBlockingDialogOpen() {
+
+  return adminOverlay.classList.contains('show') ||
+    songRequestOverlay.classList.contains('show');
+}
+
 function requestSongForResult(selected) {
 
   return new Promise((resolve) => {
@@ -1466,7 +1474,7 @@ function requestSongForResult(selected) {
     const studentLabel = getResultLabel(firstItem);
 
     songRequestTitle.textContent =
-      `${studentLabel}이 하고 싶은 노래를 입력하세요`;
+      `${studentLabel}이 듣고 싶은 노래를 입력하세요`;
     songRequestInput.value = '';
     songRequestError.textContent = '';
     songRequestOverlay.classList.add('show');
@@ -1541,6 +1549,8 @@ function showPinballResult(selected) {
 }
 
 function drawNumbers() {
+
+  if (isBlockingDialogOpen()) return;
 
   if (isPinballMode(currentMode)) {
     drawNumbersPinball({
@@ -1847,7 +1857,9 @@ function applyPinballResult(selected) {
   showPinballResult(selected);
 }
 
-function resetDraw() {
+function resetDraw(options = {}) {
+
+  if (!options.force && isBlockingDialogOpen()) return;
 
   stopPinballMode();
 
@@ -1916,7 +1928,9 @@ document.addEventListener('keydown', (event) => {
 
     if (now - lastControlPress <= 450) {
       lastControlPress = 0;
-      openAdminMode();
+      if (!isBlockingDialogOpen()) {
+        openAdminMode();
+      }
     } else {
       lastControlPress = now;
     }
@@ -1977,7 +1991,7 @@ adminResetButton.addEventListener('click', () => {
 
   renderAdminList();
 
-  resetDraw();
+  resetDraw({ force: true });
 
   setAdminManageError('기본값으로 되돌렸습니다.');
 });

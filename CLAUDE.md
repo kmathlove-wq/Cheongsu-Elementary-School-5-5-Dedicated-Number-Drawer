@@ -2,9 +2,7 @@
 
 ## 프로젝트 개요
 청수초등학교 5-5반 전용 번호 뽑기 웹앱.
-GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2c.kro.kr`
-
----
+GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iioolb86qbx2c.kro.kr`.
 
 ## 파일 구조
 ```
@@ -15,170 +13,100 @@ GitHub Pages로 배포 중. 커스텀 도메인: `xn--ok0bu1tf0b2m58iioolb86qbx2
 ├── style.css       # 스타일
 ├── 사진/logo.png   # 파비콘 및 로고
 ├── CNAME           # 커스텀 도메인 설정
+├── README.md
+├── AGENTS.md       # Codex용 프로젝트 지식
 └── .github/workflows/deploy.yml  # GitHub Pages 자동 배포
 ```
 
----
-
 ## 번호 풀 규칙
-- 기본 풀: 1~25번, **19번 제외** → 24개
-- 선생님 모드: `선생님` + 1~25번, 19번 제외 → 25개
-- 각 번호는 **문자열**로 통일 (`"1"`, `"선생님"` 등)
-- 긴 항목명은 번호 칸과 핀볼 공에서 일부만 표시
-- `선생님`은 항목 풀과 핀볼 공 출발 순서에서 항상 제일 앞
+- 기본 풀: 1~25번, 19번 제외 → 24개
+- 선생님 포함 풀: `선생님` + 1~25번, 19번 제외 → 25개
+- 번호와 `선생님` 값은 모두 문자열로 취급한다.
+- 표시 공간이 좁은 번호 칸과 핀볼 공에서는 긴 항목명을 일부만 표시한다.
+- `선생님`은 항목 풀과 핀볼 공 출발 순서에서 항상 제일 앞에 둔다.
 
----
-
-## 모드 시스템 (7가지)
-
+## 모드
 | 모드 | 설명 |
 |------|------|
-| 기본 (basic) | 1~25번 (19 제외) 랜덤 뽑기, 스파크 애니메이션 |
-| 선생님 (teacher) | `선생님` 포함, 결과 정렬 시 맨 앞 |
-| 선생님(?) (teacher-mystery) | 선생님이 남아있으면 무조건 당첨에 포함 |
-| ??? (mystery) | 5번 당첨 시 `window.close()` 실행 (장난 모드) |
-| 핀볼 (pinball) | 갈튼 보드 물리 시뮬레이션, 결승선 통과 N개 당첨, 좌측 미니맵 |
-| 핀볼(선생님) (pinball-teacher) | 핀볼 + 선생님 공 포함 (금색 `#ffe066` 특별 렌더링) |
-| 노래추첨 핀볼 (song-pinball) | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
-
----
+| `basic` | 1~25번, 19 제외 랜덤 뽑기 |
+| `teacher` | `선생님` 포함, 결과 정렬 시 맨 앞 |
+| `teacher-mystery` | 선생님이 남아있으면 무조건 당첨에 포함 |
+| `mystery` | 5번 당첨 시 `window.close()` 실행 |
+| `pinball` | 캔버스 갈튼 보드 물리 시뮬레이션 |
+| `pinball-teacher` | 핀볼 + 선생님 공 포함, 금색 렌더링 |
+| `song-pinball` | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
 
 ## 관리자 모드
-- 일반 UI에는 노출하지 않음
-- `Control` 키를 450ms 안에 빠르게 두 번 누르면 관리자 모드 오버레이 표시
-- 비밀번호: `1+1=1`
-- 관리자 모드에서는 모든 기존 모드의 항목을 추가, 삭제, 이름 변경 가능
-- 관리자 목록은 `선생님` 먼저, 숫자 오름차순, 문자 가나다순으로 표시
-- 이름 변경 입력값은 포커스 이동, 모드 전환, 닫기 시 현재 접속 중에만 자동 적용
-- 모드별 항목은 브라우저 저장소에 유지하지 않으며 새로고침/재접속 시 기본값으로 초기화
-- `중복 허용`: 같은 이름의 항목을 여러 칸으로 둘 수 있고, 각 칸은 따로 소모됨
-- `무조건`: 가능한 한 먼저 뽑음 / 일반 모드 `제외`: 화면에는 남기고 추첨 후보에서만 제외
-- `teacher-mystery`의 `선생님`과 `mystery`의 `5`는 `제외` 불가
-- `제외` 때문에 결과 생성이 불가능하면 결과 표시 전 `terminateProgram()` 실행
-- 핀볼 모드는 `제외`를 쓰지 않고 `무조건` 공에 기본 속도·중앙 배치·장애물/공 충돌 무시 적용
-- 핀볼 일반 공이 측면 바깥길로 빠지지 않도록 벽쪽까지 핀을 배치함
-- 핀볼 일반 공이 핀/공 사이에 끼면 빠르게 위치를 분리하고 잠깐 공끼리 충돌을 무시해 탈출시킴
-- 중복 이름이 있을 때 `무조건`/`제외`는 값이 아니라 관리자 행 단위로 적용
-- 각 모드는 최소 1개 항목을 유지해야 함
-- 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 배포 시 주입된 `YOUTUBE_API_KEY`로 YouTube Data API 호출
-- YouTube 후보는 한국 지역/언어 검색의 관련도 상위 10개에서 조회수 10만 이상, 길이 60초~12분, 제목 유사도, 학교 영상/반복/Shorts/해석/방송 클립 제외 조건으로 거른 뒤 조회수 높은 순서로 선택
+- 일반 UI에는 표시하지 않는다.
+- `Control` 키를 450ms 안에 빠르게 두 번 누르면 관리자 모드가 열린다.
+- 비밀번호는 `1+1=1`.
+- 관리자 모드에서는 기존 모든 모드의 항목을 추가, 삭제, 이름 변경할 수 있다.
+- 관리자 목록은 `선생님` 먼저, 숫자 오름차순, 문자 가나다순으로 표시한다.
+- 이름 변경 입력값은 포커스 이동, 모드 전환, 닫기 시 현재 접속 중에만 자동 적용한다.
+- 모드별 항목은 브라우저 저장소에 유지하지 않으며 새로고침/재접속 시 기본값으로 초기화한다.
+- `중복 허용`을 켜면 같은 이름의 항목을 여러 칸으로 둘 수 있고, 각 칸은 따로 소모된다.
+- `무조건` 항목은 가능한 한 먼저 뽑고, 일반 모드의 `제외` 항목은 화면에는 남기되 추첨 후보에서만 제외한다.
+- `teacher-mystery`의 `선생님`과 `mystery`의 `5`는 `제외`할 수 없다.
+- `제외` 때문에 결과를 만들 수 없으면 결과 표시 전에 `terminateProgram()`으로 종료한다.
+- 핀볼 모드는 `제외`를 쓰지 않고, `무조건` 항목 공은 기본 속도로 가운데 배치에 섞이며 장애물과 다른 공을 통과한다.
+- 핀볼 일반 공이 측면 바깥길로 빠지지 않도록 벽쪽까지 핀을 배치한다.
+- 핀볼 일반 공이 핀/공 사이에 끼면 빠르게 위치를 분리하고 잠깐 공끼리 충돌을 무시해 탈출시킨다.
+- 중복 이름이 있을 때 `무조건`/`제외`는 값이 아니라 관리자 행 단위로 적용한다.
+- 각 모드에는 최소 1개 항목이 필요하다.
+- 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 배포 시 주입된 `YOUTUBE_API_KEY`로 YouTube Data API를 호출한다.
+- 노래 입력창은 `(뽑힌 항목)이 듣고 싶은 노래를 입력하세요` 문구를 사용한다.
+- 관리자/노래 입력 모달이 열려 있으면 뒤쪽 화면의 뽑기, 리셋, 모드 전환을 실행하지 않는다.
+- YouTube 후보는 한국 지역/언어 검색의 관련도 상위 10개에서 조회수 10만 이상, 길이 60초~12분, 제목 유사도, 학교 영상/반복/Shorts/해석/방송 클립 제외 조건으로 거른 뒤 조회수 높은 순서로 고른다.
 
----
+## 주요 파일별 책임
+- `index.html`: 모드 버튼, 뽑기 설정, 번호 표시, 결과 기록, 오버레이, 핀볼 캔버스.
+- `main.js`: 번호 풀 생성, 모드 전환, 관리자 모드, 일반 뽑기, 효과음, 리셋.
+- `pinball.js`: 핀볼 모드 물리 시뮬레이션, 캔버스 렌더링, 핀볼 중단 처리.
+- `style.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
+- `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
 
-## 주요 함수 (main.js)
-
+## main.js 주요 함수
 | 함수 | 역할 |
 |------|------|
 | `getValidItems()` | 현재 모드에 맞는 번호 풀 반환 |
-| `switchMode(mode)` | 모드 전환 + 리셋 |
-| `drawNumbers()` | 뽑기 실행 (핀볼 모드면 `drawNumbersPinball()` 위임) |
-| `drawNumbersPinball()` | `pinball.js`의 캔버스 기반 갈튼 보드 물리 시뮬레이션 |
-| `resetDraw()` | 전체 초기화 (핀볼 애니메이션도 중단) |
-| `playSound()` | 결과 발표 효과음 (Google OGG) |
-| `playBumperBeep()` | 핀/범퍼 충돌 효과음 (Web Audio API) |
-| `adjustFontSize(text)` | 글자 수에 따라 폰트 크기 자동 조절 |
-| `terminateProgram()` | ??? 모드 5번 당첨 시 창 닫기 |
+| `switchMode(mode)` | 모드 전환 후 리셋 |
+| `drawNumbers()` | 일반 뽑기 실행, 핀볼 모드면 위임 |
+| `drawNumbersPinball()` | `pinball.js`의 캔버스 기반 핀볼 시뮬레이션 |
+| `resetDraw()` | 전체 초기화 및 핀볼 애니메이션 중단 |
+| `playSound()` | 결과 발표 효과음 |
+| `playBumperBeep()` | 핀볼 충돌 효과음 |
+| `adjustFontSize(text)` | 결과 문자열 길이에 따른 폰트 크기 조정 |
+| `terminateProgram()` | `mystery` 모드 5번 당첨 처리 |
 | `findYouTubeVideo(songName)` | 노래추첨 핀볼용 YouTube 후보 검색/점수화 |
 
----
+## 핀볼 구현 메모
+- 가상 월드는 화면 높이의 4배(`WORLD_H = H * 4`).
+- 공은 무작위 상단 배치에서 한 번에 떨어진다.
+- 시작 배치는 무작위이며 `무조건` 항목도 가운데 배치에 섞여 기본 속도로 낙하한다.
+- 카메라는 기본적으로 가장 아래 활성 공을 따라가며, 미니맵 호버 중에는 호버 위치를 따른다.
+- `pegs`, `bumpers`, `spinners`, `balls`, `winners`, `sonicBooms`가 핵심 상태다.
+- 결승선(`PLAY_BOT`)을 통과한 순서대로 `winners`에 들어가고 목표 인원 달성 후 `finalize()`가 결과를 반영한다.
+- 미니맵 상수는 `PLAY_BOT` 선언 이후에 둔다. TDZ 오류 방지를 위해 순서를 바꾸지 않는다.
 
-## 핀볼 모드 물리 엔진 구조
+## UI/스타일 메모
+- CSS 변수: `--bg`, `--card`, `--accent`, `--text`, `--muted`, `--border`.
+- `.number-cell.spark`는 금색 글로우, `.number-cell.picked`는 주황/빨강 그라데이션.
+- `pinball` 활성 버튼은 다크 보라 네온, `pinball-teacher` 활성 버튼은 다크 네이비 + 금색 네온.
+- `선생님` 셀과 공은 금색 계열로 구분한다.
 
-```
-WORLD_H = H * 4      화면 4배 높이의 가상 월드
-cameraY              기본: 가장 아래 활성 공 추적 (lerp 0.04)
-                     미니맵 호버 중: 호버 위치 추적 (lerp 0.12)
-balls[]              각 항목당 1개 공, 무작위 상단 배치에서 한 번에 낙하
-                     isTeacher 플래그: 선생님 공 여부 (금색 특별 렌더링)
-                     isForced 플래그: 기본 속도·중앙 배치·장애물/공 충돌 무시
-pegs[]               4열 × 14행 대각선 캡슐 / hitPeg: 법선 반사, 반발계수 0.6
-bumpers[]            원형 범퍼 5개 / hitBumper: 반발계수 0.85
-hitBall(a, b)        공끼리 충돌 (운동량 교환, 반발계수 0.45)
-winners[]            결승선(PLAY_BOT) 통과 순서대로 push됨
-finalize()           count개 당첨 후 1.6초 뒤 결과 표시
-```
+## 작업 규칙
+- 사용자 요청 없이 기존 변경사항을 되돌리지 않는다.
+- 새로 알게 된 프로젝트 지식은 필요할 때 `AGENTS.md` 또는 `CLAUDE.md`에 반영한다.
+- `AGENTS.md`와 `CLAUDE.md`는 각각 200줄을 넘기지 않는다. 수정 후 `wc -l AGENTS.md CLAUDE.md`로 확인한다.
+- 코드나 문서를 수정한 뒤에는 사용자가 금지하지 않는 한 커밋하고 GitHub에 push한다.
+- 커밋 메시지는 한/영 혼용 가능하며 변경 내용을 구체적으로 쓴다.
 
-**핀볼 주요 수치:**
-- 중력: `0.28` / 최대 속도: `14` / 공 간격: `BALL_R * 2.35`
-- 플레이 영역: `PLAY_W = min(W*0.62, 720px)` / 결승선: `WORLD_H * 0.95`
-- 핀 길이: `PLAY_W / 10` / 범퍼 반지름: `max(16, PLAY_W/22)`
+## 배포/인증 주의
+- `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포.
+- YouTube API 키는 코드에 커밋하지 않고 GitHub Actions Secret `YOUTUBE_API_KEY`로 설정한다.
+- GitHub push 인증은 PAT가 설정된 remote를 사용할 수 있다.
+- PAT를 채팅이나 출력에 노출하지 않는다. 토큰이 보일 가능성이 있는 명령 출력은 공유하지 않는다.
 
-**핀볼 상태 변수:**
-- `pinballRafId` / `stopPinball` / `_pinballAudioCtx`
-- 미니맵: `MM_W`, `MM_SCALE_X/Y`, `minimapHover`, `minimapTargetCamY`, `onMMMove`
-- ⚠️ 미니맵 상수는 `PLAY_BOT` 선언 **이후**에 위치해야 함 (TDZ 오류 방지)
-
----
-
-## 핀볼 drawScene() 렌더링 구조
-
-```
-drawScene()
-  배경 → ctx.save() → translate(0, -cameraY)
-    경계선 / 결승선(노란 점선) / pegs / spinners / bumpers / balls
-  ctx.restore()
-  HUD: 카운터 "당첨수/목표수" + 당첨 순위 목록
-  drawMinimap(): 약도(배경·결승선·pegs·bumpers·balls·뷰포트박스·호버커서)
-                 MM_W < 20px 이면 skip
-```
-
----
-
-## UI 구조 (index.html)
-
-```
-.container > h1, .mode-selector, .card(#drawSettings·#numberDisplay·#numberGrid·버튼들), .history-card
-.big-overlay#bigOverlay          결과 전체화면 오버레이
-.pinball-overlay#pinballOverlay  canvas#pinballCanvas
-```
-
----
-
-## 스타일 주요 포인트 (style.css)
-- CSS 변수: `--bg`, `--card`, `--accent(#5a5cff)`, `--text`, `--muted`, `--border`
-- `.number-cell.spark` — 금색 글로우 / `.number-cell.picked` — 주황/빨강 그라데이션
-- `.mode-btn[data-mode="pinball"].active` — 다크 보라 네온
-- `.mode-btn[data-mode="pinball-teacher"].active` — 다크 네이비 + 금색 네온
-
----
-
-## GitHub 배포
-- `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포
-- **GitHub push 인증:** `git remote set-url origin`으로 PAT 포함 URL을 터미널에서 직접 설정
-- ⚠️ Codespace 기본 `GITHUB_TOKEN`은 push 권한 없음 → 반드시 PAT 사용
-- ⚠️ PAT를 채팅/출력에 노출하면 GitHub이 자동 취소함 → 터미널에서 직접 입력
-- **`git push` 차단 시 우회:** `git push`로 객체 업로드(ref 실패 무시) → API로 ref 갱신
-  ```
-  git push; \
-  LOCAL_SHA=$(git rev-parse HEAD); \
-  PAT=$(git remote get-url origin | sed 's|.*:\(ghp_[^@]*\)@.*|\1|'); \
-  curl -s -X PATCH \
-    -H "Authorization: Bearer $PAT" \
-    -H "Accept: application/vnd.github+json" \
-    "https://api.github.com/repos/kmathlove-wq/Cheongsu-Elementary-School-5-5-Dedicated-Number-Drawer/git/refs/heads/main" \
-    -d "{\"sha\":\"$LOCAL_SHA\",\"force\":false}" | grep -o '"ref":"[^"]*"'
-  ```
-
----
-
-## 작업 규칙 (유저 지시사항)
-- **코드 수정 후 항상 GitHub push** (유저가 명시적으로 금지하지 않는 한)
-- 커밋 메시지는 한/영 혼용 가능, 변경 내용을 구체적으로 작성
-- 새로 알게 된 프로젝트 지식은 필요할 때 `AGENTS.md` 또는 `CLAUDE.md`에 반영
-- `AGENTS.md`와 `CLAUDE.md`는 각각 200줄을 초과하면 안 됨 — 수정 시 항상 줄 수를 확인하고 초과 시 압축
-- 사용자 요청 없이 기존 변경사항을 되돌리지 않음
-
----
-
-## 향후 개선 아이디어 (미구현)
-- 핀볼 모드 BGM / 더 다양한 효과음
-- 모바일에서 핀볼 당첨 순위 표시 레이아웃 개선
-
----
-
-## 절약 규칙
-- 이미 읽은 파일은 다시 확인하지 않는다
-- 불필요한 도구 호출은 하지 않는다
-- 가능한 도구 호출은 동시에 실행한다
-- 20줄 이상의 불필요한 출력은 서브에이전트에 위임한다
-- 사용자가 이미 설명한 내용을 다시 반복하지 않는다
+## 향후 개선 아이디어
+- 핀볼 모드 BGM 또는 다양한 효과음.
+- 모바일 핀볼 당첨 순위 표시 레이아웃 개선.
