@@ -1179,6 +1179,8 @@ const SONG_TITLE_ALIASES = {
   '버터플라이': ['butterfly'],
 };
 
+const YOUTUBE_SEARCH_LIMIT = 10;
+
 function getSongTitleQueries(songName) {
 
   const queries = [songName];
@@ -1333,8 +1335,8 @@ async function findYouTubeVideo(songName) {
     new URLSearchParams({
       part: 'snippet',
       type: 'video',
-      maxResults: '50',
-      order: 'viewCount',
+      maxResults: String(YOUTUBE_SEARCH_LIMIT),
+      order: 'relevance',
       regionCode: 'KR',
       relevanceLanguage: 'ko',
       q: songName,
