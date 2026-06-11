@@ -117,7 +117,7 @@ const DEFAULT_MODE_POOLS = {
   teacher: ['선생님', ...baseNumbers],
   'teacher-mystery': ['선생님', ...baseNumbers],
   mystery: [...baseNumbers],
-  'twenty-six': ['26'],
+  'twenty-six': [...baseNumbers],
   pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
@@ -174,6 +174,11 @@ function isPinballMode(mode) {
   return mode === 'pinball' ||
     mode === 'pinball-teacher' ||
     mode === 'song-pinball';
+}
+
+function isTwentySixMode(mode = currentMode) {
+
+  return mode === 'twenty-six';
 }
 
 function uniqueItems(items) {
@@ -366,7 +371,12 @@ function buildDrawCountOptions() {
 
   drawCountSelect.innerHTML = '';
 
-  for (let i = 1; i <= validItems.length; i++) {
+  const maxCount =
+    isTwentySixMode()
+      ? 1
+      : validItems.length;
+
+  for (let i = 1; i <= maxCount; i++) {
 
     const option =
       document.createElement('option');
@@ -1226,9 +1236,13 @@ function drawNumbers() {
   const blocked = new Set(options.blockedItems);
 
   const sourceEntries = remainingEntries;
+  const drawCandidateEntries =
+    isTwentySixMode()
+      ? sourceEntries.filter((entry) => entry.item === '26')
+      : sourceEntries;
 
   const eligibleEntries =
-    sourceEntries.filter((entry) => !blocked.has(entry.key));
+    drawCandidateEntries.filter((entry) => !blocked.has(entry.key));
 
   if (sourceEntries.length === 0) {
 
@@ -1247,7 +1261,7 @@ function drawNumbers() {
   const count =
     Math.min(
       Number(drawCountSelect.value),
-      sourceEntries.length
+      eligibleEntries.length
     );
 
   if (eligibleEntries.length === 0 ||
@@ -1361,7 +1375,7 @@ function drawNumbers() {
       for (const forcedKey of options.forcedItems) {
 
         const forcedEntry =
-          sourceEntries.find((entry) =>
+          drawCandidateEntries.find((entry) =>
             entry.key === forcedKey
           );
 
@@ -1380,7 +1394,7 @@ function drawNumbers() {
       while (selected.length < count) {
 
         const drawPool =
-          remainingEntries.filter((entry) =>
+          drawCandidateEntries.filter((entry) =>
             !blocked.has(entry.key) &&
             !selectedSet.has(entry.key)
           );

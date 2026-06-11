@@ -33,7 +33,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `teacher` | `선생님` 포함, 결과 정렬 시 맨 앞 |
 | `teacher-mystery` | 선생님이 남아있으면 무조건 당첨에 포함 |
 | `mystery` | 5번 당첨 시 `window.close()` 실행 |
-| `twenty-six` | 26번만 뽑고 26번 당첨 시 `window.close()` 실행 |
+| `twenty-six` | 전체 번호를 보여주되 26번만 뽑고 당첨 시 `window.close()` 실행 |
 | `pinball` | 캔버스 갈튼 보드 물리 시뮬레이션 |
 | `pinball-teacher` | 핀볼 + 선생님 공 포함, 금색 렌더링 |
 | `song-pinball` | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
