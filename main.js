@@ -1448,6 +1448,18 @@ function drawNumbers() {
         return;
       }
 
+      const shouldTerminate =
+        (
+          currentMode === 'mystery' &&
+          selected.includes(getTodayNumber())
+        ) ||
+        (currentMode === 'twenty-six' && selected.includes('26'));
+
+      if (shouldTerminate) {
+        terminateProgram();
+        return;
+      }
+
       selected.sort(compareItems);
 
       const resultText = selected.join(', ');
@@ -1475,27 +1487,7 @@ function drawNumbers() {
 
       playSound();
 
-      const shouldTerminate =
-        (
-          currentMode === 'mystery' &&
-          selected.includes(getTodayNumber())
-        ) ||
-        (currentMode === 'twenty-six' && selected.includes('26'));
-
-      if (shouldTerminate) {
-
-        setTimeout(() => {
-
-          bigOverlay.classList.remove('show');
-
-          terminateProgram();
-
-        }, 1500);
-
-      } else {
-
-        drawButton.disabled = false;
-      }
+      drawButton.disabled = false;
     }
 
   }, 140);
