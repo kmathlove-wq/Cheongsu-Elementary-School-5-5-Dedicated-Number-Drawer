@@ -371,12 +371,7 @@ function buildDrawCountOptions() {
 
   drawCountSelect.innerHTML = '';
 
-  const maxCount =
-    isTwentySixMode()
-      ? 1
-      : validItems.length;
-
-  for (let i = 1; i <= maxCount; i++) {
+  for (let i = 1; i <= validItems.length; i++) {
 
     const option =
       document.createElement('option');
@@ -490,7 +485,7 @@ function updateDescription() {
   } else if (currentMode === 'twenty-six') {
 
     descriptionEl.textContent =
-      '26번 모드: 26번만 뽑습니다. 26번이 나오면...?';
+      '26번 모드: 26번은 무조건 뽑습니다. 26번이 나오면...?';
 
   } else if (currentMode === 'pinball') {
 
@@ -1236,13 +1231,9 @@ function drawNumbers() {
   const blocked = new Set(options.blockedItems);
 
   const sourceEntries = remainingEntries;
-  const drawCandidateEntries =
-    isTwentySixMode()
-      ? sourceEntries.filter((entry) => entry.item === '26')
-      : sourceEntries;
 
   const eligibleEntries =
-    drawCandidateEntries.filter((entry) => !blocked.has(entry.key));
+    sourceEntries.filter((entry) => !blocked.has(entry.key));
 
   if (sourceEntries.length === 0) {
 
@@ -1372,10 +1363,26 @@ function drawNumbers() {
         }
       }
 
+      if (
+        isTwentySixMode() &&
+        selected.length < count
+      ) {
+
+        const twentySixEntry =
+          sourceEntries.find((entry) =>
+            entry.item === '26' &&
+            !blocked.has(entry.key)
+          );
+
+        if (twentySixEntry) {
+          pickEntry(twentySixEntry);
+        }
+      }
+
       for (const forcedKey of options.forcedItems) {
 
         const forcedEntry =
-          drawCandidateEntries.find((entry) =>
+          sourceEntries.find((entry) =>
             entry.key === forcedKey
           );
 
@@ -1394,7 +1401,7 @@ function drawNumbers() {
       while (selected.length < count) {
 
         const drawPool =
-          drawCandidateEntries.filter((entry) =>
+          remainingEntries.filter((entry) =>
             !blocked.has(entry.key) &&
             !selectedSet.has(entry.key)
           );
