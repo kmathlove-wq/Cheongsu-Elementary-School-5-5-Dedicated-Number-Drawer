@@ -100,6 +100,7 @@ const MODE_LABELS = {
   teacher: '선생님',
   'teacher-mystery': '선생님(?)',
   mystery: '???',
+  'twenty-six': '26번',
   pinball: '핀볼',
   'pinball-teacher': '핀볼(선생님)',
   'song-pinball': '노래추첨 핀볼',
@@ -107,7 +108,7 @@ const MODE_LABELS = {
 
 const baseNumbers =
   Array.from(
-    { length: 25 },
+    { length: 26 },
     (_, i) => String(i + 1)
   ).filter((n) => n !== '19');
 
@@ -116,6 +117,7 @@ const DEFAULT_MODE_POOLS = {
   teacher: ['선생님', ...baseNumbers],
   'teacher-mystery': ['선생님', ...baseNumbers],
   mystery: [...baseNumbers],
+  'twenty-six': ['26'],
   pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
@@ -344,6 +346,9 @@ function isProtectedBlockedItem(mode, item) {
   ) || (
     mode === 'mystery' &&
     item === '5'
+  ) || (
+    mode === 'twenty-six' &&
+    item === '26'
   );
 }
 
@@ -441,6 +446,13 @@ function updateDescription() {
       text += ' 단, 5번이 나오면...?';
     }
 
+    if (
+      currentMode === 'twenty-six' &&
+      items.includes('26')
+    ) {
+      text += ' 단, 26번이 나오면...?';
+    }
+
     if (isPinballMode(currentMode)) {
       text += ' 핀볼 방식으로 진행됩니다.';
     }
@@ -453,17 +465,22 @@ function updateDescription() {
   if (currentMode === 'basic') {
 
     descriptionEl.textContent =
-      '1번부터 25번까지 중 랜덤 번호를 뽑습니다. 19번은 제외됩니다.';
+      '1번부터 26번까지 중 랜덤 번호를 뽑습니다. 19번은 제외됩니다.';
 
   } else if (currentMode === 'teacher') {
 
     descriptionEl.textContent =
-      '선생님 + 1번~25번 중 랜덤으로 뽑습니다. 19번은 제외됩니다.';
+      '선생님 + 1번~26번 중 랜덤으로 뽑습니다. 19번은 제외됩니다.';
 
   } else if (currentMode === 'teacher-mystery') {
 
     descriptionEl.textContent =
-      '선생님 + 1번~25번 중 뽑습니다. 19번 제외. 선생님에겐 조금 특별한 무언가가 있을지도...?';
+      '선생님 + 1번~26번 중 뽑습니다. 19번 제외. 선생님에겐 조금 특별한 무언가가 있을지도...?';
+
+  } else if (currentMode === 'twenty-six') {
+
+    descriptionEl.textContent =
+      '26번 모드: 26번만 뽑습니다. 26번이 나오면...?';
 
   } else if (currentMode === 'pinball') {
 
@@ -483,7 +500,7 @@ function updateDescription() {
   } else {
 
     descriptionEl.textContent =
-      '1번~25번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, 5번이 나오면...?';
+      '1번~26번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, 5번이 나오면...?';
   }
 }
 
@@ -1420,8 +1437,11 @@ function drawNumbers() {
 
       playSound();
 
-      // ??? 모드: 5번이 뽑히면 종료
-      if (currentMode === 'mystery' && selected.includes('5')) {
+      const shouldTerminate =
+        (currentMode === 'mystery' && selected.includes('5')) ||
+        (currentMode === 'twenty-six' && selected.includes('26'));
+
+      if (shouldTerminate) {
 
         setTimeout(() => {
 
