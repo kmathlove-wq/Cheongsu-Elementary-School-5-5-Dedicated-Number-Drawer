@@ -112,11 +112,28 @@ const baseNumbers =
     (_, i) => String(i + 1)
   ).filter((n) => n !== '19');
 
+function getTodayNumber() {
+
+  return String(new Date().getDate());
+}
+
+function getMysteryNumbers() {
+
+  const todayNumber = getTodayNumber();
+  const numbers = [...baseNumbers];
+
+  if (!numbers.includes(todayNumber)) {
+    numbers.push(todayNumber);
+  }
+
+  return numbers;
+}
+
 const DEFAULT_MODE_POOLS = {
   basic: [...baseNumbers],
   teacher: ['선생님', ...baseNumbers],
   'teacher-mystery': ['선생님', ...baseNumbers],
-  mystery: [...baseNumbers],
+  mystery: getMysteryNumbers(),
   'twenty-six': [...baseNumbers],
   pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
@@ -350,7 +367,7 @@ function isProtectedBlockedItem(mode, item) {
     item === '선생님'
   ) || (
     mode === 'mystery' &&
-    item === '5'
+    item === getTodayNumber()
   ) || (
     mode === 'twenty-six' &&
     item === '26'
@@ -446,9 +463,9 @@ function updateDescription() {
 
     if (
       currentMode === 'mystery' &&
-      items.includes('5')
+      items.includes(getTodayNumber())
     ) {
-      text += ' 단, 5번이 나오면...?';
+      text += ` 단, ${getTodayNumber()}번이 나오면...?`;
     }
 
     if (
@@ -505,7 +522,7 @@ function updateDescription() {
   } else {
 
     descriptionEl.textContent =
-      '1번~26번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, 5번이 나오면...?';
+      `1번~26번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, ${getTodayNumber()}번이 나오면...?`;
   }
 }
 
@@ -1459,7 +1476,10 @@ function drawNumbers() {
       playSound();
 
       const shouldTerminate =
-        (currentMode === 'mystery' && selected.includes('5')) ||
+        (
+          currentMode === 'mystery' &&
+          selected.includes(getTodayNumber())
+        ) ||
         (currentMode === 'twenty-six' && selected.includes('26'));
 
       if (shouldTerminate) {

@@ -458,7 +458,8 @@ button:hover {
   border-color: transparent;
 }
 
-.mode-btn[data-mode="mystery"].active {
+.mode-btn[data-mode="mystery"].active,
+.mode-btn[data-mode="twenty-six"].active {
 
   background:
     linear-gradient(

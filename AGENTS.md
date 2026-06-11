@@ -32,7 +32,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `basic` | 1~26번, 19 제외 랜덤 뽑기 |
 | `teacher` | `선생님` 포함, 결과 정렬 시 맨 앞 |
 | `teacher-mystery` | 선생님이 남아있으면 무조건 당첨에 포함 |
-| `mystery` | 5번 당첨 시 `window.close()` 실행 |
+| `mystery` | 오늘 날짜 번호 당첨 시 `window.close()` 실행 |
 | `twenty-six` | 전체 번호 중 26번을 무조건 포함하고 당첨 시 `window.close()` 실행 |
 | `pinball` | 캔버스 갈튼 보드 물리 시뮬레이션 |
 | `pinball-teacher` | 핀볼 + 선생님 공 포함, 금색 렌더링 |
@@ -50,7 +50,8 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 모드별 항목은 브라우저 저장소에 유지하지 않으며 새로고침/재접속 시 기본값으로 초기화한다.
 - `중복 허용`을 켜면 같은 이름의 항목을 여러 칸으로 둘 수 있고, 각 칸은 따로 소모된다.
 - `무조건` 항목은 가능한 한 먼저 뽑고, 일반 모드의 `제외` 항목은 화면에는 남기되 추첨 후보에서만 제외한다.
-- `teacher-mystery`의 `선생님`, `mystery`의 `5`, `twenty-six`의 `26`은 `제외`할 수 없다.
+- `teacher-mystery`의 `선생님`, `mystery`의 오늘 날짜 번호, `twenty-six`의 `26`은 `제외`할 수 없다.
+- 27~31일에는 그 날짜 번호를 `mystery` 모드에만 임시로 추가한다.
 - `제외` 때문에 결과를 만들 수 없으면 결과 표시 전에 `terminateProgram()`으로 종료한다.
 - 핀볼 모드는 `제외`를 쓰지 않고, `무조건` 항목 공은 기본 속도로 가운데 배치에 섞이며 장애물과 다른 공을 통과한다.
 - 핀볼 일반 공이 측면 바깥길로 빠지지 않도록 벽쪽까지 핀을 배치한다.
@@ -83,7 +84,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `playSound()` | 결과 발표 효과음 |
 | `playBumperBeep()` | 핀볼 충돌 효과음 |
 | `adjustFontSize(text)` | 결과 문자열 길이에 따른 폰트 크기 조정 |
-| `terminateProgram()` | `mystery` 5번 및 `twenty-six` 26번 당첨 처리 |
+| `terminateProgram()` | `mystery` 오늘 날짜 번호 및 `twenty-six` 26번 당첨 처리 |
 | `requestSongForResult(selected, helpers)` | 노래추첨 핀볼 결과의 노래 입력/후보 선택 처리 |
 
 ## 핀볼 구현 메모
@@ -98,7 +99,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 ## UI/스타일 메모
 - CSS 변수: `--bg`, `--card`, `--accent`, `--text`, `--muted`, `--border`.
 - `.number-cell.spark`는 금색 글로우, `.number-cell.picked`는 주황/빨강 그라데이션.
-- `pinball` 활성 버튼은 다크 보라 네온, `pinball-teacher` 활성 버튼은 다크 네이비 + 금색 네온.
+- `mystery`와 `twenty-six` 활성 버튼은 같은 어두운 그라데이션, `pinball` 활성 버튼은 다크 보라 네온, `pinball-teacher` 활성 버튼은 다크 네이비 + 금색 네온.
 - `선생님` 셀과 공은 금색 계열로 구분한다.
 
 ## 작업 규칙
