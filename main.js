@@ -374,6 +374,14 @@ function isProtectedBlockedItem(mode, item) {
   );
 }
 
+function isProtectedAdminItem(mode, item, index) {
+
+  return (
+    isProtectedBlockedItem(mode, item) &&
+    modePools[mode].findIndex((entry) => entry === item) === index
+  );
+}
+
 let validEntries = getValidEntries();
 
 let validItems = getValidItems();
@@ -714,6 +722,15 @@ function renderAdminList() {
 
     input.className = 'admin-item-input';
 
+    const protectedAdmin =
+      isProtectedAdminItem(mode, item, index);
+
+    input.disabled = protectedAdmin;
+
+    if (protectedAdmin) {
+      input.title = '이 항목은 수정하거나 삭제할 수 없습니다.';
+    }
+
     const forcedLabel =
       document.createElement('label');
 
@@ -784,7 +801,12 @@ function renderAdminList() {
 
     deleteButton.textContent = '삭제';
 
-    deleteButton.disabled = items.length <= 1;
+    deleteButton.disabled =
+      items.length <= 1 || protectedAdmin;
+
+    if (protectedAdmin) {
+      deleteButton.title = '이 항목은 삭제할 수 없습니다.';
+    }
 
     deleteButton.addEventListener('click', () => {
       deleteAdminItem(index);
@@ -944,14 +966,26 @@ function saveAdminListInputs(mode) {
 
   const items = [...modePools[mode]];
 
-  rows.forEach((row) => {
+  for (const row of rows) {
 
     const index = Number(row.key);
 
     if (Number.isInteger(index) && index >= 0) {
+      const currentItem = modePools[mode][index];
+
+      if (
+        isProtectedAdminItem(mode, currentItem, index) &&
+        row.item !== currentItem
+      ) {
+        setAdminManageError(
+          '이 항목은 수정하거나 삭제할 수 없습니다.'
+        );
+        return false;
+      }
+
       items[index] = row.item;
     }
-  });
+  }
 
   const error = validateAdminItems(items, mode);
 
@@ -1068,6 +1102,12 @@ function renameAdminItem(index, value) {
 
   const mode = adminModeSelect.value;
 
+  if (isProtectedAdminItem(mode, modePools[mode][index], index)) {
+    setAdminManageError('이 항목은 수정할 수 없습니다.');
+    renderAdminList();
+    return;
+  }
+
   const item = value.trim();
 
   if (!item) {
@@ -1097,6 +1137,11 @@ function renameAdminItem(index, value) {
 function deleteAdminItem(index) {
 
   const mode = adminModeSelect.value;
+
+  if (isProtectedAdminItem(mode, modePools[mode][index], index)) {
+    setAdminManageError('이 항목은 삭제할 수 없습니다.');
+    return;
+  }
 
   if (modePools[mode].length <= 1) {
     setAdminManageError('각 모드에는 최소 1개 항목이 필요합니다.');
