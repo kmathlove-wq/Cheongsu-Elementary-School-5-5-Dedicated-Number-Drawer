@@ -502,7 +502,7 @@ function updateDescription() {
   } else if (currentMode === 'twenty-six') {
 
     descriptionEl.textContent =
-      '26번 모드: 26번은 무조건 뽑습니다. 26번이 나오면...?';
+      '1번~26번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, 26번이 나오면...?';
 
   } else if (currentMode === 'pinball') {
 
