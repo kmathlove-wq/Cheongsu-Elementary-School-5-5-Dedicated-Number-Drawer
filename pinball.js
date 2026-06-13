@@ -93,13 +93,14 @@ export function drawNumbersPinball({
     Math.max(0, PLAY_X - MM_MARGIN * 2);
   const MM_AVAILABLE_H =
     H - MM_MARGIN * 2;
+  const MM_WORLD_H = PLAY_BOT;
   const MM_SCALE =
     Math.min(
       MM_AVAILABLE_W / PLAY_W,
-      MM_AVAILABLE_H / WORLD_H
+      MM_AVAILABLE_H / MM_WORLD_H
     );
   const MM_W = PLAY_W * MM_SCALE;
-  const MM_H = WORLD_H * MM_SCALE;
+  const MM_H = MM_WORLD_H * MM_SCALE;
   const MM_X =
     Math.max(MM_MARGIN, (PLAY_X - MM_W) / 2);
   const MM_Y = (H - MM_H) / 2;
@@ -463,7 +464,7 @@ export function drawNumbersPinball({
         mx >= MM_X && mx <= MM_X + MM_W &&
         my >= MM_Y && my <= MM_Y + MM_H) {
       minimapHover = true;
-      const worldY = (my - MM_Y) / MM_H * WORLD_H;
+      const worldY = (my - MM_Y) / MM_H * MM_WORLD_H;
       minimapTargetCamY =
         Math.max(0, Math.min(worldY - H / 2, WORLD_H - H));
     } else {
@@ -732,7 +733,11 @@ export function drawNumbersPinball({
     }
 
     // 뷰포트 표시
-    const vpY = MM_Y + cameraY * MM_SCALE_Y;
+    const vpY =
+      Math.min(
+        MM_Y + MM_H - H * MM_SCALE_Y,
+        MM_Y + cameraY * MM_SCALE_Y
+      );
     const vpH = H * MM_SCALE_Y;
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.fillRect(MM_X, vpY, MM_W, vpH);
