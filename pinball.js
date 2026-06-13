@@ -89,12 +89,21 @@ export function drawNumbersPinball({
 
   // ── 미니맵 ──
   const MM_MARGIN = 5;
-  const MM_W = Math.max(0, PLAY_X - MM_MARGIN * 2);
-  const MM_H = H - MM_MARGIN * 2;
+  const MM_AVAILABLE_W =
+    Math.max(0, PLAY_X - MM_MARGIN * 2);
+  const MM_AVAILABLE_H =
+    H - MM_MARGIN * 2;
+  const MM_SCALE =
+    Math.min(
+      MM_AVAILABLE_W / PLAY_W,
+      MM_AVAILABLE_H / WORLD_H
+    );
+  const MM_W = PLAY_W * MM_SCALE;
+  const MM_H = WORLD_H * MM_SCALE;
   const MM_X = MM_MARGIN;
-  const MM_Y = MM_MARGIN;
-  const MM_SCALE_X = MM_W > 0 ? MM_W / PLAY_W : 0;
-  const MM_SCALE_Y = MM_H / WORLD_H;
+  const MM_Y = (H - MM_H) / 2;
+  const MM_SCALE_X = MM_SCALE;
+  const MM_SCALE_Y = MM_SCALE;
   let minimapHover = false;
   let minimapTargetCamY = 0;
 
@@ -714,8 +723,9 @@ export function drawNumbersPinball({
       const px = mmX(ball.x);
       const py = mmY(ball.y);
       if (py < MM_Y - 4 || py > MM_Y + MM_H + 4) continue;
+      const r = Math.max(3, ball.r * MM_SCALE);
       ctx.beginPath();
-      ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+      ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.fillStyle = ball.color;
       ctx.fill();
     }
