@@ -725,7 +725,7 @@ export function drawNumbersPinball({
       const px = mmX(ball.x);
       const py = mmY(ball.y);
       if (py < MM_Y - 4 || py > MM_Y + MM_H + 4) continue;
-      const r = Math.max(3, ball.r * MM_SCALE);
+      const r = ball.r * MM_SCALE;
       ctx.beginPath();
       ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.fillStyle = ball.color;
