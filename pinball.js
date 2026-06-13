@@ -100,7 +100,8 @@ export function drawNumbersPinball({
     );
   const MM_W = PLAY_W * MM_SCALE;
   const MM_H = WORLD_H * MM_SCALE;
-  const MM_X = MM_MARGIN;
+  const MM_X =
+    Math.max(MM_MARGIN, (PLAY_X - MM_W) / 2);
   const MM_Y = (H - MM_H) / 2;
   const MM_SCALE_X = MM_SCALE;
   const MM_SCALE_Y = MM_SCALE;
