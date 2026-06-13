@@ -89,7 +89,7 @@ export function drawNumbersPinball({
 
   // ── 미니맵 ──
   const MM_MARGIN = 5;
-  const MM_W = Math.max(0, Math.min(70, PLAY_X - MM_MARGIN * 2));
+  const MM_W = Math.max(0, PLAY_X - MM_MARGIN * 2);
   const MM_H = H - MM_MARGIN * 2;
   const MM_X = MM_MARGIN;
   const MM_Y = MM_MARGIN;
