@@ -982,11 +982,11 @@ export function drawNumbersPinball({
     const colGap = denseList ? 14 : 0;
     const maxCols =
       denseList
-        ? Math.max(1, Math.min(3, Math.floor(listW / 150)))
+        ? Math.max(1, Math.min(2, Math.floor(listW / 150)))
         : 1;
     const colCount =
       denseList
-        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 26)))
+        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 13)))
         : 1;
     const rowsPerCol = Math.ceil(count / colCount);
     const colW =
@@ -995,11 +995,27 @@ export function drawNumbersPinball({
       denseList ? Math.max(42, H * 0.07) : Math.max(54, H * 0.09);
     const lineH =
       Math.min(maxLineH, availH / rowsPerCol);
-    const minRankFont = denseList ? 22 : 20;
-    const rfsz = Math.max(minRankFont, Math.min(
+    const minRankFont = denseList ? 16 : 20;
+    let rfsz = Math.max(minRankFont, Math.min(
       Math.floor(lineH * 0.82),
       Math.floor(colW / 2.8)
     ));
+
+    while (denseList && rfsz > minRankFont) {
+      ctx.save();
+      ctx.font = `bold ${rfsz}px Noto Sans KR, sans-serif`;
+      const widestRankText =
+        winners.reduce((widest, ball, index) => {
+          const text =
+            `#${index + 1} ${getResultLabel(ball.num)}`;
+          return Math.max(widest, ctx.measureText(text).width);
+        }, 0);
+      ctx.restore();
+
+      if (widestRankText <= colW - 8) break;
+
+      rfsz -= 1;
+    }
 
     for (let i = 0; i < winners.length; i++) {
 
