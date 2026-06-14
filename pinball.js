@@ -958,24 +958,16 @@ export function drawNumbersPinball({
 
     // ── HUD (화면 좌표) ──
 
-    // 카운터 (우상단)
     const cfsz = Math.max(18, Math.floor(W * 0.022));
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(180,180,180,0.85)';
-    ctx.font = `bold ${cfsz}px sans-serif`;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'top';
-    ctx.fillText(
-      `${winners.length} / ${count}`,
-      W - 20, 16
-    );
-    ctx.restore();
 
     // 당첨 순위 목록
     const denseList = count >= 20;
     const listX = PLAY_X2 + 18;
-    const listY0 = denseList ? H * 0.07 : H * 0.06;
+    const counterY = 16;
+    const listY0 =
+      denseList
+        ? counterY + cfsz + 16
+        : H * 0.06;
     const listW =
       Math.max(60, W - listX - 20);
     const availH = H - listY0 - 20;
@@ -1054,6 +1046,18 @@ export function drawNumbersPinball({
       );
       ctx.restore();
     }
+
+    // 카운터 (우상단)
+    ctx.save();
+    ctx.fillStyle = 'rgba(180,180,180,0.85)';
+    ctx.font = `bold ${cfsz}px sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(
+      `${winners.length} / ${count}`,
+      W - 20, counterY
+    );
+    ctx.restore();
 
     drawMinimap();
   }
