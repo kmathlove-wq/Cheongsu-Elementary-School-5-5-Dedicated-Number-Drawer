@@ -972,28 +972,50 @@ export function drawNumbersPinball({
     );
     ctx.restore();
 
-    // 당첨 순위 목록 (플레이 영역 오른쪽 바깥 패널)
-    const listX  = PLAY_X2 + 10;
-    const listY0 = H * 0.06;
-    const listW  = Math.max(60, W - PLAY_X2 - 20);
+    // 당첨 순위 목록
+    const denseList = count >= 20;
+    const listX = denseList ? 10 : PLAY_X2 + 10;
+    const listY0 = denseList ? H * 0.07 : H * 0.06;
+    const listW =
+      denseList
+        ? W - 20
+        : Math.max(60, W - PLAY_X2 - 20);
     const availH = H - listY0 - 20;
-    const maxLineH = Math.max(54, H * 0.09);
-    const lineH  = Math.min(maxLineH, availH / count);
-    const rfsz   = Math.max(20, Math.min(
+    const colGap = denseList ? 14 : 0;
+    const maxCols =
+      denseList
+        ? Math.max(1, Math.min(3, Math.floor(listW / 150)))
+        : 1;
+    const colCount =
+      denseList
+        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 13)))
+        : 1;
+    const rowsPerCol = Math.ceil(count / colCount);
+    const colW =
+      (listW - colGap * (colCount - 1)) / colCount;
+    const maxLineH =
+      denseList ? Math.max(42, H * 0.07) : Math.max(54, H * 0.09);
+    const lineH =
+      Math.min(maxLineH, availH / rowsPerCol);
+    const minRankFont = denseList ? 22 : 20;
+    const rfsz = Math.max(minRankFont, Math.min(
       Math.floor(lineH * 0.82),
-      Math.floor(listW / 2.8)
+      Math.floor(colW / 2.8)
     ));
 
     for (let i = 0; i < winners.length; i++) {
 
-      const y = listY0 + i * lineH;
+      const col = Math.floor(i / rowsPerCol);
+      const row = i % rowsPerCol;
+      const x = listX + col * (colW + colGap);
+      const y = listY0 + row * lineH;
       const c = RANK_COLORS[i % RANK_COLORS.length];
 
       ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(
-        listX - 4, y - lineH * 0.5,
-        listW, lineH * 0.92
+        x - 4, y - lineH * 0.5,
+        colW, lineH * 0.92
       );
       ctx.restore();
 
@@ -1010,11 +1032,11 @@ export function drawNumbersPinball({
       const nameText =
         fitText(
           getResultLabel(winners[i].num),
-          Math.max(12, listW - rankW - 8)
+          Math.max(12, colW - rankW - 8)
         );
       ctx.fillText(
         `${rankText}${nameText}`,
-        listX, y
+        x, y
       );
       ctx.restore();
     }
