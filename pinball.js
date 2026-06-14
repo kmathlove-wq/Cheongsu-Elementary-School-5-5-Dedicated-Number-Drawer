@@ -986,7 +986,7 @@ export function drawNumbersPinball({
         : 1;
     const colCount =
       denseList
-        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 13)))
+        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 26)))
         : 1;
     const rowsPerCol = Math.ceil(count / colCount);
     const colW =
