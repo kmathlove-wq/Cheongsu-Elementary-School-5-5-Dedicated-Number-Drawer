@@ -974,12 +974,10 @@ export function drawNumbersPinball({
 
     // 당첨 순위 목록
     const denseList = count >= 20;
-    const listX = denseList ? 10 : PLAY_X2 + 10;
+    const listX = PLAY_X2 + 18;
     const listY0 = denseList ? H * 0.07 : H * 0.06;
     const listW =
-      denseList
-        ? W - 20
-        : Math.max(60, W - PLAY_X2 - 20);
+      Math.max(60, W - listX - 20);
     const availH = H - listY0 - 20;
     const colGap = denseList ? 14 : 0;
     const maxCols =
