@@ -167,6 +167,7 @@ export function drawNumbersGumball({
   addPickedNumbers,
   updatePickedNumbers,
   terminateProgram,
+  shouldTerminate,
   playFinalSound,
   playTurnSound,
   playDropSound,
@@ -218,6 +219,11 @@ export function drawNumbersGumball({
 
   const selectedItems =
     selectedEntries.map((entry) => entry.item);
+
+  if (shouldTerminate(selectedItems)) {
+    terminateProgram();
+    return;
+  }
 
   drawButton.disabled = true;
   gumballStage.classList.add('is-spinning');
@@ -300,7 +306,7 @@ export function drawNumbersGumball({
       }
 
       gumballDrawTimer = setTimeout(showResult, 900);
-    }, index === 0 ? 1550 : 980);
+    }, index === 0 ? 2600 : 1300);
   };
 
   releaseBall(0);

@@ -19,6 +19,13 @@ import {
 } from './sound.js';
 
 import {
+  closeAppSettings,
+  isAppSettingsOpen,
+  openAppSettings,
+  setupAppSettings,
+} from './settings.js';
+
+import {
   closeSongRequest,
   closeYouTubePlayer,
   isBlockingDialogOpen as isSongDialogOpen,
@@ -100,6 +107,7 @@ const youtubePlayerClose =
   document.getElementById('youtubePlayerClose');
 
 let currentMode = 'basic';
+let currentDrawStyle = 'basic';
 
 const ADMIN_PASSWORD = '1+1=1';
 const MOBILE_ADMIN_TAP_WINDOW = 900;
@@ -209,14 +217,82 @@ function isPinballMode(mode) {
     mode === 'song-pinball';
 }
 
-function isGumballMode(mode = currentMode) {
+function isDrawStyleLockedMode(mode = currentMode) {
 
-  return mode === 'gumball';
+  return mode === 'basic' ||
+    mode === 'gumball' ||
+    mode === 'pinball';
+}
+
+function getEffectiveDrawStyle() {
+
+  if (currentMode === 'basic') return 'basic';
+
+  if (currentMode === 'gumball') return 'gumball';
+
+  if (currentMode === 'pinball') return 'pinball';
+
+  return currentDrawStyle;
+}
+
+function isGumballMode() {
+
+  return getEffectiveDrawStyle() === 'gumball';
+}
+
+function isPinballDrawStyle() {
+
+  return getEffectiveDrawStyle() === 'pinball';
 }
 
 function isTwentySixMode(mode = currentMode) {
 
   return mode === 'twenty-six';
+}
+
+function getStyleForcedItems() {
+
+  const forcedItems =
+    [...modeOptions[currentMode].forcedItems];
+
+  if (currentMode === 'teacher-mystery') {
+
+    const teacherEntry =
+      remainingEntries.find((entry) =>
+        entry.item === '선생님'
+      );
+
+    if (teacherEntry &&
+        !forcedItems.includes(teacherEntry.key)) {
+      forcedItems.unshift(teacherEntry.key);
+    }
+  }
+
+  if (isTwentySixMode()) {
+
+    const twentySixEntry =
+      remainingEntries.find((entry) =>
+        entry.item === '26'
+      );
+
+    if (twentySixEntry &&
+        !forcedItems.includes(twentySixEntry.key)) {
+      forcedItems.unshift(twentySixEntry.key);
+    }
+  }
+
+  return forcedItems;
+}
+
+function shouldTerminateSelection(items) {
+
+  return (
+    currentMode === 'mystery' &&
+    items.includes(getTodayNumber())
+  ) || (
+    currentMode === 'twenty-six' &&
+    items.includes('26')
+  );
 }
 
 function uniqueItems(items) {
@@ -649,7 +725,8 @@ function setAdminManageError(message) {
 
 function isBlockingDialogOpen() {
 
-  return adminOverlay.classList.contains('show') ||
+  return isAppSettingsOpen() ||
+    adminOverlay.classList.contains('show') ||
     isSongDialogOpen();
 }
 
@@ -1286,7 +1363,10 @@ function drawNumbers() {
 
     drawNumbersGumball({
       remainingEntries,
-      options: modeOptions[currentMode],
+      options: {
+        ...modeOptions[currentMode],
+        forcedItems: getStyleForcedItems(),
+      },
       drawCountSelect,
       drawButton,
       numberDisplay,
@@ -1313,6 +1393,7 @@ function drawNumbers() {
       },
       updatePickedNumbers,
       terminateProgram,
+      shouldTerminate: shouldTerminateSelection,
       playFinalSound: playSound,
       playTurnSound: playGumballTurnSound,
       playDropSound: playGumballDropSound,
@@ -1320,7 +1401,7 @@ function drawNumbers() {
     return;
   }
 
-  if (isPinballMode(currentMode)) {
+  if (isPinballDrawStyle() || isPinballMode(currentMode)) {
     drawNumbersPinball({
       remainingEntries,
       drawCountSelect,
@@ -1330,7 +1411,7 @@ function drawNumbers() {
       getResultLabel,
       getDisplayLabel,
       playBumperBeep,
-      forcedItems: modeOptions[currentMode].forcedItems,
+      forcedItems: getStyleForcedItems(),
       applyPinballResult,
     });
     return;
@@ -1592,6 +1673,14 @@ function drawNumbers() {
 
 function applyPinballResult(selected) {
 
+  const selectedItems =
+    selected.map((entry) => getEntryItem(entry));
+
+  if (shouldTerminateSelection(selectedItems)) {
+    terminateProgram();
+    return;
+  }
+
   for (const entry of selected) {
 
     const num = getEntryItem(entry);
@@ -1745,6 +1834,11 @@ document.addEventListener('keydown', (event) => {
     closeAdminMode();
   }
 
+  if (event.key === 'Escape' &&
+      isAppSettingsOpen()) {
+    closeAppSettings();
+  }
+
 });
 
 adminLoginForm.addEventListener('submit', (event) => {
@@ -1827,3 +1921,20 @@ bigOverlay.addEventListener(
 updatePickedNumbers();
 
 updateDescription();
+
+setupAppSettings({
+  getCurrentDrawStyle: getEffectiveDrawStyle,
+  setCurrentDrawStyle: (style) => {
+    if (isDrawStyleLockedMode()) return;
+    currentDrawStyle = style;
+  },
+  isDrawStyleLocked: isDrawStyleLockedMode,
+  afterApply: () => {
+    resetDraw({ force: true });
+  },
+  canOpenSettings: () =>
+    !isSongDialogOpen() &&
+    !isYouTubePlayerOpen(),
+});
+
+openAppSettings({ required: true });

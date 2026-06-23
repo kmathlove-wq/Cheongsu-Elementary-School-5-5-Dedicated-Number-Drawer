@@ -38,6 +38,16 @@
 
       <div class="draw-settings" id="drawSettings">
 
+        <button
+          class="settings-button"
+          id="appSettingsButton"
+          type="button"
+          aria-label="설정 열기"
+          title="설정"
+        >
+          ⚙
+        </button>
+
         <label for="drawCount">
           한 번에 뽑을 인원 수
         </label>
@@ -115,6 +125,63 @@
       id="bigNumber"
     ></div>
 
+  </div>
+
+  <div class="admin-overlay app-settings-overlay" id="appSettingsOverlay" aria-hidden="true">
+    <section class="admin-panel app-settings-panel" role="dialog" aria-modal="true">
+      <button
+        class="admin-close"
+        id="appSettingsClose"
+        type="button"
+        aria-label="설정 닫기"
+      >
+        ×
+      </button>
+      <h2>설정</h2>
+      <div class="app-setting-group">
+        <p class="app-setting-title">뽑기 방식</p>
+        <div class="app-mode-options">
+          <button type="button" class="app-mode-option" data-app-mode="basic">
+            기본
+          </button>
+          <button type="button" class="app-mode-option" data-app-mode="gumball">
+            공 뽑기
+          </button>
+          <button type="button" class="app-mode-option" data-app-mode="pinball">
+            핀볼
+          </button>
+        </div>
+      </div>
+      <label class="app-sound-toggle">
+        <input id="soundEnabledInput" type="checkbox" checked />
+        효과음 켜기
+      </label>
+      <label class="app-sound-select">
+        효과음 종류
+        <select id="soundThemeSelect">
+          <option value="bright">신나는</option>
+          <option value="calm">차분한</option>
+          <option value="arcade">아케이드</option>
+        </select>
+      </label>
+      <div class="app-setting-group">
+        <p class="app-setting-title">미리 듣기</p>
+        <div class="sound-preview-options">
+          <button type="button" class="sound-preview-button" data-preview-sound="basic">
+            기본
+          </button>
+          <button type="button" class="sound-preview-button" data-preview-sound="gumball">
+            공 뽑기
+          </button>
+          <button type="button" class="sound-preview-button" data-preview-sound="pinball">
+            핀볼
+          </button>
+        </div>
+      </div>
+      <button id="appSettingsApply" type="button">
+        적용
+      </button>
+    </section>
   </div>
 
   <div class="pinball-overlay" id="pinballOverlay">

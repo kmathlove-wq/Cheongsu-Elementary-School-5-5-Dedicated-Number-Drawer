@@ -45,6 +45,31 @@ h1 {
     clamp(2rem, 3vw, 2.8rem);
 }
 
+.settings-button {
+
+  position: absolute;
+
+  right: 0;
+
+  width: 46px;
+
+  min-width: 46px;
+
+  height: 46px;
+
+  padding: 0;
+
+  border-radius: 50%;
+
+  background: #eef0ff;
+
+  color: var(--text);
+
+  font-size: 1.25rem;
+
+  line-height: 1;
+}
+
 .description {
   margin: 0 0 24px;
 
@@ -73,6 +98,8 @@ h1 {
 
 .draw-settings {
   display: flex;
+
+  position: relative;
 
   justify-content: center;
 
@@ -1040,6 +1067,127 @@ button:hover {
   margin: 0 42px 22px 0;
 
   font-size: 1.45rem;
+}
+
+.app-settings-panel {
+
+  max-width: 560px;
+
+  overflow-x: hidden;
+}
+
+.app-setting-group {
+
+  display: grid;
+
+  gap: 12px;
+
+  margin: 18px 0;
+}
+
+.app-setting-title {
+
+  margin: 0;
+
+  color: var(--muted);
+
+  font-weight: 800;
+}
+
+.app-mode-options,
+.sound-preview-options {
+
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+.app-mode-option,
+.sound-preview-button {
+
+  min-height: 54px;
+
+  padding: 12px;
+
+  border-radius: 14px;
+
+  background: #eef0ff;
+
+  color: var(--text);
+
+  font-size: 1rem;
+}
+
+.app-mode-option.active {
+
+  background:
+    linear-gradient(135deg, #5a5cff, #2ea6b2);
+
+  color: white;
+}
+
+.app-mode-option:disabled {
+
+  cursor: not-allowed;
+
+  opacity: 0.6;
+}
+
+.app-mode-option.active:disabled {
+
+  opacity: 1;
+}
+
+.app-sound-toggle {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: flex-start;
+
+  gap: 12px;
+
+  margin: 16px 0;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.app-sound-select {
+
+  display: grid;
+
+  grid-template-columns: auto minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 16px 0;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.app-sound-toggle input {
+
+  width: 20px;
+
+  height: 20px;
+
+  flex: 0 0 auto;
+}
+
+.app-sound-select select {
+
+  width: 100%;
+
+  min-width: 0;
 }
 
 .admin-close {
