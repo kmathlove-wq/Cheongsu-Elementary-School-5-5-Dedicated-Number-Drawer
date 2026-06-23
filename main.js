@@ -1394,6 +1394,16 @@ function drawNumbers() {
       updatePickedNumbers,
       terminateProgram,
       shouldTerminate: shouldTerminateSelection,
+      beforeShowResult(entries) {
+        if (currentMode !== 'song-pinball') {
+          return Promise.resolve();
+        }
+
+        return requestSongForResult(entries, {
+          getEntryItem,
+          getResultLabel,
+        });
+      },
       playFinalSound: playSound,
       playTurnSound: playGumballTurnSound,
       playDropSound: playGumballDropSound,
@@ -1401,7 +1411,13 @@ function drawNumbers() {
     return;
   }
 
-  if (isPinballDrawStyle() || isPinballMode(currentMode)) {
+  if (
+    isPinballDrawStyle() ||
+    (
+      isPinballMode(currentMode) &&
+      currentMode !== 'song-pinball'
+    )
+  ) {
     drawNumbersPinball({
       remainingEntries,
       drawCountSelect,
@@ -1642,30 +1658,41 @@ function drawNumbers() {
 
       const resultText = selected.join(', ');
 
-      // 메인 표시
-      numberDisplay.textContent = resultText;
+      const showResult = () => {
 
-      numberDisplay.style.fontSize =
-        adjustFontSize(resultText);
+        numberDisplay.textContent = resultText;
 
-      numberDisplay.classList.remove(
-        'placeholder',
-        'notice'
-      );
+        numberDisplay.style.fontSize =
+          adjustFontSize(resultText);
 
-      // 큰 화면 표시
-      bigNumber.textContent = resultText;
+        numberDisplay.classList.remove(
+          'placeholder',
+          'notice'
+        );
 
-      bigNumber.style.fontSize =
-        adjustFontSize(resultText);
+        bigNumber.textContent = resultText;
 
-      bigOverlay.classList.add('show');
+        bigNumber.style.fontSize =
+          adjustFontSize(resultText);
 
-      updatePickedNumbers();
+        bigOverlay.classList.add('show');
 
-      playSound();
+        updatePickedNumbers();
 
-      drawButton.disabled = false;
+        playSound();
+
+        drawButton.disabled = false;
+      };
+
+      if (currentMode === 'song-pinball') {
+        requestSongForResult(selectedEntries, {
+          getEntryItem,
+          getResultLabel,
+        }).then(showResult);
+        return;
+      }
+
+      showResult();
     }
 
   }, 140);

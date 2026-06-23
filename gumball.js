@@ -168,6 +168,7 @@ export function drawNumbersGumball({
   updatePickedNumbers,
   terminateProgram,
   shouldTerminate,
+  beforeShowResult = () => Promise.resolve(),
   playFinalSound,
   playTurnSound,
   playDropSound,
@@ -241,22 +242,26 @@ export function drawNumbersGumball({
     const resultText =
       displayItems.join(', ');
 
-    numberDisplay.textContent = resultText;
-    numberDisplay.style.fontSize =
-      adjustFontSize(resultText);
-    numberDisplay.classList.remove('placeholder', 'notice');
+    Promise.resolve(beforeShowResult(selectedEntries))
+      .then(() => {
 
-    bigNumber.textContent = resultText;
-    bigNumber.style.fontSize =
-      adjustFontSize(resultText);
-    bigOverlay.classList.add('show');
+        numberDisplay.textContent = resultText;
+        numberDisplay.style.fontSize =
+          adjustFontSize(resultText);
+        numberDisplay.classList.remove('placeholder', 'notice');
 
-    addPickedNumbers(selectedItems);
-    updatePickedNumbers();
-    playFinalSound();
+        bigNumber.textContent = resultText;
+        bigNumber.style.fontSize =
+          adjustFontSize(resultText);
+        bigOverlay.classList.add('show');
 
-    drawButton.disabled = false;
-    gumballDrawTimer = null;
+        addPickedNumbers(selectedItems);
+        updatePickedNumbers();
+        playFinalSound();
+
+        drawButton.disabled = false;
+        gumballDrawTimer = null;
+      });
   };
 
   const releaseBall = (index) => {
