@@ -107,6 +107,7 @@ const MOBILE_ADMIN_TAP_COUNT = 3;
 
 let basicModeTapCount = 0;
 let lastBasicModeTap = 0;
+let gumballHandleReady = false;
 
 const MODE_LABELS = {
   basic: '기본',
@@ -1272,6 +1273,17 @@ function drawNumbers() {
   if (isBlockingDialogOpen()) return;
 
   if (isGumballMode()) {
+
+    if (!gumballHandleReady) {
+      numberDisplay.textContent =
+        '손잡이를 길게 눌러 한 바퀴 돌려주세요';
+      numberDisplay.classList.remove('placeholder');
+      numberDisplay.classList.add('notice');
+      return;
+    }
+
+    gumballHandleReady = false;
+
     drawNumbersGumball({
       remainingEntries,
       options: modeOptions[currentMode],
@@ -1643,6 +1655,7 @@ function resetDraw(options = {}) {
   closeSongRequest();
 
   resetGumballMode();
+  gumballHandleReady = false;
 
   validEntries = getValidEntries();
 
@@ -1691,10 +1704,14 @@ document
     });
   });
 
-bindGumballHandle(() => {
-  if (isGumballMode() && !drawButton.disabled) {
+bindGumballHandle({
+  canDraw: () =>
+    isGumballMode() &&
+    !drawButton.disabled,
+  onDraw: () => {
+    gumballHandleReady = true;
     drawButton.click();
-  }
+  },
 });
 
 drawButton.addEventListener(

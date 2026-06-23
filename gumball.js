@@ -11,6 +11,9 @@ const gumballHandle =
   document.getElementById('gumballHandle');
 
 let gumballDrawTimer = null;
+let handlePressTimer = null;
+
+const HANDLE_HOLD_MS = 850;
 
 function clearGumballTimer() {
 
@@ -306,13 +309,47 @@ export function drawNumbersGumball({
 export function resetGumballMode() {
 
   clearGumballTimer();
+  clearTimeout(handlePressTimer);
+  handlePressTimer = null;
   gumballStage.classList.remove('is-spinning');
+  gumballHandle.classList.remove('is-holding');
   gumballOutput.classList.remove('show', 'rolling', 'teacher-ball');
   gumballOutput.textContent = '';
   gumballOutput.title = '';
 }
 
-export function bindGumballHandle(onDraw) {
+function cancelHandleHold() {
 
-  gumballHandle.addEventListener('click', onDraw);
+  if (!handlePressTimer) return;
+
+  clearTimeout(handlePressTimer);
+  handlePressTimer = null;
+  gumballHandle.classList.remove('is-holding');
+}
+
+export function bindGumballHandle({
+  canDraw,
+  onDraw,
+}) {
+
+  gumballHandle.addEventListener('pointerdown', (event) => {
+
+    if (!canDraw()) return;
+
+    event.preventDefault();
+
+    gumballHandle.setPointerCapture?.(event.pointerId);
+    gumballHandle.classList.add('is-holding');
+
+    handlePressTimer = setTimeout(() => {
+
+      handlePressTimer = null;
+      gumballHandle.classList.remove('is-holding');
+      onDraw();
+    }, HANDLE_HOLD_MS);
+  });
+
+  gumballHandle.addEventListener('pointerup', cancelHandleHold);
+  gumballHandle.addEventListener('pointerleave', cancelHandleHold);
+  gumballHandle.addEventListener('pointercancel', cancelHandleHold);
 }
