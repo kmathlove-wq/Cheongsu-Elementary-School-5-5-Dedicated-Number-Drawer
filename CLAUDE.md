@@ -9,8 +9,10 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 /
 ├── index.html      # UI 마크업
 ├── main.js         # 공통 UI·일반 뽑기·관리자 로직
+├── gumball.js      # 공 뽑기 모드 렌더링/애니메이션
 ├── pinball.js      # 핀볼 모드 물리/렌더링
 ├── song.js         # 노래추첨 핀볼 YouTube 검색/선택/재생
+├── sound.js        # Web Audio 효과음
 ├── style.css       # 스타일
 ├── 사진/logo.png   # 파비콘 및 로고
 ├── CNAME           # 커스텀 도메인 설정
@@ -34,7 +36,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `teacher-mystery` | 선생님이 남아있으면 무조건 당첨에 포함 |
 | `mystery` | 오늘 날짜 번호 당첨 시 `window.close()` 실행 |
 | `twenty-six` | 전체 번호 중 26번을 무조건 포함하고 당첨 시 `window.close()` 실행 |
-| `gumball` | 통 안의 공이 돌아가다가 하나가 배출되는 공 뽑기 |
+| `gumball` | 통 안의 공이 돌아가다가 선택 인원 수만큼 순차 배출되는 공 뽑기 |
 | `pinball` | 캔버스 갈튼 보드 물리 시뮬레이션 |
 | `pinball-teacher` | 핀볼 + 선생님 공 포함, 금색 렌더링 |
 | `song-pinball` | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
@@ -57,7 +59,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 핀볼 모드는 `제외`를 쓰지 않고, `무조건` 항목 공은 기본 속도로 가운데 배치에 섞이며 장애물과 다른 공을 통과한다.
 - 핀볼 일반 공이 측면 바깥길로 빠지지 않도록 벽쪽까지 핀을 배치한다.
 - 핀볼 일반 공이 핀/공 사이에 끼면 빠르게 위치를 분리하고 잠깐 공끼리 충돌을 무시해 탈출시킨다.
-- 공 뽑기 모드는 번호 그리드 대신 CSS로 그린 기계를 표시하고, 통 안 공을 매번 무작위로 배치한 뒤 버튼 클릭 시 공들이 통 중심을 기준으로 회전하고 입구를 통해 한 공만 굴러 나온다.
+- 공 뽑기 모드는 번호 그리드 대신 CSS로 그린 기계를 표시하고, 통 안 공을 매번 무작위로 배치한 뒤 버튼 클릭 시 공들이 통 중심을 기준으로 회전하고 입구를 통해 선택 인원 수만큼 순서대로 굴러 나온다.
 - 중복 이름이 있을 때 `무조건`/`제외`는 값이 아니라 관리자 행 단위로 적용한다.
 - 각 모드에는 최소 1개 항목이 필요하다.
 - 노래추첨 핀볼은 결과 표시 전 노래 입력창을 띄우고 배포 시 주입된 `YOUTUBE_API_KEY`로 YouTube Data API를 호출한다.
@@ -69,9 +71,11 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 
 ## 주요 파일별 책임
 - `index.html`: 모드 버튼, 뽑기 설정, 번호 표시, 결과 기록, 오버레이, 공 뽑기 기계, 핀볼 캔버스.
-- `main.js`: 번호 풀 생성, 모드 전환, 관리자 모드, 일반/공 뽑기, 효과음, 리셋.
+- `main.js`: 번호 풀 생성, 모드 전환, 관리자 모드, 일반 뽑기, 효과음, 리셋.
+- `gumball.js`: 공 뽑기 모드의 공 배치, 회전, 순차 배출, 손잡이 클릭 처리.
 - `pinball.js`: 핀볼 모드 물리 시뮬레이션, 캔버스 렌더링, 핀볼 중단 처리.
 - `song.js`: 노래추첨 핀볼의 노래 입력, YouTube 후보 검색/필터링, 후보 선택, 재생창.
+- `sound.js`: 일반 뽑기, 핀볼, 공 뽑기에서 쓰는 Web Audio 효과음.
 - `style.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
 - `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
 
@@ -81,7 +85,6 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `getValidItems()` | 현재 모드에 맞는 번호 풀 반환 |
 | `switchMode(mode)` | 모드 전환 후 리셋 |
 | `drawNumbers()` | 일반 뽑기 실행, 공 뽑기/핀볼 모드면 위임 |
-| `drawNumbersGumball()` | 공 뽑기 모드의 통 회전 애니메이션과 단일 결과 처리 |
 | `drawNumbersPinball()` | `pinball.js`의 캔버스 기반 핀볼 시뮬레이션 |
 | `resetDraw()` | 전체 초기화 및 핀볼 애니메이션 중단 |
 | `playSound()` | 결과 발표 효과음 |
