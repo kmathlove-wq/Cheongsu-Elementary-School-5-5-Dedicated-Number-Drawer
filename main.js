@@ -29,6 +29,18 @@ const pickedNumbersContainer =
 const numberGrid =
   document.getElementById('numberGrid');
 
+const gumballStage =
+  document.getElementById('gumballStage');
+
+const gumballBowl =
+  document.getElementById('gumballBowl');
+
+const gumballOutput =
+  document.getElementById('gumballOutput');
+
+const gumballHandle =
+  document.getElementById('gumballHandle');
+
 const bigOverlay =
   document.getElementById('bigOverlay');
 
@@ -86,6 +98,8 @@ const youtubePlayerClose =
 
 let _pinballAudioCtx = null;
 
+let gumballDrawTimer = null;
+
 let currentMode = 'basic';
 
 const ADMIN_PASSWORD = '1+1=1';
@@ -101,6 +115,7 @@ const MODE_LABELS = {
   'teacher-mystery': '선생님(?)',
   mystery: '???',
   'twenty-six': '26번',
+  gumball: '공 뽑기',
   pinball: '핀볼',
   'pinball-teacher': '핀볼(선생님)',
   'song-pinball': '노래추첨 핀볼',
@@ -135,6 +150,7 @@ const DEFAULT_MODE_POOLS = {
   'teacher-mystery': ['선생님', ...baseNumbers],
   mystery: getMysteryNumbers(),
   'twenty-six': [...baseNumbers],
+  gumball: [...baseNumbers],
   pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
@@ -191,6 +207,11 @@ function isPinballMode(mode) {
   return mode === 'pinball' ||
     mode === 'pinball-teacher' ||
     mode === 'song-pinball';
+}
+
+function isGumballMode(mode = currentMode) {
+
+  return mode === 'gumball';
 }
 
 function isTwentySixMode(mode = currentMode) {
@@ -360,9 +381,13 @@ function getSortedAdminEntries(mode) {
     );
 }
 
-function isProtectedBlockedItem(mode, item) {
+function isProtectedBlockedItem(mode, item, index = -1) {
 
-  return (
+  const isFirstProtectedItem =
+    index >= 0 &&
+    modePools[mode].findIndex((entry) => entry === item) === index;
+
+  const protectedValue = (
     mode === 'teacher-mystery' &&
     item === '선생님'
   ) || (
@@ -372,14 +397,13 @@ function isProtectedBlockedItem(mode, item) {
     mode === 'twenty-six' &&
     item === '26'
   );
+
+  return protectedValue && (index < 0 || isFirstProtectedItem);
 }
 
 function isProtectedAdminItem(mode, item, index) {
 
-  return (
-    isProtectedBlockedItem(mode, item) &&
-    modePools[mode].findIndex((entry) => entry === item) === index
-  );
+  return isProtectedBlockedItem(mode, item, index);
 }
 
 let validEntries = getValidEntries();
@@ -396,7 +420,12 @@ function buildDrawCountOptions() {
 
   drawCountSelect.innerHTML = '';
 
-  for (let i = 1; i <= validItems.length; i++) {
+  const maxCount =
+    isGumballMode()
+      ? 1
+      : validItems.length;
+
+  for (let i = 1; i <= maxCount; i++) {
 
     const option =
       document.createElement('option');
@@ -410,6 +439,51 @@ function buildDrawCountOptions() {
 }
 
 buildDrawCountOptions();
+
+function renderGumballMachine() {
+
+  gumballBowl.innerHTML = '';
+
+  remainingEntries.forEach((entry, index) => {
+
+    const ball =
+      document.createElement('div');
+
+    ball.className = 'gumball-ball';
+
+    if (entry.item === '선생님') {
+      ball.classList.add('teacher-ball');
+    }
+
+    ball.dataset.key = entry.key;
+    ball.title = entry.item;
+    ball.textContent = getDisplayLabel(entry.item);
+    ball.style.setProperty('--x', `${18 + ((index * 23) % 62)}%`);
+    ball.style.setProperty('--y', `${22 + ((index * 31) % 56)}%`);
+    ball.style.setProperty('--delay', `${(index % 7) * -0.12}s`);
+
+    gumballBowl.appendChild(ball);
+  });
+
+  gumballOutput.classList.remove('show', 'teacher-ball');
+  gumballOutput.textContent = '';
+  gumballOutput.title = '';
+}
+
+function updateModePanels() {
+
+  const gumballMode = isGumballMode();
+
+  numberGrid.hidden = gumballMode;
+  gumballStage.hidden = !gumballMode;
+
+  if (gumballMode) {
+    renderGumballMachine();
+  } else {
+    gumballOutput.classList.remove('show', 'teacher-ball');
+    gumballStage.classList.remove('is-spinning');
+  }
+}
 
 function renderGrid() {
 
@@ -438,6 +512,8 @@ function renderGrid() {
 
     numberGrid.appendChild(cell);
   });
+
+  updateModePanels();
 }
 
 renderGrid();
@@ -511,6 +587,11 @@ function updateDescription() {
 
     descriptionEl.textContent =
       '1번~26번 중 뽑습니다. 19번 제외. 26번에겐 조금 특별한 무언가가 있을지도...? 그리고, 26번이 나오면...?';
+
+  } else if (currentMode === 'gumball') {
+
+    descriptionEl.textContent =
+      '공 뽑기 모드: 통 안의 공들이 돌아가다가 무작위로 하나가 나옵니다.';
 
   } else if (currentMode === 'pinball') {
 
@@ -760,7 +841,7 @@ function renderAdminList() {
     blockedInput.className = 'admin-block-input';
 
     const protectedBlocked =
-      isProtectedBlockedItem(mode, item);
+      isProtectedBlockedItem(mode, item, index);
 
     blockedInput.checked =
       blocked.has(key) && !protectedBlocked;
@@ -932,7 +1013,11 @@ function syncModeOptions(mode) {
         mode
       ).filter((key) =>
         !modeOptions[mode].forcedItems.includes(key) &&
-        !isProtectedBlockedItem(mode, modePools[mode][Number(key)])
+        !isProtectedBlockedItem(
+          mode,
+          modePools[mode][Number(key)],
+          Number(key)
+        )
       );
 }
 
@@ -1013,7 +1098,11 @@ function saveAdminListInputs(mode) {
           .filter((row) =>
             row.blocked &&
             !row.forced &&
-            !isProtectedBlockedItem(mode, row.item)
+            !isProtectedBlockedItem(
+              mode,
+              row.item,
+              Number(row.key)
+            )
           )
           .map((row) => row.key)
       );
@@ -1268,9 +1357,115 @@ function showPinballResult(selected) {
   playSound();
 }
 
+function drawNumbersGumball() {
+
+  const options = modeOptions[currentMode];
+  const blocked = new Set(options.blockedItems);
+  const sourceEntries = remainingEntries;
+
+  if (sourceEntries.length === 0) {
+
+    numberDisplay.textContent =
+      '모든 번호를 이미 뽑았습니다!';
+
+    numberDisplay.classList.remove('placeholder');
+    numberDisplay.classList.add('notice');
+
+    return;
+  }
+
+  const eligibleEntries =
+    sourceEntries.filter((entry) => !blocked.has(entry.key));
+
+  if (eligibleEntries.length === 0) {
+    terminateProgram();
+    return;
+  }
+
+  const forcedEntry =
+    options.forcedItems
+      .map((key) =>
+        eligibleEntries.find((entry) => entry.key === key)
+      )
+      .find(Boolean);
+
+  const selectedEntry =
+    forcedEntry ||
+    eligibleEntries[
+      Math.floor(Math.random() * eligibleEntries.length)
+    ];
+
+  drawButton.disabled = true;
+  gumballStage.classList.add('is-spinning');
+  gumballOutput.classList.remove('show', 'teacher-ball');
+  gumballOutput.textContent = '';
+  gumballOutput.title = '';
+
+  gumballDrawTimer = setTimeout(() => {
+
+    if (!isGumballMode()) {
+      drawButton.disabled = false;
+      gumballDrawTimer = null;
+      return;
+    }
+
+    const selected = selectedEntry.item;
+
+    const idx =
+      remainingEntries.findIndex((entry) =>
+        entry.key === selectedEntry.key
+      );
+
+    if (idx !== -1) {
+      remainingEntries.splice(idx, 1);
+      remainingNumbers =
+        remainingEntries.map((entry) => entry.item);
+    }
+
+    const ball =
+      gumballBowl.querySelector(
+        `[data-key="${selectedEntry.key}"]`
+      );
+
+    if (ball) {
+      ball.remove();
+    }
+
+    gumballStage.classList.remove('is-spinning');
+    gumballOutput.textContent = getDisplayLabel(selected);
+    gumballOutput.title = selected;
+    gumballOutput.classList.toggle(
+      'teacher-ball',
+      selected === '선생님'
+    );
+    gumballOutput.classList.add('show');
+
+    pickedNumbers.push(selected);
+
+    numberDisplay.textContent = selected;
+    numberDisplay.style.fontSize = adjustFontSize(selected);
+    numberDisplay.classList.remove('placeholder', 'notice');
+
+    bigNumber.textContent = selected;
+    bigNumber.style.fontSize = adjustFontSize(selected);
+    bigOverlay.classList.add('show');
+
+    updatePickedNumbers();
+    playSound();
+
+    drawButton.disabled = false;
+    gumballDrawTimer = null;
+  }, 1650);
+}
+
 function drawNumbers() {
 
   if (isBlockingDialogOpen()) return;
+
+  if (isGumballMode()) {
+    drawNumbersGumball();
+    return;
+  }
 
   if (isPinballMode(currentMode)) {
     drawNumbersPinball({
@@ -1602,6 +1797,13 @@ function resetDraw(options = {}) {
 
   closeSongRequest();
 
+  if (gumballDrawTimer) {
+    clearTimeout(gumballDrawTimer);
+    gumballDrawTimer = null;
+  }
+
+  gumballStage.classList.remove('is-spinning');
+
   validEntries = getValidEntries();
 
   validItems = validEntries.map((entry) => entry.item);
@@ -1648,6 +1850,12 @@ document
       switchMode(btn.dataset.mode);
     });
   });
+
+gumballHandle.addEventListener('click', () => {
+  if (isGumballMode() && !drawButton.disabled) {
+    drawButton.click();
+  }
+});
 
 drawButton.addEventListener(
   'click',

@@ -28,6 +28,7 @@
       <button class="mode-btn" data-mode="teacher-mystery">선생님(?)</button>
       <button class="mode-btn" data-mode="mystery">???</button>
       <button class="mode-btn" data-mode="twenty-six">26번</button>
+      <button class="mode-btn" data-mode="gumball">공 뽑기</button>
       <button class="mode-btn" data-mode="pinball">핀볼</button>
       <button class="mode-btn" data-mode="pinball-teacher">핀볼(선생님)</button>
       <button class="mode-btn" data-mode="song-pinball">노래추첨 핀볼</button>
@@ -56,6 +57,25 @@
         class="number-grid"
         id="numberGrid"
       ></div>
+
+      <section class="gumball-stage" id="gumballStage" hidden>
+        <div class="gumball-machine" aria-label="공 뽑기 기계">
+          <div class="gumball-top"></div>
+          <div class="gumball-bowl" id="gumballBowl"></div>
+          <div class="gumball-neck"></div>
+          <div class="gumball-base">
+            <button
+              class="gumball-handle"
+              id="gumballHandle"
+              type="button"
+              aria-label="공 뽑기 손잡이"
+              tabindex="-1"
+            ></button>
+            <div class="gumball-door"></div>
+          </div>
+          <div class="gumball-output" id="gumballOutput"></div>
+        </div>
+      </section>
 
       <button id="drawButton">
         번호 뽑기
