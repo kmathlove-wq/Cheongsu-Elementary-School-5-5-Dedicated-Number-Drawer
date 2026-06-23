@@ -471,6 +471,13 @@ button:hover {
   --angle-end-inverse: -360deg;
   --radius: 72px;
   --size: 1;
+  --wobble-x: 12px;
+  --wobble-y: 10px;
+  --spin-start: 0deg;
+  --spin-end: 360deg;
+  --orbit-duration: 1.1s;
+  --tumble-duration: 0.62s;
+  --bounce-duration: 0.76s;
 
   border-radius: 50%;
 
@@ -499,11 +506,32 @@ button:hover {
     rotate(var(--angle))
     translateX(var(--radius))
     rotate(var(--angle-inverse))
+    translate(0, 0)
+    rotate(var(--spin-start))
     scale(var(--size));
 
   box-shadow:
     inset -8px -10px 16px rgba(25,33,72,0.16),
     0 8px 12px rgba(25,33,72,0.12);
+}
+
+.gumball-ball::before {
+
+  content: '';
+
+  position: absolute;
+
+  inset: 8px auto auto 9px;
+
+  width: 14px;
+
+  height: 10px;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,0.78);
+
+  pointer-events: none;
 }
 
 .gumball-ball:nth-child(4n + 1) {
@@ -744,7 +772,9 @@ button:hover {
 .gumball-stage.is-spinning .gumball-ball {
 
   animation:
-    gumball-orbit 0.78s linear infinite;
+    gumball-orbit var(--orbit-duration) linear infinite,
+    gumball-wobble var(--tumble-duration) ease-in-out infinite,
+    gumball-bounce var(--bounce-duration) ease-in-out infinite;
 
   animation-delay: var(--delay);
 }
@@ -767,6 +797,8 @@ button:hover {
       rotate(var(--angle))
       translateX(var(--radius))
       rotate(var(--angle-inverse))
+      translate(0, 0)
+      rotate(0deg)
       scale(var(--size));
   }
 
@@ -776,7 +808,41 @@ button:hover {
       rotate(var(--angle-end))
       translateX(var(--radius))
       rotate(var(--angle-end-inverse))
+      translate(0, 0)
+      rotate(var(--spin-end))
       scale(var(--size));
+  }
+}
+
+@keyframes gumball-wobble {
+
+  0%,
+  100% {
+    margin-left: 0;
+  }
+
+  35% {
+    margin-left: var(--wobble-x);
+  }
+
+  70% {
+    margin-left: calc(var(--wobble-x) * -0.7);
+  }
+}
+
+@keyframes gumball-bounce {
+
+  0%,
+  100% {
+    margin-top: 0;
+  }
+
+  45% {
+    margin-top: calc(var(--wobble-y) * -1);
+  }
+
+  72% {
+    margin-top: calc(var(--wobble-y) * 0.8);
   }
 }
 

@@ -38,8 +38,14 @@ export function renderGumballMachine({
         angle: Math.random() * 360,
         radius: 18 + Math.random() * 82,
         size: 0.88 + Math.random() * 0.2,
-        delay: Math.random() * -0.7,
+        delay: Math.random() * -1.4,
         direction: Math.random() > 0.5 ? 360 : -360,
+        wobbleX: 8 + Math.random() * 18,
+        wobbleY: 6 + Math.random() * 20,
+        spin: Math.random() > 0.5 ? 360 : -360,
+        orbitDuration: 0.95 + Math.random() * 0.8,
+        tumbleDuration: 0.42 + Math.random() * 0.5,
+        bounceDuration: 0.5 + Math.random() * 0.65,
       }))
       .sort((a, b) => a.order - b.order);
 
@@ -50,6 +56,12 @@ export function renderGumballMachine({
     size,
     delay,
     direction,
+    wobbleX,
+    wobbleY,
+    spin,
+    orbitDuration,
+    tumbleDuration,
+    bounceDuration,
   }) => {
 
     const ball =
@@ -71,6 +83,12 @@ export function renderGumballMachine({
     ball.style.setProperty('--radius', `${radius}px`);
     ball.style.setProperty('--size', String(size));
     ball.style.setProperty('--delay', `${delay}s`);
+    ball.style.setProperty('--wobble-x', `${wobbleX}px`);
+    ball.style.setProperty('--wobble-y', `${wobbleY}px`);
+    ball.style.setProperty('--spin-end', `${spin}deg`);
+    ball.style.setProperty('--orbit-duration', `${orbitDuration}s`);
+    ball.style.setProperty('--tumble-duration', `${tumbleDuration}s`);
+    ball.style.setProperty('--bounce-duration', `${bounceDuration}s`);
 
     gumballBowl.appendChild(ball);
   });
