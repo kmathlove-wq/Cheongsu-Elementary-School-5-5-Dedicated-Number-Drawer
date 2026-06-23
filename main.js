@@ -444,7 +444,27 @@ function renderGumballMachine() {
 
   gumballBowl.innerHTML = '';
 
-  remainingEntries.forEach((entry, index) => {
+  const placedBalls =
+    [...remainingEntries]
+      .map((entry) => ({
+        entry,
+        order: Math.random(),
+        angle: Math.random() * 360,
+        radius: 18 + Math.random() * 82,
+        size: 0.88 + Math.random() * 0.2,
+        delay: Math.random() * -0.7,
+        direction: Math.random() > 0.5 ? 360 : -360,
+      }))
+      .sort((a, b) => a.order - b.order);
+
+  placedBalls.forEach(({
+    entry,
+    angle,
+    radius,
+    size,
+    delay,
+    direction,
+  }) => {
 
     const ball =
       document.createElement('div');
@@ -458,14 +478,18 @@ function renderGumballMachine() {
     ball.dataset.key = entry.key;
     ball.title = entry.item;
     ball.textContent = getDisplayLabel(entry.item);
-    ball.style.setProperty('--x', `${18 + ((index * 23) % 62)}%`);
-    ball.style.setProperty('--y', `${22 + ((index * 31) % 56)}%`);
-    ball.style.setProperty('--delay', `${(index % 7) * -0.12}s`);
+    ball.style.setProperty('--angle', `${angle}deg`);
+    ball.style.setProperty('--angle-inverse', `${-angle}deg`);
+    ball.style.setProperty('--angle-end', `${angle + direction}deg`);
+    ball.style.setProperty('--angle-end-inverse', `${-(angle + direction)}deg`);
+    ball.style.setProperty('--radius', `${radius}px`);
+    ball.style.setProperty('--size', String(size));
+    ball.style.setProperty('--delay', `${delay}s`);
 
     gumballBowl.appendChild(ball);
   });
 
-  gumballOutput.classList.remove('show', 'teacher-ball');
+  gumballOutput.classList.remove('show', 'rolling', 'teacher-ball');
   gumballOutput.textContent = '';
   gumballOutput.title = '';
 }
@@ -480,7 +504,7 @@ function updateModePanels() {
   if (gumballMode) {
     renderGumballMachine();
   } else {
-    gumballOutput.classList.remove('show', 'teacher-ball');
+    gumballOutput.classList.remove('show', 'rolling', 'teacher-ball');
     gumballStage.classList.remove('is-spinning');
   }
 }
@@ -1397,7 +1421,7 @@ function drawNumbersGumball() {
 
   drawButton.disabled = true;
   gumballStage.classList.add('is-spinning');
-  gumballOutput.classList.remove('show', 'teacher-ball');
+  gumballOutput.classList.remove('show', 'rolling', 'teacher-ball');
   gumballOutput.textContent = '';
   gumballOutput.title = '';
 
@@ -1438,7 +1462,7 @@ function drawNumbersGumball() {
       'teacher-ball',
       selected === '선생님'
     );
-    gumballOutput.classList.add('show');
+    gumballOutput.classList.add('show', 'rolling');
 
     pickedNumbers.push(selected);
 
@@ -1446,15 +1470,24 @@ function drawNumbersGumball() {
     numberDisplay.style.fontSize = adjustFontSize(selected);
     numberDisplay.classList.remove('placeholder', 'notice');
 
-    bigNumber.textContent = selected;
-    bigNumber.style.fontSize = adjustFontSize(selected);
-    bigOverlay.classList.add('show');
+    gumballDrawTimer = setTimeout(() => {
 
-    updatePickedNumbers();
-    playSound();
+      if (!isGumballMode()) {
+        drawButton.disabled = false;
+        gumballDrawTimer = null;
+        return;
+      }
 
-    drawButton.disabled = false;
-    gumballDrawTimer = null;
+      bigNumber.textContent = selected;
+      bigNumber.style.fontSize = adjustFontSize(selected);
+      bigOverlay.classList.add('show');
+
+      updatePickedNumbers();
+      playSound();
+
+      drawButton.disabled = false;
+      gumballDrawTimer = null;
+    }, 900);
   }, 1650);
 }
 
@@ -1803,6 +1836,7 @@ function resetDraw(options = {}) {
   }
 
   gumballStage.classList.remove('is-spinning');
+  gumballOutput.classList.remove('rolling');
 
   validEntries = getValidEntries();
 
