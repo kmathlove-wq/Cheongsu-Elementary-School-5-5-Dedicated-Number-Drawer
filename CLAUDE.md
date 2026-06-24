@@ -8,14 +8,19 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 ```
 /
 ├── index.html      # UI 마크업
-├── main.js         # 공통 UI·일반 뽑기·관리자 로직
-├── gumball.js      # 공 뽑기 모드 렌더링/애니메이션
-├── manitto.js      # 마니또 순환 배정 로직
-├── pinball.js      # 핀볼 모드 물리/렌더링
-├── settings.js     # 일반 설정창/뽑기 방식/효과음 설정
-├── song.js         # 노래추첨 핀볼 YouTube 검색/선택/재생
-├── sound.js        # Web Audio 효과음
-├── style.css       # 스타일
+├── scripts/        # 모든 JavaScript 모듈
+│   ├── main.js     # 공통 UI·일반 뽑기·관리자 로직
+│   ├── gumball.js  # 공 뽑기 모드 렌더링/애니메이션
+│   ├── manitto.js  # 마니또 순환 배정 로직
+│   ├── pinball.js  # 핀볼 모드 물리/렌더링
+│   ├── settings.js # 일반 설정창/뽑기 방식/효과음 설정
+│   ├── song.js     # 노래추첨 핀볼 YouTube 검색/선택/재생
+│   ├── sound.js    # Web Audio 효과음
+│   └── terminate.js # 종료 화면 처리
+├── tests/smoke.mjs # 정적 스모크 검사
+├── styles/app.css  # 전체 스타일
+├── style.css       # 스타일 진입점
+├── package.json    # `npm test` 스모크 검사
 ├── 사진/logo.png   # 파비콘 및 로고
 ├── CNAME           # 커스텀 도메인 설정
 ├── README.md
@@ -91,8 +96,9 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - `settings.js`: 접속 중 뽑기 방식과 효과음 설정, 미리듣기 처리.
 - `song.js`: 노래추첨 핀볼의 노래 입력, YouTube 후보 검색/필터링, 후보 선택, 재생창.
 - `sound.js`: 일반 뽑기, 핀볼, 공 뽑기에서 쓰는 Web Audio 효과음.
-- `style.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
+- `styles/app.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
 - `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
+- `tests/smoke.mjs`: HTML 진입점과 JS 모듈 문법을 확인하는 무의존성 검사.
 
 ## main.js 주요 함수
 | 함수 | 역할 |
@@ -133,7 +139,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 
 ## 배포/인증 주의
 - `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포.
-- YouTube API 키는 코드에 커밋하지 않고 GitHub Actions Secret `YOUTUBE_API_KEY`로 설정하며, 배포 시 `song.js`에 주입한다.
+- YouTube API 키는 코드에 커밋하지 않고 GitHub Actions Secret `YOUTUBE_API_KEY`로 설정하며, 배포 시 `scripts/song.js`에 주입한다.
 - GitHub push 인증은 PAT가 설정된 remote를 사용할 수 있다.
 - PAT를 채팅이나 출력에 노출하지 않는다. 토큰이 보일 가능성이 있는 명령 출력은 공유하지 않는다.
 

@@ -33,7 +33,7 @@ jobs:
           rsync -a --exclude='.git' --exclude='dist' ./ dist/
           node - <<'NODE'
           const fs = require('fs');
-          const path = 'dist/song.js';
+          const path = 'dist/scripts/song.js';
           const key = process.env.YOUTUBE_API_KEY;
           let source = fs.readFileSync(path, 'utf8');
           source = source.replace(

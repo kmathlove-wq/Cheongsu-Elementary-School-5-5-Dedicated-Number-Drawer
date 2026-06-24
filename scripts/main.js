@@ -37,6 +37,10 @@ import {
   requestSongForResult,
 } from './song.js';
 
+import {
+  terminateProgram,
+} from './terminate.js';
+
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
 const drawCountSelect = document.getElementById('drawCount');
@@ -1329,16 +1333,6 @@ function adjustFontSize(text) {
   }
 
   return '1.5rem';
-}
-
-function terminateProgram() {
-
-  window.close();
-
-  // 브라우저가 window.close()를 차단한 경우 폴백
-  setTimeout(() => {
-    document.body.innerHTML = '';
-  }, 300);
 }
 
 function showPinballResult(selected) {
