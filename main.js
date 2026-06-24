@@ -11,6 +11,10 @@ import {
 } from './gumball.js';
 
 import {
+  drawManitto, resetManittoMode, setupManittoMode,
+} from './manitto.js';
+
+import {
   playBumperBeep,
   playDrawTick,
   playGumballDropSound,
@@ -33,78 +37,30 @@ import {
   requestSongForResult,
 } from './song.js';
 
-const drawButton =
-  document.getElementById('drawButton');
-
-const resetButton =
-  document.getElementById('resetButton');
-
-const drawCountSelect =
-  document.getElementById('drawCount');
-
-const numberDisplay =
-  document.getElementById('numberDisplay');
-
-const pickedNumbersContainer =
-  document.getElementById('pickedNumbers');
-
-const numberGrid =
-  document.getElementById('numberGrid');
-
-const bigOverlay =
-  document.getElementById('bigOverlay');
-
-const bigNumber =
-  document.getElementById('bigNumber');
-
-
-const descriptionEl =
-  document.getElementById('description');
-
-const adminOverlay =
-  document.getElementById('adminOverlay');
-
-const adminCloseButton =
-  document.getElementById('adminCloseButton');
-
-const adminLoginView =
-  document.getElementById('adminLoginView');
-
-const adminManageView =
-  document.getElementById('adminManageView');
-
-const adminLoginForm =
-  document.getElementById('adminLoginForm');
-
-const adminPassword =
-  document.getElementById('adminPassword');
-
-const adminError =
-  document.getElementById('adminError');
-
-const adminModeSelect =
-  document.getElementById('adminModeSelect');
-
-const adminOptions =
-  document.getElementById('adminOptions');
-
-const adminList =
-  document.getElementById('adminList');
-
-const adminAddForm =
-  document.getElementById('adminAddForm');
-
-const adminNewItem =
-  document.getElementById('adminNewItem');
-
-const adminManageError =
-  document.getElementById('adminManageError');
-
-const adminResetButton =
-  document.getElementById('adminResetButton');
-
-const youtubePlayerClose =
-  document.getElementById('youtubePlayerClose');
+const drawButton = document.getElementById('drawButton');
+const resetButton = document.getElementById('resetButton');
+const drawCountSelect = document.getElementById('drawCount');
+const numberDisplay = document.getElementById('numberDisplay');
+const pickedNumbersContainer = document.getElementById('pickedNumbers');
+const numberGrid = document.getElementById('numberGrid');
+const bigOverlay = document.getElementById('bigOverlay');
+const bigNumber = document.getElementById('bigNumber');
+const descriptionEl = document.getElementById('description');
+const adminOverlay = document.getElementById('adminOverlay');
+const adminCloseButton = document.getElementById('adminCloseButton');
+const adminLoginView = document.getElementById('adminLoginView');
+const adminManageView = document.getElementById('adminManageView');
+const adminLoginForm = document.getElementById('adminLoginForm');
+const adminPassword = document.getElementById('adminPassword');
+const adminError = document.getElementById('adminError');
+const adminModeSelect = document.getElementById('adminModeSelect');
+const adminOptions = document.getElementById('adminOptions');
+const adminList = document.getElementById('adminList');
+const adminAddForm = document.getElementById('adminAddForm');
+const adminNewItem = document.getElementById('adminNewItem');
+const adminManageError = document.getElementById('adminManageError');
+const adminResetButton = document.getElementById('adminResetButton');
+const youtubePlayerClose = document.getElementById('youtubePlayerClose');
 
 let currentMode = 'basic';
 let currentDrawStyle = 'basic';
@@ -123,6 +79,7 @@ const MODE_LABELS = {
   'teacher-mystery': '선생님(?)',
   mystery: '???',
   'twenty-six': '26번',
+  manitto: '마니또',
   gumball: '공 뽑기',
   pinball: '핀볼',
   'pinball-teacher': '핀볼(선생님)',
@@ -158,6 +115,7 @@ const DEFAULT_MODE_POOLS = {
   'teacher-mystery': ['선생님', ...baseNumbers],
   mystery: getMysteryNumbers(),
   'twenty-six': [...baseNumbers],
+  manitto: [...baseNumbers],
   gumball: [...baseNumbers],
   pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
@@ -220,6 +178,7 @@ function isPinballMode(mode) {
 function isDrawStyleLockedMode(mode = currentMode) {
 
   return mode === 'basic' ||
+    mode === 'manitto' ||
     mode === 'gumball' ||
     mode === 'pinball';
 }
@@ -231,6 +190,8 @@ function getEffectiveDrawStyle() {
   if (currentMode === 'gumball') return 'gumball';
 
   if (currentMode === 'pinball') return 'pinball';
+
+  if (currentMode === 'manitto') return 'basic';
 
   return currentDrawStyle;
 }
@@ -246,8 +207,11 @@ function isPinballDrawStyle() {
 }
 
 function isTwentySixMode(mode = currentMode) {
-
   return mode === 'twenty-six';
+}
+
+function isManittoMode(mode = currentMode) {
+  return mode === 'manitto';
 }
 
 function getStyleForcedItems() {
@@ -563,7 +527,10 @@ function updateDescription() {
     let text =
       `${MODE_LABELS[currentMode]} 모드: 관리자 설정 항목 ${items.length}개 중 뽑습니다.`;
 
-    if (modeOptions[currentMode].forcedItems.length > 0) {
+    if (
+      !isManittoMode() &&
+      modeOptions[currentMode].forcedItems.length > 0
+    ) {
       text += ' 무조건 뽑힘 항목이 적용됩니다.';
     }
 
@@ -599,6 +566,10 @@ function updateDescription() {
       text += ' 핀볼 방식으로 진행됩니다.';
     }
 
+    if (isManittoMode()) {
+      text += ' 자기 자신을 제외하고 서로 한 명씩 비밀 친구를 배정합니다.';
+    }
+
     descriptionEl.textContent = text;
 
     return;
@@ -620,9 +591,12 @@ function updateDescription() {
       '선생님 + 1번~26번 중 뽑습니다. 19번 제외. 선생님에겐 조금 특별한 무언가가 있을지도...?';
 
   } else if (currentMode === 'twenty-six') {
-
     descriptionEl.textContent =
       '1번~26번 중 뽑습니다. 19번 제외. 26번에겐 조금 특별한 무언가가 있을지도...? 그리고, 26번이 나오면...?';
+
+  } else if (currentMode === 'manitto') {
+    descriptionEl.textContent =
+      '마니또 모드: 자기 자신이 나오지 않도록 전체를 섞어 서로 한 명씩 비밀 친구를 배정합니다.';
 
   } else if (currentMode === 'gumball') {
 
@@ -815,6 +789,7 @@ function renderAdminList() {
   const forced = new Set(options.forcedItems);
   const blocked = new Set(options.blockedItems);
   const pinballMode = isPinballMode(mode);
+  const manittoMode = isManittoMode(mode);
 
   adminEditingMode = mode;
 
@@ -862,8 +837,13 @@ function renderAdminList() {
     forcedInput.className = 'admin-force-input';
 
     forcedInput.checked = forced.has(key);
+    forcedInput.disabled = manittoMode;
 
     forcedLabel.append(forcedInput, '무조건');
+
+    if (manittoMode) {
+      forcedLabel.hidden = true;
+    }
 
     const blockedLabel =
       document.createElement('label');
@@ -1037,10 +1017,12 @@ function validateAdminItems(items, mode) {
 function syncModeOptions(mode) {
 
   modeOptions[mode].forcedItems =
-    normalizeOptionItems(
-      modeOptions[mode].forcedItems,
-      mode
-    );
+    isManittoMode(mode)
+      ? []
+      : normalizeOptionItems(
+        modeOptions[mode].forcedItems,
+        mode
+      );
 
   modeOptions[mode].blockedItems =
     isPinballMode(mode)
@@ -1348,6 +1330,17 @@ function showPinballResult(selected) {
 function drawNumbers() {
 
   if (isBlockingDialogOpen()) return;
+
+  if (isManittoMode()) {
+    drawManitto({
+      entries: remainingEntries,
+      blockedItems: modeOptions[currentMode].blockedItems,
+      numberDisplay,
+      drawButton,
+      getDisplayLabel,
+    });
+    return;
+  }
 
   if (isGumballMode()) {
 
@@ -1771,6 +1764,7 @@ function resetDraw(options = {}) {
   closeSongRequest();
 
   resetGumballMode();
+  resetManittoMode();
   gumballHandleReady = false;
 
   validEntries = getValidEntries();
@@ -1962,6 +1956,15 @@ setupAppSettings({
   canOpenSettings: () =>
     !isSongDialogOpen() &&
     !isYouTubePlayerOpen(),
+});
+
+setupManittoMode({
+  numberGrid,
+  bigOverlay,
+  bigNumber,
+  getResultLabel,
+  adjustFontSize,
+  playSound,
 });
 
 openAppSettings({ required: true });

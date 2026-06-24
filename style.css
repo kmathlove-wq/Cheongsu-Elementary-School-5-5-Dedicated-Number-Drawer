@@ -366,6 +366,26 @@ button:hover {
   transform: scale(1.08);
 }
 
+.number-grid.manitto-active .number-cell {
+
+  cursor: pointer;
+}
+
+.number-cell.manitto-ready {
+
+  border:
+    3px solid rgba(39, 178, 126, 0.5);
+
+  box-shadow:
+    0 16px 36px rgba(21, 128, 92, 0.16),
+    inset 0 6px 18px rgba(255,255,255,0.25);
+}
+
+.number-cell.manitto-ready:hover {
+
+  transform: translateY(-4px) scale(1.03);
+}
+
 .gumball-stage {
 
   display: grid;
@@ -1061,6 +1081,24 @@ button:hover {
   box-shadow:
     0 0 14px
     rgba(255, 200, 0, 0.4);
+}
+
+.mode-btn[data-mode="manitto"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #234f9c,
+      #27b27e
+    );
+
+  color: white;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(39, 178, 126, 0.35);
 }
 
 .number-cell.teacher-cell {
