@@ -21,6 +21,9 @@ const appSettingsClose =
 const appSettingsApply =
   document.getElementById('appSettingsApply');
 
+const drawStyleSettings =
+  document.getElementById('drawStyleSettings');
+
 const soundEnabledInput =
   document.getElementById('soundEnabledInput');
 
@@ -40,6 +43,7 @@ let beforeApply = () => true;
 function updateAppModeOptions() {
 
   const locked = isDrawStyleLocked();
+  drawStyleSettings.hidden = locked;
 
   document
     .querySelectorAll('.app-mode-option')
