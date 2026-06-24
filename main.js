@@ -40,8 +40,10 @@ import {
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
 const drawCountSelect = document.getElementById('drawCount');
+const drawSettings = document.getElementById('drawSettings');
 const numberDisplay = document.getElementById('numberDisplay');
 const pickedNumbersContainer = document.getElementById('pickedNumbers');
+const historyCard = document.querySelector('.history-card');
 const numberGrid = document.getElementById('numberGrid');
 const bigOverlay = document.getElementById('bigOverlay');
 const bigNumber = document.getElementById('bigNumber');
@@ -61,6 +63,8 @@ const adminNewItem = document.getElementById('adminNewItem');
 const adminManageError = document.getElementById('adminManageError');
 const adminResetButton = document.getElementById('adminResetButton');
 const youtubePlayerClose = document.getElementById('youtubePlayerClose');
+const manittoSettings = document.getElementById('manittoSettings');
+const manittoExcludeList = document.getElementById('manittoExcludeList');
 
 let currentMode = 'basic';
 let currentDrawStyle = 'basic';
@@ -483,6 +487,14 @@ function updateModePanels() {
     getDisplayLabel,
     numberGrid,
   });
+
+  const manittoMode = isManittoMode();
+
+  drawSettings.classList.toggle('manitto-draw-settings', manittoMode);
+  historyCard.hidden = manittoMode;
+  drawButton.textContent = manittoMode
+    ? '마니또 배정하기'
+    : '번호 뽑기';
 }
 
 function renderGrid() {
@@ -690,6 +702,36 @@ function updatePickedNumbers() {
 
     pickedNumbersContainer.appendChild(tag);
   });
+}
+
+function renderManittoSettings() {
+  const manittoMode = isManittoMode();
+  manittoSettings.hidden = !manittoMode;
+  manittoExcludeList.innerHTML = '';
+  if (!manittoMode) return;
+  const blocked = new Set(modeOptions.manitto.blockedItems);
+  getSortedAdminEntries('manitto').forEach(({ item, key }) => {
+    const label = document.createElement('label');
+    label.className = 'manitto-exclude-item';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.key = key;
+    input.checked = blocked.has(key);
+    label.append(input, getResultLabel(item));
+    manittoExcludeList.appendChild(label);
+  });
+}
+
+function saveManittoSettings() {
+  if (!isManittoMode()) return true;
+  modeOptions.manitto.blockedItems =
+    Array.from(
+      manittoExcludeList.querySelectorAll('input:checked')
+    ).map((input) => input.dataset.key);
+  modeOptions.manitto.forcedItems = [];
+  syncModeOptions('manitto');
+  saveModePools();
+  return true;
 }
 
 function setAdminManageError(message) {
@@ -1333,11 +1375,8 @@ function drawNumbers() {
 
   if (isManittoMode()) {
     drawManitto({
-      entries: remainingEntries,
-      blockedItems: modeOptions[currentMode].blockedItems,
-      numberDisplay,
-      drawButton,
-      getDisplayLabel,
+      entries: remainingEntries, numberDisplay, drawButton,
+      blockedItems: modeOptions[currentMode].blockedItems, getDisplayLabel,
     });
     return;
   }
@@ -1950,21 +1989,12 @@ setupAppSettings({
     currentDrawStyle = style;
   },
   isDrawStyleLocked: isDrawStyleLockedMode,
-  afterApply: () => {
-    resetDraw({ force: true });
-  },
-  canOpenSettings: () =>
-    !isSongDialogOpen() &&
-    !isYouTubePlayerOpen(),
+  afterApply: () => resetDraw({ force: true }),
+  beforeOpen: renderManittoSettings,
+  beforeApply: saveManittoSettings,
+  canOpenSettings: () => !isSongDialogOpen() && !isYouTubePlayerOpen(),
 });
 
-setupManittoMode({
-  numberGrid,
-  bigOverlay,
-  bigNumber,
-  getResultLabel,
-  adjustFontSize,
-  playSound,
-});
+setupManittoMode({ numberGrid, bigOverlay, bigNumber, getResultLabel, adjustFontSize, playSound });
 
 openAppSettings({ required: true });

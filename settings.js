@@ -34,6 +34,8 @@ let setCurrentDrawStyle = () => {};
 let afterApply = () => {};
 let canOpenSettings = () => true;
 let isDrawStyleLocked = () => false;
+let beforeOpen = () => {};
+let beforeApply = () => true;
 
 function updateAppModeOptions() {
 
@@ -63,6 +65,7 @@ export function openAppSettings({ required = false } = {}) {
   pendingDrawStyle = getCurrentDrawStyle();
   soundEnabledInput.checked = isSoundEnabled();
   updateAppModeOptions();
+  beforeOpen({ required });
 
   appSettingsClose.hidden = required;
   appSettingsOverlay.classList.add('show');
@@ -78,6 +81,8 @@ export function closeAppSettings() {
 }
 
 function applyAppSettings() {
+
+  if (beforeApply() === false) return;
 
   setSoundEnabled(soundEnabledInput.checked);
   setSoundTheme(soundThemeSelect.value);
@@ -123,6 +128,8 @@ export function setupAppSettings(options) {
   isDrawStyleLocked =
     options.isDrawStyleLocked ||
     (() => false);
+  beforeOpen = options.beforeOpen || (() => {});
+  beforeApply = options.beforeApply || (() => true);
 
   document
     .querySelectorAll('.app-mode-option')

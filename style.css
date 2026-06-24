@@ -229,6 +229,17 @@ button {
   margin-bottom: 12px;
 }
 
+.draw-settings.manitto-draw-settings {
+
+  justify-content: flex-end;
+}
+
+.draw-settings.manitto-draw-settings label,
+.draw-settings.manitto-draw-settings select {
+
+  display: none;
+}
+
 .secondary {
 
   background: #eef0ff;
@@ -1198,6 +1209,101 @@ button:hover {
   font-weight: 800;
 }
 
+.manitto-exclude-list {
+
+  display: grid;
+
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+
+  gap: 10px;
+
+  max-height: 240px;
+
+  overflow: auto;
+
+  padding: 4px;
+}
+
+.manitto-exclude-item {
+
+  position: relative;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  min-height: 48px;
+
+  border:
+    2px solid var(--border);
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(180deg, #ffffff, #f4f6ff);
+
+  color: var(--text);
+
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  word-break: keep-all;
+
+  cursor: pointer;
+
+  user-select: none;
+
+  transition:
+    transform 0.16s,
+    border-color 0.16s,
+    background 0.16s,
+    color 0.16s,
+    box-shadow 0.16s;
+}
+
+.manitto-exclude-item:hover {
+
+  border-color: #7b83ff;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 24px rgba(90, 92, 255, 0.14);
+}
+
+.manitto-exclude-item:has(input:checked) {
+
+  border-color: rgba(214, 43, 58, 0.5);
+
+  background:
+    linear-gradient(135deg, #fff0f0, #ffdada);
+
+  color: #b4232a;
+
+  box-shadow:
+    0 10px 24px rgba(180, 35, 42, 0.14);
+}
+
+.manitto-exclude-item input {
+
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+
+  height: 100%;
+
+  opacity: 0;
+
+  cursor: pointer;
+}
+
 .app-mode-options,
 .sound-preview-options {
 
@@ -1722,6 +1828,11 @@ button:hover {
 
     grid-template-columns:
       minmax(0, 1fr) 84px 62px 62px;
+  }
+
+  .manitto-exclude-list {
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .admin-row .admin-item-input {
