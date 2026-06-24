@@ -1200,6 +1200,11 @@ button:hover {
   margin: 18px 0;
 }
 
+.app-setting-group[hidden] {
+
+  display: none;
+}
+
 .app-setting-title {
 
   margin: 0;
