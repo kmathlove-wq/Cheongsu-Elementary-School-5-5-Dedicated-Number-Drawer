@@ -113,7 +113,7 @@ const DEFAULT_MODE_POOLS = {
   gumball: [...baseNumbers], pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
-  'eleven-song-pinball': Array.from({ length: 26 }, () => '11'),
+  'eleven-song-pinball': Array.from({ length: 25 }, () => '11'),
 };
 
 const DEFAULT_MODE_OPTIONS =
