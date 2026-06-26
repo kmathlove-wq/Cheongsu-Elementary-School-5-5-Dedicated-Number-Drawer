@@ -72,6 +72,10 @@ const manittoExcludeList = document.getElementById('manittoExcludeList');
 
 let currentMode = 'basic';
 let currentDrawStyle = 'basic';
+const modeDrawStyles = {
+  'pinball-teacher': 'pinball',
+  'song-pinball': 'pinball',
+};
 
 const ADMIN_PASSWORD = '1+1=1';
 const MOBILE_ADMIN_TAP_WINDOW = 900;
@@ -201,7 +205,7 @@ function getEffectiveDrawStyle() {
 
   if (currentMode === 'manitto') return 'basic';
 
-  return currentDrawStyle;
+  return modeDrawStyles[currentMode] || currentDrawStyle;
 }
 
 function isGumballMode() {
@@ -1437,13 +1441,7 @@ function drawNumbers() {
     return;
   }
 
-  if (
-    isPinballDrawStyle() ||
-    (
-      isPinballMode(currentMode) &&
-      currentMode !== 'song-pinball'
-    )
-  ) {
+  if (isPinballDrawStyle()) {
     drawNumbersPinball({
       remainingEntries,
       drawCountSelect,
@@ -1980,7 +1978,11 @@ setupAppSettings({
   getCurrentDrawStyle: getEffectiveDrawStyle,
   setCurrentDrawStyle: (style) => {
     if (isDrawStyleLockedMode()) return;
-    currentDrawStyle = style;
+    if (currentMode in modeDrawStyles) {
+      modeDrawStyles[currentMode] = style;
+    } else {
+      currentDrawStyle = style;
+    }
   },
   isDrawStyleLocked: isDrawStyleLockedMode,
   afterApply: () => resetDraw({ force: true }),
