@@ -15,12 +15,20 @@ let handlePressTimer = null;
 
 const HANDLE_HOLD_MS = 850;
 
-const GRAVITY_POSITIONS = [
-  [-100, 62], [-60, 66], [-20, 62], [20, 66], [60, 62], [100, 66],
-  [-112, 30], [-74, 34], [-37, 30], [0, 34], [37, 30], [74, 34], [112, 30],
-  [-96, -4], [-58, 0], [-20, -4], [18, 0], [56, -4], [94, 0],
-  [-78, -38], [-26, -34], [26, -34], [78, -38],
-  [-36, -70], [36, -70],
+const STACKED_POSITIONS = [
+  [-92, 82], [-55, 90], [-18, 84], [18, 90], [55, 84], [92, 82],
+  [-120, 54], [-82, 62], [-43, 56], [-4, 64], [36, 56], [78, 62], [120, 54],
+  [-126, 24], [-86, 30], [-44, 22], [0, 30], [44, 22], [86, 30], [126, 24],
+  [-104, -8], [-52, -4], [0, -12], [52, -4], [104, -8],
+  [-38, -38], [38, -38],
+];
+
+const SCATTERED_POSITIONS = [
+  [-90, 78], [-52, 92], [-12, 82], [26, 92], [62, 80], [96, 86],
+  [-122, 46], [-84, 66], [-42, 50], [0, 70], [40, 48], [84, 66], [122, 50],
+  [-126, 14], [-90, 34], [-48, 18], [-6, 36], [38, 16], [82, 34], [126, 20],
+  [-108, -14], [-58, 6], [-10, -16], [42, 4], [100, -12],
+  [-42, -44], [42, -40],
 ];
 
 function clearGumballTimer() {
@@ -31,6 +39,50 @@ function clearGumballTimer() {
   }
 }
 
+function shuffledPositions(source) {
+
+  return [...source].sort(() => Math.random() - 0.5);
+}
+
+function clamp(value, min, max) {
+
+  return Math.max(min, Math.min(max, value));
+}
+
+function getMaxGumballX(y) {
+
+  if (y > 86) return 92;
+  if (y > 72) return 104;
+  if (y > 54) return 122;
+  if (y > 20) return 130;
+  if (y < -45) return 82;
+  if (y < -20) return 112;
+  return 126;
+}
+
+function setBallRestPosition(ball, source, index, jitter = 4) {
+
+  const [x, y] = source[index % source.length];
+  const safeY = clamp(y + (Math.random() - 0.5) * jitter, -48, 92);
+  const maxX = getMaxGumballX(safeY);
+  const safeX = clamp(x + (Math.random() - 0.5) * jitter, -maxX, maxX);
+
+  ball.style.setProperty('--rest-x', `${safeX}px`);
+  ball.style.setProperty('--rest-y', `${safeY}px`);
+}
+
+function scatterGumballBalls() {
+
+  const positions = shuffledPositions(SCATTERED_POSITIONS);
+
+  gumballBowl
+    .querySelectorAll('.gumball-ball')
+    .forEach((ball, index) => {
+      setBallRestPosition(ball, positions, index, 10);
+      ball.style.setProperty('--spin-start', '0deg');
+    });
+}
+
 export function renderGumballMachine({
   entries,
   getDisplayLabel,
@@ -38,22 +90,15 @@ export function renderGumballMachine({
 
   gumballBowl.innerHTML = '';
 
-  const positions =
-    [...GRAVITY_POSITIONS]
-      .sort(() => Math.random() - 0.5);
+  const positions = shuffledPositions(STACKED_POSITIONS);
 
   const placedBalls =
     [...entries]
       .map((entry, index) => {
-        const [x, y] =
-          positions[index % positions.length];
-
         return {
           entry,
           order: Math.random(),
           angle: Math.random() * 360,
-          restX: x + (Math.random() - 0.5) * 8,
-          restY: y + (Math.random() - 0.5) * 8,
           radius: 18 + Math.random() * 74,
           size: 0.72 + Math.random() * 0.14,
           delay: Math.random() * -1.4,
@@ -72,8 +117,6 @@ export function renderGumballMachine({
   placedBalls.forEach(({
     entry,
     angle,
-    restX,
-    restY,
     radius,
     size,
     delay,
@@ -103,8 +146,7 @@ export function renderGumballMachine({
     ball.style.setProperty('--angle-inverse', `${-angle}deg`);
     ball.style.setProperty('--angle-end', `${angle + direction}deg`);
     ball.style.setProperty('--angle-end-inverse', `${-(angle + direction)}deg`);
-    ball.style.setProperty('--rest-x', `${restX}px`);
-    ball.style.setProperty('--rest-y', `${restY}px`);
+    setBallRestPosition(ball, positions, Number(entry.key));
     ball.style.setProperty('--radius', `${radius}px`);
     ball.style.setProperty('--size', String(size));
     ball.style.setProperty('--delay', `${delay}s`);
@@ -271,6 +313,7 @@ export function drawNumbersGumball({
   }
 
   drawButton.disabled = true;
+  scatterGumballBalls();
   gumballStage.classList.add('is-spinning');
   gumballOutput.classList.remove('show', 'rolling', 'teacher-ball');
   gumballOutput.textContent = '';
@@ -336,6 +379,10 @@ export function drawNumbersGumball({
         'is-spinning',
         index < selectedEntries.length - 1
       );
+
+      if (index < selectedEntries.length - 1) {
+        scatterGumballBalls();
+      }
 
       gumballOutput.classList.remove('show', 'rolling', 'teacher-ball');
       void gumballOutput.offsetWidth;
