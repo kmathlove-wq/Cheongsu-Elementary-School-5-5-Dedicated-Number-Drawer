@@ -37,9 +37,8 @@ import {
   requestSongForResult,
 } from './song.js';
 
-import {
-  terminateProgram,
-} from './terminate.js';
+import { terminateProgram } from './terminate.js';
+import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
@@ -113,7 +112,8 @@ const DEFAULT_MODE_POOLS = {
   'twenty-six': [...baseNumbers], manitto: [...baseNumbers],
   gumball: [...baseNumbers], pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
-  'song-pinball': [...baseNumbers], 'eleven-song-pinball': ['11'],
+  'song-pinball': [...baseNumbers],
+  'eleven-song-pinball': Array.from({ length: 26 }, () => '11'),
 };
 
 const DEFAULT_MODE_OPTIONS =
@@ -173,13 +173,9 @@ function isPinballMode(mode) {
     isSongDrawMode(mode);
 }
 
-function isSongDrawMode(mode = currentMode) {
-  return mode === 'song-pinball' || mode === 'eleven-song-pinball';
-}
+function isSongDrawMode(mode = currentMode) { return mode === 'song-pinball' || mode === 'eleven-song-pinball'; }
 
-function isElevenOnlyMode(mode = currentMode) {
-  return mode === 'eleven-song-pinball';
-}
+function isElevenOnlyMode(mode = currentMode) { return mode === 'eleven-song-pinball'; }
 
 function isDrawStyleLockedMode(mode = currentMode) {
 
@@ -635,6 +631,8 @@ function updateDescription() {
 function switchMode(mode) {
 
   if (isBlockingDialogOpen()) return;
+
+  closeMoreModes();
 
   currentMode = mode;
 
@@ -1837,17 +1835,10 @@ function resetDraw(options = {}) {
   updatePickedNumbers();
 }
 
-document
-  .querySelectorAll('.mode-btn')
-  .forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.mode === 'basic') {
-        handleBasicModeAdminTap();
-      }
-
-      switchMode(btn.dataset.mode);
-    });
-  });
+setupModeMenu({
+  onModeClick: switchMode,
+  onBasicTap: handleBasicModeAdminTap,
+});
 
 bindGumballHandle({
   canDraw: () =>
@@ -1893,6 +1884,10 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' &&
       isAppSettingsOpen()) {
     closeAppSettings();
+  }
+
+  if (event.key === 'Escape') {
+    closeMoreModes();
   }
 
 });

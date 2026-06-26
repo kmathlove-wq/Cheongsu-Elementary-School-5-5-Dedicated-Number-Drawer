@@ -5,6 +5,7 @@ const files = [
   'scripts/main.js',
   'scripts/gumball.js',
   'scripts/manitto.js',
+  'scripts/mode-menu.js',
   'scripts/pinball.js',
   'scripts/settings.js',
   'scripts/song.js',

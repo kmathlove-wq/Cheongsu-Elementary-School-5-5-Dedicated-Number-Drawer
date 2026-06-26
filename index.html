@@ -24,16 +24,23 @@
 
     <div class="mode-selector">
       <button class="mode-btn active" data-mode="basic">기본</button>
-      <button class="mode-btn" data-mode="teacher">선생님</button>
-      <button class="mode-btn" data-mode="teacher-mystery">선생님(?)</button>
-      <button class="mode-btn" data-mode="mystery">???</button>
-      <button class="mode-btn" data-mode="twenty-six">26번</button>
       <button class="mode-btn" data-mode="manitto">마니또</button>
       <button class="mode-btn" data-mode="gumball">공 뽑기</button>
       <button class="mode-btn" data-mode="pinball">핀볼</button>
-      <button class="mode-btn" data-mode="pinball-teacher">핀볼(선생님)</button>
       <button class="mode-btn" data-mode="song-pinball">노래추첨 핀볼</button>
       <button class="mode-btn" data-mode="eleven-song-pinball">11번 노래추첨 핀볼</button>
+      <div class="more-modes">
+        <button class="more-mode-toggle" type="button" aria-label="더보기 모드" aria-expanded="false">
+          ⋯
+        </button>
+        <div class="more-mode-menu" id="moreModeMenu">
+          <button class="mode-btn" data-mode="teacher">선생님</button>
+          <button class="mode-btn" data-mode="teacher-mystery">선생님(?)</button>
+          <button class="mode-btn" data-mode="mystery">???</button>
+          <button class="mode-btn" data-mode="twenty-six">26번</button>
+          <button class="mode-btn" data-mode="pinball-teacher">핀볼(선생님)</button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
