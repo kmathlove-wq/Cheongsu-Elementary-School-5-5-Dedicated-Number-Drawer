@@ -500,10 +500,13 @@ button:hover {
   --angle-inverse: 0deg;
   --angle-end: 360deg;
   --angle-end-inverse: -360deg;
+  --rest-x: 0px;
+  --rest-y: 48px;
   --radius: 72px;
   --size: 1;
   --wobble-x: 12px;
   --wobble-y: 10px;
+  --gravity-pull: 24px;
   --spin-start: 0deg;
   --spin-end: 360deg;
   --orbit-duration: 1.1s;
@@ -534,10 +537,7 @@ button:hover {
 
   transform:
     translate(-50%, -50%)
-    rotate(var(--angle))
-    translateX(var(--radius))
-    rotate(var(--angle-inverse))
-    translate(0, 0)
+    translate(var(--rest-x), var(--rest-y))
     rotate(var(--spin-start))
     scale(var(--size));
 
@@ -825,11 +825,19 @@ button:hover {
   0% {
     transform:
       translate(-50%, -50%)
+      translate(var(--rest-x), var(--rest-y))
+      rotate(0deg)
+      scale(var(--size));
+  }
+
+  18% {
+    transform:
+      translate(-50%, -50%)
       rotate(var(--angle))
       translateX(var(--radius))
       rotate(var(--angle-inverse))
       translate(0, 0)
-      rotate(0deg)
+      rotate(calc(var(--spin-end) * 0.18))
       scale(var(--size));
   }
 
@@ -865,15 +873,17 @@ button:hover {
 
   0%,
   100% {
-    margin-top: 0;
+    margin-top: var(--gravity-pull);
   }
 
   45% {
-    margin-top: calc(var(--wobble-y) * -1);
+    margin-top:
+      calc(var(--gravity-pull) - var(--wobble-y));
   }
 
   72% {
-    margin-top: calc(var(--wobble-y) * 0.8);
+    margin-top:
+      calc(var(--gravity-pull) + var(--wobble-y) * 0.8);
   }
 }
 

@@ -15,6 +15,14 @@ let handlePressTimer = null;
 
 const HANDLE_HOLD_MS = 850;
 
+const GRAVITY_POSITIONS = [
+  [-100, 62], [-60, 66], [-20, 62], [20, 66], [60, 62], [100, 66],
+  [-112, 30], [-74, 34], [-37, 30], [0, 34], [37, 30], [74, 34], [112, 30],
+  [-96, -4], [-58, 0], [-20, -4], [18, 0], [56, -4], [94, 0],
+  [-78, -38], [-26, -34], [26, -34], [78, -38],
+  [-36, -70], [36, -70],
+];
+
 function clearGumballTimer() {
 
   if (gumballDrawTimer) {
@@ -30,34 +38,49 @@ export function renderGumballMachine({
 
   gumballBowl.innerHTML = '';
 
+  const positions =
+    [...GRAVITY_POSITIONS]
+      .sort(() => Math.random() - 0.5);
+
   const placedBalls =
     [...entries]
-      .map((entry) => ({
-        entry,
-        order: Math.random(),
-        angle: Math.random() * 360,
-        radius: 18 + Math.random() * 82,
-        size: 0.88 + Math.random() * 0.2,
-        delay: Math.random() * -1.4,
-        direction: Math.random() > 0.5 ? 360 : -360,
-        wobbleX: 8 + Math.random() * 18,
-        wobbleY: 6 + Math.random() * 20,
-        spin: Math.random() > 0.5 ? 360 : -360,
-        orbitDuration: 0.95 + Math.random() * 0.8,
-        tumbleDuration: 0.42 + Math.random() * 0.5,
-        bounceDuration: 0.5 + Math.random() * 0.65,
-      }))
+      .map((entry, index) => {
+        const [x, y] =
+          positions[index % positions.length];
+
+        return {
+          entry,
+          order: Math.random(),
+          angle: Math.random() * 360,
+          restX: x + (Math.random() - 0.5) * 8,
+          restY: y + (Math.random() - 0.5) * 8,
+          radius: 18 + Math.random() * 74,
+          size: 0.72 + Math.random() * 0.14,
+          delay: Math.random() * -1.4,
+          direction: Math.random() > 0.5 ? 360 : -360,
+          wobbleX: 8 + Math.random() * 18,
+          wobbleY: 6 + Math.random() * 20,
+          gravityPull: 8 + Math.random() * 20,
+          spin: Math.random() > 0.5 ? 360 : -360,
+          orbitDuration: 0.95 + Math.random() * 0.8,
+          tumbleDuration: 0.42 + Math.random() * 0.5,
+          bounceDuration: 0.5 + Math.random() * 0.65,
+        };
+      })
       .sort((a, b) => a.order - b.order);
 
   placedBalls.forEach(({
     entry,
     angle,
+    restX,
+    restY,
     radius,
     size,
     delay,
     direction,
     wobbleX,
     wobbleY,
+    gravityPull,
     spin,
     orbitDuration,
     tumbleDuration,
@@ -80,11 +103,14 @@ export function renderGumballMachine({
     ball.style.setProperty('--angle-inverse', `${-angle}deg`);
     ball.style.setProperty('--angle-end', `${angle + direction}deg`);
     ball.style.setProperty('--angle-end-inverse', `${-(angle + direction)}deg`);
+    ball.style.setProperty('--rest-x', `${restX}px`);
+    ball.style.setProperty('--rest-y', `${restY}px`);
     ball.style.setProperty('--radius', `${radius}px`);
     ball.style.setProperty('--size', String(size));
     ball.style.setProperty('--delay', `${delay}s`);
     ball.style.setProperty('--wobble-x', `${wobbleX}px`);
     ball.style.setProperty('--wobble-y', `${wobbleY}px`);
+    ball.style.setProperty('--gravity-pull', `${gravityPull}px`);
     ball.style.setProperty('--spin-end', `${spin}deg`);
     ball.style.setProperty('--orbit-duration', `${orbitDuration}s`);
     ball.style.setProperty('--tumble-duration', `${tumbleDuration}s`);
