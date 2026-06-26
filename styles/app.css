@@ -2015,7 +2015,8 @@ button:hover {
     rgba(255, 200, 0, 0.5);
 }
 
-.mode-btn[data-mode="song-pinball"].active {
+.mode-btn[data-mode="song-pinball"].active,
+.mode-btn[data-mode="eleven-song-pinball"].active {
 
   background:
     linear-gradient(

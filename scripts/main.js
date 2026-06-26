@@ -72,10 +72,7 @@ const manittoExcludeList = document.getElementById('manittoExcludeList');
 
 let currentMode = 'basic';
 let currentDrawStyle = 'basic';
-const modeDrawStyles = {
-  'pinball-teacher': 'pinball',
-  'song-pinball': 'pinball',
-};
+const modeDrawStyles = { 'pinball-teacher': 'pinball', 'song-pinball': 'pinball', 'eleven-song-pinball': 'pinball' };
 
 const ADMIN_PASSWORD = '1+1=1';
 const MOBILE_ADMIN_TAP_WINDOW = 900;
@@ -86,16 +83,10 @@ let lastBasicModeTap = 0;
 let gumballHandleReady = false;
 
 const MODE_LABELS = {
-  basic: '기본',
-  teacher: '선생님',
-  'teacher-mystery': '선생님(?)',
-  mystery: '???',
-  'twenty-six': '26번',
-  manitto: '마니또',
-  gumball: '공 뽑기',
-  pinball: '핀볼',
-  'pinball-teacher': '핀볼(선생님)',
-  'song-pinball': '노래추첨 핀볼',
+  basic: '기본', teacher: '선생님', 'teacher-mystery': '선생님(?)',
+  mystery: '???', 'twenty-six': '26번', manitto: '마니또',
+  gumball: '공 뽑기', pinball: '핀볼', 'pinball-teacher': '핀볼(선생님)',
+  'song-pinball': '노래추첨 핀볼', 'eleven-song-pinball': '11번 노래추첨 핀볼',
 };
 
 const baseNumbers =
@@ -104,34 +95,25 @@ const baseNumbers =
     (_, i) => String(i + 1)
   ).filter((n) => n !== '19');
 
-function getTodayNumber() {
-
-  return String(new Date().getDate());
-}
+function getTodayNumber() { return String(new Date().getDate()); }
 
 function getMysteryNumbers() {
 
   const todayNumber = getTodayNumber();
   const numbers = [...baseNumbers];
-
   if (!numbers.includes(todayNumber)) {
     numbers.push(todayNumber);
   }
-
   return numbers;
 }
 
 const DEFAULT_MODE_POOLS = {
-  basic: [...baseNumbers],
-  teacher: ['선생님', ...baseNumbers],
-  'teacher-mystery': ['선생님', ...baseNumbers],
-  mystery: getMysteryNumbers(),
-  'twenty-six': [...baseNumbers],
-  manitto: [...baseNumbers],
-  gumball: [...baseNumbers],
-  pinball: [...baseNumbers],
+  basic: [...baseNumbers], teacher: ['선생님', ...baseNumbers],
+  'teacher-mystery': ['선생님', ...baseNumbers], mystery: getMysteryNumbers(),
+  'twenty-six': [...baseNumbers], manitto: [...baseNumbers],
+  gumball: [...baseNumbers], pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
-  'song-pinball': [...baseNumbers],
+  'song-pinball': [...baseNumbers], 'eleven-song-pinball': ['11'],
 };
 
 const DEFAULT_MODE_OPTIONS =
@@ -180,11 +162,23 @@ function cloneDefaultModeOptions() {
   );
 }
 
+function allowDuplicateItems(mode) {
+  return isElevenOnlyMode(mode) || modeOptions[mode].allowDuplicates;
+}
+
 function isPinballMode(mode) {
 
   return mode === 'pinball' ||
     mode === 'pinball-teacher' ||
-    mode === 'song-pinball';
+    isSongDrawMode(mode);
+}
+
+function isSongDrawMode(mode = currentMode) {
+  return mode === 'song-pinball' || mode === 'eleven-song-pinball';
+}
+
+function isElevenOnlyMode(mode = currentMode) {
+  return mode === 'eleven-song-pinball';
 }
 
 function isDrawStyleLockedMode(mode = currentMode) {
@@ -208,15 +202,9 @@ function getEffectiveDrawStyle() {
   return modeDrawStyles[currentMode] || currentDrawStyle;
 }
 
-function isGumballMode() {
+function isGumballMode() { return getEffectiveDrawStyle() === 'gumball'; }
 
-  return getEffectiveDrawStyle() === 'gumball';
-}
-
-function isPinballDrawStyle() {
-
-  return getEffectiveDrawStyle() === 'pinball';
-}
+function isPinballDrawStyle() { return getEffectiveDrawStyle() === 'pinball'; }
 
 function isTwentySixMode(mode = currentMode) {
   return mode === 'twenty-six';
@@ -619,27 +607,26 @@ function updateDescription() {
       '마니또 모드: 자기 자신이 나오지 않도록 전체를 섞어 서로 한 명씩 비밀 친구를 배정합니다.';
 
   } else if (currentMode === 'gumball') {
-
     descriptionEl.textContent =
       '공 뽑기 모드: 통 안의 공들이 돌아가다가 무작위로 하나가 나옵니다.';
 
   } else if (currentMode === 'pinball') {
-
     descriptionEl.textContent =
       '핀볼! 공이 번호 범퍼를 튕기다가 선택된 번호가 뽑힙니다.';
 
   } else if (currentMode === 'pinball-teacher') {
-
     descriptionEl.textContent =
       '핀볼(선생님) 모드: 선생님 공 포함! 선생님이 당첨될 수도?';
 
   } else if (currentMode === 'song-pinball') {
-
     descriptionEl.textContent =
       '노래추첨 핀볼 모드: 당첨 번호가 듣고 싶은 노래를 입력하면 YouTube에서 찾아 재생합니다.';
 
-  } else {
+  } else if (currentMode === 'eleven-song-pinball') {
+    descriptionEl.textContent =
+      '11번 노래추첨 핀볼 모드: 모든 항목이 11번이며, 11번이 듣고 싶은 노래를 찾아 재생합니다.';
 
+  } else {
     descriptionEl.textContent =
       `1번~26번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, ${getTodayNumber()}번이 나오면...?`;
   }
@@ -988,6 +975,8 @@ function renderAdminOptions() {
 
   adminOptions.innerHTML = '';
 
+  if (isElevenOnlyMode(mode)) return;
+
   const duplicateLabel =
     document.createElement('label');
 
@@ -1046,12 +1035,16 @@ function validateAdminItems(items, mode) {
   }
 
   const seen = new Set();
-  const allowDuplicates = modeOptions[mode].allowDuplicates;
+  const allowDuplicates = allowDuplicateItems(mode);
 
   for (const item of items) {
 
     if (!item) {
       return '빈 값으로 변경할 수 없습니다.';
+    }
+
+    if (isElevenOnlyMode(mode) && item !== '11') {
+      return '이 모드에는 11번만 넣을 수 있습니다.';
     }
 
     if (!allowDuplicates && seen.has(item)) {
@@ -1210,7 +1203,7 @@ function commitAdminPoolChange(mode) {
   modePools[mode] =
     normalizeItems(
       modePools[mode],
-      modeOptions[mode].allowDuplicates
+      allowDuplicateItems(mode)
     );
 
   syncModeOptions(mode);
@@ -1239,8 +1232,13 @@ function addAdminItem(value) {
     return;
   }
 
+  if (isElevenOnlyMode(mode) && item !== '11') {
+    setAdminManageError('이 모드에는 11번만 추가할 수 있습니다.');
+    return;
+  }
+
   if (
-    !modeOptions[mode].allowDuplicates &&
+    !allowDuplicateItems(mode) &&
     modePools[mode].includes(item)
   ) {
     setAdminManageError('이미 있는 값입니다.');
@@ -1273,11 +1271,17 @@ function renameAdminItem(index, value) {
     return;
   }
 
+  if (isElevenOnlyMode(mode) && item !== '11') {
+    setAdminManageError('이 모드에는 11번만 넣을 수 있습니다.');
+    renderAdminList();
+    return;
+  }
+
   const duplicateIndex =
     modePools[mode].findIndex((entry) => entry === item);
 
   if (
-    !modeOptions[mode].allowDuplicates &&
+    !allowDuplicateItems(mode) &&
     duplicateIndex !== -1 &&
     duplicateIndex !== index
   ) {
@@ -1425,7 +1429,7 @@ function drawNumbers() {
       terminateProgram,
       shouldTerminate: shouldTerminateSelection,
       beforeShowResult(entries) {
-        if (currentMode !== 'song-pinball') {
+        if (!isSongDrawMode()) {
           return Promise.resolve();
         }
 
@@ -1708,7 +1712,7 @@ function drawNumbers() {
         drawButton.disabled = false;
       };
 
-      if (currentMode === 'song-pinball') {
+      if (isSongDrawMode()) {
         requestSongForResult(selectedEntries, {
           getEntryItem,
           getResultLabel,
@@ -1772,7 +1776,7 @@ function applyPinballResult(selected) {
     }
   }
 
-  if (currentMode === 'song-pinball') {
+  if (isSongDrawMode()) {
     requestSongForResult(selected, {
       getEntryItem,
       getResultLabel,
