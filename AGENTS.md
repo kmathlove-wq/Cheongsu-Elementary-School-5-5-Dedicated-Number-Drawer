@@ -17,7 +17,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 │   ├── settings.js # 일반 설정창/뽑기 방식/효과음 설정
 │   ├── song.js     # 노래추첨 핀볼 YouTube 검색/선택/재생
 │   ├── sound.js    # Web Audio 효과음
-│   └── terminate.js # 종료 화면 처리
+│   └── terminate.js # 종료 화면/스페이스 폭발 종료
 ├── tests/smoke.mjs # 정적 스모크 검사
 ├── styles/app.css  # 전체 스타일
 ├── style.css       # 스타일 진입점
@@ -54,6 +54,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 ## 관리자 모드
 - 일반 UI에는 표시하지 않는다.
 - `Control` 키를 450ms 안에 빠르게 두 번 누르면 관리자 모드가 열린다.
+- 어떤 상황에서든 스페이스를 430ms 안에 빠르게 두 번 누르면 `사진/폭발 짤.png` 종료 화면과 폭발음이 나온다.
 - 모바일에서는 `기본` 모드 버튼을 900ms 안에 빠르게 세 번 터치하면 관리자 모드가 열린다.
 - YouTube 노래 재생창이 열려 있는 동안에는 관리자 모드가 열리지 않는다.
 - 비밀번호는 `1+1=1`.

@@ -96,11 +96,12 @@ function playTone({
   type = 'sine',
   volume = 0.08,
   slideTo = null,
+  force = false,
 }) {
 
   const ac = getAudioContext();
 
-  if (!soundEnabled || !ac) return;
+  if ((!soundEnabled && !force) || !ac) return;
 
   const start = ac.currentTime + delay;
   const osc = ac.createOscillator();
@@ -220,5 +221,41 @@ export function playGumballDropSound() {
     duration: 0.06,
     type: 'square',
     volume: 0.035 * theme.volume,
+  });
+}
+
+export function playExplosionSound() {
+
+  playTone({
+    frequency: 58,
+    duration: 0.95,
+    type: 'sawtooth',
+    volume: 0.22,
+    slideTo: 24,
+    force: true,
+  });
+
+  [220, 130, 91, 64, 310, 48].forEach((frequency, index) => {
+    playTone({
+      frequency,
+      delay: index * 0.045,
+      duration: 0.18,
+      type: index % 2 ? 'square' : 'sawtooth',
+      volume: 0.11,
+      slideTo: Math.max(22, frequency * 0.42),
+      force: true,
+    });
+  });
+
+  [720, 980, 540, 1240, 360, 840].forEach((frequency, index) => {
+    playTone({
+      frequency,
+      delay: 0.08 + index * 0.035,
+      duration: 0.08,
+      type: 'square',
+      volume: 0.065,
+      slideTo: frequency * 0.55,
+      force: true,
+    });
   });
 }

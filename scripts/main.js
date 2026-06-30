@@ -37,7 +37,10 @@ import {
   requestSongForResult,
 } from './song.js';
 
-import { terminateProgram } from './terminate.js';
+import {
+  setupMemeTerminateShortcut,
+  terminateProgram,
+} from './terminate.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 
 const drawButton = document.getElementById('drawButton');
@@ -1991,5 +1994,7 @@ setupAppSettings({
 });
 
 setupManittoMode({ numberGrid, bigOverlay, bigNumber, getResultLabel, adjustFontSize, playSound });
+
+setupMemeTerminateShortcut();
 
 openAppSettings({ required: true });
