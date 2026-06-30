@@ -19,8 +19,13 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 │   ├── sound.js    # Web Audio 효과음
 │   └── terminate.js # 종료 화면/스페이스 폭발 종료
 ├── tests/smoke.mjs # 정적 스모크 검사
-├── styles/app.css  # 전체 스타일
-├── style.css       # 스타일 진입점
+├── styles/         # CSS 모듈과 스타일 진입점
+│   ├── app.css     # CSS import 진입점
+│   ├── base.css    # 기본 레이아웃/번호판
+│   ├── gumball.css # 공 뽑기 스타일/애니메이션
+│   ├── modes.css   # 모드 선택 UI
+│   ├── dialogs.css # 관리자/설정/노래 모달
+│   └── terminate.css # 종료/병맛모드 연출
 ├── package.json    # `npm test` 스모크 검사
 ├── 사진/logo.png   # 파비콘 및 로고
 ├── CNAME           # 커스텀 도메인 설정
@@ -103,7 +108,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - `settings.js`: 접속 중 뽑기 방식과 효과음 설정, 미리듣기 처리.
 - `song.js`: 노래추첨 핀볼의 노래 입력, YouTube 후보 검색/필터링, 후보 선택, 재생창.
 - `sound.js`: 일반 뽑기, 핀볼, 공 뽑기에서 쓰는 Web Audio 효과음.
-- `styles/app.css`: 카드/버튼/번호 셀/관리자 모달/오버레이/핀볼 모드 활성 스타일.
+- `styles/app.css`: CSS import 진입점. 실제 스타일은 `styles/*.css` 모듈에 나눈다.
 - `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
 - `tests/smoke.mjs`: HTML 진입점과 JS 모듈 문법을 확인하는 무의존성 검사.
 

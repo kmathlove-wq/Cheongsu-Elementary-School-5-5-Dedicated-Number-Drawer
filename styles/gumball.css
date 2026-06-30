@@ -1,0 +1,553 @@
+.gumball-stage {
+
+  display: grid;
+
+  place-items: center;
+
+  min-height: 430px;
+
+  margin-top: 18px;
+
+  padding: 18px 8px 8px;
+}
+
+.gumball-stage[hidden] {
+
+  display: none;
+}
+
+.gumball-machine {
+
+  position: relative;
+
+  width: min(360px, 88vw);
+
+  height: 390px;
+}
+
+.gumball-top {
+
+  position: absolute;
+
+  top: 0;
+
+  left: 50%;
+
+  width: 92px;
+
+  height: 42px;
+
+  border-radius: 28px 28px 12px 12px;
+
+  background:
+    linear-gradient(180deg, #ff315a, #c91435);
+
+  transform: translateX(-50%);
+
+  box-shadow:
+    inset 0 8px 12px rgba(255,255,255,0.24),
+    0 8px 18px rgba(201,20,53,0.24);
+}
+
+.gumball-bowl {
+
+  position: absolute;
+
+  top: 28px;
+
+  left: 50%;
+
+  width: 280px;
+
+  height: 245px;
+
+  overflow: hidden;
+
+  border: 5px solid #5d6f85;
+
+  border-radius: 48% 48% 42% 42%;
+
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,0.92), transparent 18%),
+    linear-gradient(180deg, rgba(219,252,255,0.9), rgba(184,239,238,0.72));
+
+  transform: translateX(-50%);
+
+  box-shadow:
+    inset 0 14px 30px rgba(255,255,255,0.58),
+    inset 0 -24px 40px rgba(58,116,143,0.2),
+    0 18px 34px rgba(23,45,92,0.14);
+}
+
+.gumball-ball {
+
+  position: absolute;
+
+  left: 50%;
+
+  top: 52%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 46px;
+
+  height: 46px;
+
+  --angle: 0deg;
+  --angle-inverse: 0deg;
+  --angle-end: 360deg;
+  --angle-end-inverse: -360deg;
+  --rest-x: 0px;
+  --rest-y: 48px;
+  --radius: 72px;
+  --size: 1;
+  --wobble-x: 12px;
+  --wobble-y: 10px;
+  --gravity-pull: 24px;
+  --spin-start: 0deg;
+  --spin-end: 360deg;
+  --orbit-duration: 1.1s;
+  --tumble-duration: 0.62s;
+  --bounce-duration: 0.76s;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(circle at 30% 24%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(145deg, #8ec5fc, #e0c3fc);
+
+  color: #10162e;
+
+  font-weight: 900;
+
+  font-size: 0.95rem;
+
+  line-height: 1;
+
+  overflow: hidden;
+
+  padding: 4px;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  transform:
+    translate(-50%, -50%)
+    translate(var(--rest-x), var(--rest-y))
+    rotate(var(--spin-start))
+    scale(var(--size));
+
+  box-shadow:
+    inset -8px -10px 16px rgba(25,33,72,0.16),
+    0 8px 12px rgba(25,33,72,0.12);
+}
+
+.gumball-ball::before {
+
+  content: '';
+
+  position: absolute;
+
+  inset: 8px auto auto 9px;
+
+  width: 14px;
+
+  height: 10px;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,0.78);
+
+  pointer-events: none;
+}
+
+.gumball-ball:nth-child(4n + 1) {
+  background:
+    radial-gradient(circle at 30% 24%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(145deg, #ff7b8a, #ffcf5f);
+}
+
+.gumball-ball:nth-child(4n + 2) {
+  background:
+    radial-gradient(circle at 30% 24%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(145deg, #66ead5, #77a7ff);
+}
+
+.gumball-ball:nth-child(4n + 3) {
+  background:
+    radial-gradient(circle at 30% 24%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(145deg, #c8ff6a, #ffd166);
+}
+
+.gumball-ball.teacher-ball,
+.gumball-output.teacher-ball {
+
+  background:
+    radial-gradient(circle at 30% 24%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(145deg, #ffe58a, #ffad33);
+}
+
+.gumball-neck {
+
+  position: absolute;
+
+  top: 256px;
+
+  left: 50%;
+
+  width: 112px;
+
+  height: 34px;
+
+  border-radius: 18px 18px 8px 8px;
+
+  background: #d8183f;
+
+  transform: translateX(-50%);
+}
+
+.gumball-base {
+
+  position: absolute;
+
+  bottom: 0;
+
+  left: 50%;
+
+  width: 250px;
+
+  height: 126px;
+
+  border-radius: 24px 24px 10px 10px;
+
+  background:
+    linear-gradient(180deg, #ff2b55, #c71232);
+
+  transform: translateX(-50%);
+
+  box-shadow:
+    inset 0 12px 18px rgba(255,255,255,0.2),
+    0 18px 30px rgba(58,27,61,0.22);
+}
+
+.gumball-door {
+
+  position: absolute;
+
+  left: 42px;
+
+  bottom: 0;
+
+  width: 62px;
+
+  height: 74px;
+
+  border-radius: 34px 34px 0 0;
+
+  background:
+    linear-gradient(180deg, #671825, #2d1017);
+}
+
+.gumball-door::after {
+
+  content: '';
+
+  position: absolute;
+
+  left: 50%;
+
+  bottom: 16px;
+
+  width: 48px;
+
+  height: 18px;
+
+  border-radius: 999px;
+
+  background:
+    radial-gradient(circle at 50% 60%, #0f0508 0 44%, #4a1420 46% 100%);
+
+  transform: translateX(-50%);
+
+  box-shadow:
+    inset 0 5px 8px rgba(0,0,0,0.55),
+    0 3px 0 rgba(255,255,255,0.12);
+}
+
+.gumball-handle {
+
+  position: absolute;
+
+  right: 44px;
+
+  top: 34px;
+
+  width: 54px;
+
+  height: 54px;
+
+  border: 6px solid #9b132b;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(circle at center, #ffb6c2 0 28%, #e62a4f 30% 100%);
+
+  cursor: pointer;
+
+  touch-action: none;
+
+  user-select: none;
+
+  box-shadow:
+    inset 0 5px 10px rgba(255,255,255,0.24),
+    0 8px 18px rgba(43,17,35,0.22);
+}
+
+.gumball-handle::after {
+
+  content: '';
+
+  position: absolute;
+
+  top: 50%;
+
+  left: 50%;
+
+  width: 44px;
+
+  height: 8px;
+
+  border-radius: 999px;
+
+  background: #7d1024;
+
+  transform: translate(-50%, -50%) rotate(25deg);
+}
+
+.gumball-output {
+
+  position: absolute;
+
+  right: 0;
+
+  bottom: 18px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 66px;
+
+  height: 66px;
+
+  border-radius: 50%;
+
+  --exit-start-x: -188px;
+  --exit-start-y: 24px;
+  --exit-mid-x: -108px;
+  --exit-mid-y: 24px;
+  --exit-end-x: 18px;
+  --exit-end-y: -10px;
+
+  background:
+    radial-gradient(circle at 30% 24%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(145deg, #8ec5fc, #e0c3fc);
+
+  color: #10162e;
+
+  font-weight: 900;
+
+  opacity: 0;
+
+  overflow: hidden;
+
+  padding: 6px;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  transform: translate(-58px, -78px) scale(0.4);
+
+  box-shadow:
+    inset -8px -10px 16px rgba(25,33,72,0.16),
+    0 14px 24px rgba(25,33,72,0.24);
+}
+
+.gumball-output.show {
+
+  opacity: 1;
+
+  transform:
+    translate(var(--exit-end-x), var(--exit-end-y))
+    rotate(360deg)
+    scale(1);
+
+  transition:
+    opacity 0.12s ease;
+}
+
+.gumball-output.rolling {
+
+  animation:
+    gumball-exit 0.86s cubic-bezier(.22,.82,.22,1) both;
+}
+
+.gumball-stage.is-spinning .gumball-ball {
+
+  animation:
+    gumball-orbit var(--orbit-duration) linear infinite,
+    gumball-wobble var(--tumble-duration) ease-in-out infinite,
+    gumball-bounce var(--bounce-duration) ease-in-out infinite;
+
+  animation-delay: var(--delay);
+}
+
+.gumball-stage.is-spinning .gumball-handle {
+
+  animation: handle-turn 0.72s ease-in-out infinite;
+}
+
+.gumball-handle.is-holding {
+
+  animation: handle-full-turn 0.85s linear forwards;
+}
+
+@keyframes gumball-orbit {
+
+  0% {
+    transform:
+      translate(-50%, -50%)
+      translate(var(--rest-x), var(--rest-y))
+      rotate(0deg)
+      scale(var(--size));
+  }
+
+  18% {
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--angle))
+      translateX(var(--radius))
+      rotate(var(--angle-inverse))
+      translate(0, 0)
+      rotate(calc(var(--spin-end) * 0.18))
+      scale(var(--size));
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--angle-end))
+      translateX(var(--radius))
+      rotate(var(--angle-end-inverse))
+      translate(0, 0)
+      rotate(var(--spin-end))
+      scale(var(--size));
+  }
+}
+
+@keyframes gumball-wobble {
+
+  0%,
+  100% {
+    margin-left: 0;
+  }
+
+  35% {
+    margin-left: var(--wobble-x);
+  }
+
+  70% {
+    margin-left: calc(var(--wobble-x) * -0.7);
+  }
+}
+
+@keyframes gumball-bounce {
+
+  0%,
+  100% {
+    margin-top: var(--gravity-pull);
+  }
+
+  45% {
+    margin-top:
+      calc(var(--gravity-pull) - var(--wobble-y));
+  }
+
+  72% {
+    margin-top:
+      calc(var(--gravity-pull) + var(--wobble-y) * 0.8);
+  }
+}
+
+@keyframes handle-turn {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(140deg);
+  }
+}
+
+@keyframes handle-full-turn {
+
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gumball-exit {
+
+  0% {
+    opacity: 0;
+    transform:
+      translate(var(--exit-start-x), var(--exit-start-y))
+      rotate(0deg)
+      scale(0.42);
+  }
+
+  18% {
+    opacity: 1;
+    transform:
+      translate(var(--exit-start-x), var(--exit-start-y))
+      rotate(30deg)
+      scale(0.62);
+  }
+
+  48% {
+    transform:
+      translate(var(--exit-mid-x), var(--exit-mid-y))
+      rotate(190deg)
+      scale(0.86);
+  }
+
+  72% {
+    transform:
+      translate(calc(var(--exit-end-x) - 18px), calc(var(--exit-end-y) + 8px))
+      rotate(315deg)
+      scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform:
+      translate(var(--exit-end-x), var(--exit-end-y))
+      rotate(360deg)
+      scale(1);
+  }
+}

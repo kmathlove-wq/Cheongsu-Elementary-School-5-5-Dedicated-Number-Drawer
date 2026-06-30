@@ -1,0 +1,72 @@
+.mode-btn[data-mode="pinball"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #0d0d2e,
+      #3d006e
+    );
+
+  color: #c084fc;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(123, 47, 247, 0.5);
+}
+
+.mode-btn[data-mode="pinball-teacher"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #0d0d2e,
+      #5a3d00
+    );
+
+  color: #ffe066;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(255, 200, 0, 0.5);
+}
+
+.mode-btn[data-mode="song-pinball"].active,
+.mode-btn[data-mode="eleven-song-pinball"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #103a2e,
+      #008c7a
+    );
+
+  color: #b8fff2;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(0, 180, 160, 0.45);
+}
+
+.mode-btn[data-mode="gumball"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #d51d3f,
+      #2ea6b2
+    );
+
+  color: white;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(213, 29, 63, 0.38);
+}

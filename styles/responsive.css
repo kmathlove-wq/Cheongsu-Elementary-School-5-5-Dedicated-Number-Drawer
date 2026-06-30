@@ -1,0 +1,179 @@
+@media (max-width: 600px) {
+
+  .number-grid {
+
+    grid-template-columns:
+      repeat(4, 1fr);
+  }
+
+  .number-display {
+
+    font-size: 2rem;
+  }
+
+  .gumball-stage {
+
+    min-height: 350px;
+
+    padding-top: 8px;
+  }
+
+  .gumball-machine {
+
+    width: min(300px, 86vw);
+
+    height: 330px;
+  }
+
+  .gumball-bowl {
+
+    width: 230px;
+
+    height: 205px;
+  }
+
+  .gumball-ball {
+
+    width: 38px;
+
+    height: 38px;
+
+    font-size: 0.82rem;
+  }
+
+  .gumball-neck {
+
+    top: 218px;
+  }
+
+  .gumball-base {
+
+    width: 212px;
+
+    height: 108px;
+  }
+
+  .gumball-handle {
+
+    right: 34px;
+
+    top: 30px;
+
+    width: 48px;
+
+    height: 48px;
+  }
+
+  .gumball-output {
+
+    width: 58px;
+
+    height: 58px;
+
+    --exit-start-x: -152px;
+    --exit-start-y: 18px;
+    --exit-mid-x: -86px;
+    --exit-mid-y: 18px;
+    --exit-end-x: 8px;
+    --exit-end-y: -6px;
+
+    transform:
+      translate(var(--exit-start-x), var(--exit-start-y))
+      scale(0.4);
+  }
+
+  .gumball-output.show {
+
+    transform:
+      translate(var(--exit-end-x), var(--exit-end-y))
+      rotate(360deg)
+      scale(1);
+  }
+
+  .admin-panel {
+
+    padding: 22px 18px;
+  }
+
+  .admin-row {
+
+    grid-template-columns:
+      minmax(0, 1fr) 84px 62px 62px;
+  }
+
+  .manitto-exclude-list {
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-row .admin-item-input {
+
+    grid-column: 1 / -1;
+  }
+
+  .admin-row button,
+  .admin-add-form button {
+
+    width: 100%;
+  }
+
+  .admin-add-form {
+
+    grid-template-columns: 1fr;
+  }
+
+  .song-actions {
+
+    grid-template-columns: 1fr;
+  }
+
+  .song-panel {
+
+    width: min(100%, calc(100vw - 24px));
+
+    max-height: 88vh;
+  }
+
+  .song-candidate {
+
+    padding: 14px;
+  }
+
+  .song-candidate strong {
+
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    white-space: normal;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+  }
+
+  .youtube-player {
+
+    width: calc(100vw - 16px);
+
+    border-radius: 10px;
+  }
+
+  .youtube-player-header {
+
+    grid-template-columns: minmax(0, 1fr) 36px;
+
+    padding: 9px 10px;
+  }
+
+  .youtube-player-header strong {
+
+    white-space: normal;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+  }
+}

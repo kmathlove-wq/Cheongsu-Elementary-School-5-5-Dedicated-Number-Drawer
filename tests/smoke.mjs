@@ -13,22 +13,41 @@ const files = [
   'scripts/terminate.js',
 ];
 
+const styleFiles = [
+  'styles/app.css',
+  'styles/base.css',
+  'styles/gumball.css',
+  'styles/overlays.css',
+  'styles/modes.css',
+  'styles/dialogs.css',
+  'styles/responsive.css',
+  'styles/terminate.css',
+  'styles/mode-themes.css',
+];
+
 const html = readFileSync('index.html', 'utf8');
 
 if (!html.includes('src="scripts/main.js"')) {
   throw new Error('index.html must load scripts/main.js');
 }
 
-if (!html.includes('href="style.css"')) {
-  throw new Error('index.html must load style.css');
+if (!html.includes('href="styles/app.css"')) {
+  throw new Error('index.html must load styles/app.css');
 }
 
-if (!readFileSync('style.css', 'utf8').includes('./styles/app.css')) {
-  throw new Error('style.css must import styles/app.css');
-}
+const appCss = readFileSync('styles/app.css', 'utf8');
 
-if (!existsSync('styles/app.css')) {
-  throw new Error('Missing styles/app.css');
+for (const file of styleFiles) {
+  if (!existsSync(file)) {
+    throw new Error(`Missing ${file}`);
+  }
+
+  if (
+    file !== 'styles/app.css' &&
+    !appCss.includes(`./${file.replace('styles/', '')}`)
+  ) {
+    throw new Error(`styles/app.css must import ${file}`);
+  }
 }
 
 for (const file of files) {

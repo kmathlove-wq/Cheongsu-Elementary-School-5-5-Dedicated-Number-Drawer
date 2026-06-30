@@ -1,0 +1,66 @@
+.big-overlay {
+
+  position: fixed;
+
+  inset: 0;
+
+  display: grid;
+
+  place-items: center;
+
+  backdrop-filter: blur(6px);
+
+  background: rgba(0,0,0,0.3);
+
+  z-index: 1000;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition: 0.25s;
+}
+
+.big-overlay.show {
+
+  opacity: 1;
+
+  pointer-events: auto;
+}
+
+.big-number {
+
+  width: min(92vw, 980px);
+
+  min-height: 300px;
+
+  border-radius: 28px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 30px;
+
+  font-size:
+    clamp(3rem, 10vw, 8rem);
+
+  font-weight: 900;
+
+  color: white;
+
+  text-align: center;
+
+  word-break: break-word;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7b2ff7 0%,
+      #ff6b6b 60%
+    );
+
+  box-shadow:
+    0 60px 120px
+    rgba(120,40,200,0.22);
+}
