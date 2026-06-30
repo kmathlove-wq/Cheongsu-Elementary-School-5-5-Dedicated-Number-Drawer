@@ -20,7 +20,9 @@ export function terminateProgram(options = {}) {
     variant === 'meme'
   );
 
-  window.close();
+  if (variant !== 'meme') {
+    window.close();
+  }
 
   setTimeout(() => {
     terminateScreen?.classList.add('show');
