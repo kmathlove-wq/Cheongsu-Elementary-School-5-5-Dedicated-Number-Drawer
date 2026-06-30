@@ -1,5 +1,7 @@
 let pinballRafId = null;
 
+let pinballFinalizeTimer = null;
+
 let stopPinball = false;
 
 export function stopPinballMode() {
@@ -9,6 +11,11 @@ export function stopPinballMode() {
   if (pinballRafId) {
     cancelAnimationFrame(pinballRafId);
     pinballRafId = null;
+  }
+
+  if (pinballFinalizeTimer) {
+    clearTimeout(pinballFinalizeTimer);
+    pinballFinalizeTimer = null;
   }
 
   const pinballOv =
@@ -52,6 +59,7 @@ export function drawNumbersPinball({
   drawButton.disabled = true;
 
   stopPinball = false;
+  pinballFinalizeTimer = null;
 
   const overlay =
     document.getElementById('pinballOverlay');
@@ -566,7 +574,8 @@ export function drawNumbersPinball({
             !doneHandled
           ) {
             doneHandled = true;
-            setTimeout(finalize, 1600);
+            pinballFinalizeTimer =
+              setTimeout(finalize, 1600);
           }
         }
       }
@@ -1063,6 +1072,8 @@ export function drawNumbersPinball({
   }
 
   function finalize() {
+
+    pinballFinalizeTimer = null;
 
     if (stopPinball) return;
 

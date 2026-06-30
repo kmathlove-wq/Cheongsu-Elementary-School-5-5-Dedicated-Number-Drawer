@@ -2058,8 +2058,59 @@ button:hover {
     repeating-conic-gradient(from 12deg, #ff004c 0 7deg, #ffe100 7deg 13deg, #00e5ff 13deg 19deg, #111 19deg 25deg);
 
   animation:
+    meme-long-blast 5.6s cubic-bezier(.2,.8,.12,1) both,
     meme-screen-shake 0.12s steps(2, end) infinite,
     meme-hue-spin 0.42s linear infinite;
+}
+
+.meme-terminated .terminate-screen::before,
+.meme-terminated .terminate-screen::after {
+
+  content: 'BOOM';
+
+  position: absolute;
+
+  z-index: 0;
+
+  color: #fff200;
+
+  font-size: clamp(3rem, 18vw, 12rem);
+
+  font-weight: 1000;
+
+  letter-spacing: 0;
+
+  text-shadow:
+    8px 0 #ff004c,
+    -8px 0 #00e5ff,
+    0 12px #111;
+
+  pointer-events: none;
+
+  animation:
+    meme-boom-float 4.8s cubic-bezier(.16,.8,.2,1) both;
+}
+
+.meme-terminated .terminate-screen::before {
+
+  top: 4%;
+
+  left: -4%;
+
+  transform: rotate(-18deg);
+}
+
+.meme-terminated .terminate-screen::after {
+
+  right: -5%;
+
+  bottom: 2%;
+
+  color: #00e5ff;
+
+  transform: rotate(14deg);
+
+  animation-delay: 0.5s;
 }
 
 .terminate-card {
@@ -2089,6 +2140,10 @@ button:hover {
 
 .meme-terminated .terminate-card {
 
+  position: relative;
+
+  z-index: 1;
+
   width: min(86vw, 680px);
 
   padding: 0;
@@ -2109,7 +2164,8 @@ button:hover {
   transform: rotate(-2deg);
 
   animation:
-    meme-card-wobble 0.18s steps(2, end) infinite;
+    meme-card-arrival 5.2s cubic-bezier(.16,.8,.2,1) both,
+    meme-card-wobble 0.18s steps(2, end) 5.2s infinite;
 }
 
 .meme-terminated .terminate-card strong {
@@ -2130,7 +2186,8 @@ button:hover {
     0 6px #111;
 
   animation:
-    meme-text-jump 0.16s steps(2, end) infinite;
+    meme-title-meltdown 5.2s cubic-bezier(.16,.8,.2,1) both,
+    meme-text-jump 0.16s steps(2, end) 5.2s infinite;
 }
 
 .meme-terminated .terminate-meme {
@@ -2149,7 +2206,8 @@ button:hover {
     hue-rotate(8deg);
 
   animation:
-    meme-image-zoom 0.28s steps(2, end) infinite;
+    meme-image-meltdown 5.2s cubic-bezier(.16,.8,.2,1) both,
+    meme-image-zoom 0.28s steps(2, end) 5.2s infinite;
 }
 
 .meme-terminated .terminate-meme-text {
@@ -2180,6 +2238,57 @@ button:hover {
   100% { transform: translate(7px, 5px) rotate(0.4deg); }
 }
 
+@keyframes meme-long-blast {
+
+  0% {
+    filter: brightness(3) saturate(3);
+    transform: scale(1.08);
+  }
+
+  12% {
+    filter: brightness(6) saturate(4) contrast(2);
+    transform: scale(1.18) rotate(2deg);
+  }
+
+  28% {
+    filter: brightness(1.1) saturate(2.8) contrast(1.5);
+    transform: scale(1) rotate(-1deg);
+  }
+
+  62% {
+    filter: brightness(1.7) saturate(3.4) hue-rotate(160deg);
+    transform: scale(1.04) rotate(1deg);
+  }
+
+  100% {
+    filter: brightness(1.25) saturate(2.4);
+    transform: scale(1);
+  }
+}
+
+@keyframes meme-boom-float {
+
+  0% {
+    opacity: 0;
+    transform: translateY(70px) rotate(-25deg) scale(0.2);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translateY(0) rotate(12deg) scale(1.25);
+  }
+
+  48% {
+    opacity: 0.9;
+    transform: translateY(-24px) rotate(-8deg) scale(1);
+  }
+
+  100% {
+    opacity: 0.2;
+    transform: translateY(-80px) rotate(28deg) scale(1.6);
+  }
+}
+
 @keyframes meme-hue-spin {
 
   0% { filter: hue-rotate(0deg) saturate(1.5); }
@@ -2193,6 +2302,36 @@ button:hover {
   100% { transform: rotate(-1deg) scale(1.01); }
 }
 
+@keyframes meme-card-arrival {
+
+  0% {
+    opacity: 0;
+    transform: translateY(120vh) rotate(22deg) scale(0.2);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translateY(-8vh) rotate(-18deg) scale(1.25);
+  }
+
+  36% {
+    transform: translateY(2vh) rotate(8deg) scale(0.92);
+  }
+
+  58% {
+    transform: translateY(-2vh) rotate(-5deg) scale(1.08);
+  }
+
+  78% {
+    transform: translateY(0) rotate(3deg) scale(1.02);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotate(-2deg) scale(1);
+  }
+}
+
 @keyframes meme-text-jump {
 
   0% { transform: translateX(-4px) skewX(-5deg); }
@@ -2200,11 +2339,67 @@ button:hover {
   100% { transform: translateX(-2px) skewX(-3deg); }
 }
 
+@keyframes meme-title-meltdown {
+
+  0% {
+    letter-spacing: 0;
+    transform: scaleX(0.5) skewX(18deg);
+  }
+
+  22% {
+    letter-spacing: 0;
+    transform: scaleX(1.25) skewX(-16deg);
+  }
+
+  46% {
+    transform: translateY(-12px) scale(1.08) skewX(12deg);
+  }
+
+  72% {
+    transform: translateY(8px) scale(0.96) skewX(-8deg);
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
 @keyframes meme-image-zoom {
 
   0% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.08) rotate(1deg); }
   100% { transform: scale(1.03) rotate(-1deg); }
+}
+
+@keyframes meme-image-meltdown {
+
+  0% {
+    opacity: 0;
+    transform: scale(0.25) rotate(35deg);
+    filter: saturate(6) contrast(3) blur(5px);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1.22) rotate(-10deg);
+    filter: saturate(4) contrast(2) blur(0);
+  }
+
+  42% {
+    transform: scale(0.9) rotate(7deg);
+    filter: saturate(3.2) contrast(1.8) hue-rotate(80deg);
+  }
+
+  70% {
+    transform: scale(1.08) rotate(-4deg);
+    filter: saturate(3) contrast(1.5) hue-rotate(210deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+    filter: saturate(2.6) contrast(1.45) hue-rotate(8deg);
+  }
 }
 
 .mode-btn[data-mode="pinball"].active {

@@ -1,6 +1,7 @@
 let audioCtx = null;
 let soundEnabled = true;
 let soundTheme = 'bright';
+const activeSoundNodes = new Set();
 
 const SOUND_THEMES = {
   bright: {
@@ -107,6 +108,11 @@ function playTone({
   const osc = ac.createOscillator();
   const g = ac.createGain();
 
+  activeSoundNodes.add(osc);
+  osc.addEventListener('ended', () => {
+    activeSoundNodes.delete(osc);
+  });
+
   osc.connect(g);
   g.connect(ac.destination);
 
@@ -132,6 +138,19 @@ function playTone({
 
   osc.start(start);
   osc.stop(start + duration + 0.02);
+}
+
+export function stopAllSounds() {
+
+  activeSoundNodes.forEach((node) => {
+    try {
+      node.stop();
+    } catch (e) {
+      // 이미 멈춘 노드는 무시한다.
+    }
+  });
+
+  activeSoundNodes.clear();
 }
 
 export function playSound() {
