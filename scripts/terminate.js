@@ -14,17 +14,18 @@ export function terminateProgram(options = {}) {
     variant = 'default',
   } = options;
 
+  document.body.classList.add('terminated');
+  document.body.classList.toggle(
+    'meme-terminated',
+    variant === 'meme'
+  );
+
   window.close();
 
   setTimeout(() => {
-    document.body.classList.add('terminated');
-    document.body.classList.toggle(
-      'meme-terminated',
-      variant === 'meme'
-    );
     terminateScreen?.classList.add('show');
     terminateScreen?.setAttribute('aria-hidden', 'false');
-  }, 300);
+  }, variant === 'meme' ? 0 : 300);
 }
 
 export function setupMemeTerminateShortcut() {
@@ -37,16 +38,18 @@ export function setupMemeTerminateShortcut() {
 
     if (event.repeat || event.code !== 'Space') return;
 
+    event.preventDefault();
+    event.stopPropagation();
+
     const now = Date.now();
 
     if (now - lastSpacePress <= SPACE_TERMINATE_WINDOW) {
       lastSpacePress = 0;
-      event.preventDefault();
       playExplosionSound();
       terminateProgram({ variant: 'meme' });
       return;
     }
 
     lastSpacePress = now;
-  });
+  }, true);
 }
