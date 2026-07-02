@@ -19,6 +19,7 @@ let memeShortcutReady = false;
 
 function stopActiveWork() {
 
+  document.dispatchEvent(new CustomEvent('app:stop-active-work'));
   stopPinballMode();
   resetGumballMode();
   closeSongRequest();

@@ -2,18 +2,15 @@ import {
   drawNumbersPinball,
   stopPinballMode,
 } from './pinball.js';
-
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
 } from './gumball.js';
-
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
-
 import {
   playBumperBeep,
   playDrawTick,
@@ -21,14 +18,12 @@ import {
   playGumballTurnSound,
   playSound,
 } from './sound.js';
-
 import {
   closeAppSettings,
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
 } from './settings.js';
-
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -36,7 +31,6 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-
 import {
   setupMemeTerminateShortcut,
   terminateProgram,
@@ -83,6 +77,7 @@ const MOBILE_ADMIN_TAP_COUNT = 3;
 let basicModeTapCount = 0;
 let lastBasicModeTap = 0;
 let gumballHandleReady = false;
+let activeDrawInterval = null;
 
 const MODE_LABELS = {
   basic: '기본', teacher: '선생님', 'teacher-mystery': '선생님(?)',
@@ -1345,36 +1340,38 @@ function adjustFontSize(text) {
 }
 
 function showPinballResult(selected) {
-
   const resultText =
     selected
       .map((entry) => getEntryItem(entry))
       .join(', ');
-
   numberDisplay.textContent = resultText;
-
   numberDisplay.style.fontSize =
     adjustFontSize(resultText);
-
   numberDisplay.classList.remove(
     'placeholder', 'notice'
   );
-
   bigNumber.textContent = resultText;
-
   bigNumber.style.fontSize =
     adjustFontSize(resultText);
-
   bigOverlay.classList.add('show');
-
   updatePickedNumbers();
-
   playSound();
 }
 
-function drawNumbers() {
+function stopBasicDrawAnimation() {
+  if (activeDrawInterval) {
+    clearInterval(activeDrawInterval);
+    activeDrawInterval = null;
+  }
+  document
+    .querySelectorAll('.number-cell.spark')
+    .forEach((cell) => cell.classList.remove('spark'));
+  drawButton.disabled = false;
+}
 
+function drawNumbers() {
   if (isBlockingDialogOpen()) return;
+  stopBasicDrawAnimation();
 
   if (isManittoMode()) {
     drawManitto({
@@ -1514,7 +1511,6 @@ function drawNumbers() {
       prev.classList.remove('spark');
     }
 
-    // dataset.num은 항상 문자열이므로 문자열로 비교
     const availableCells =
       cells.filter((cell) =>
         eligibleEntries.some((entry) =>
@@ -1545,7 +1541,8 @@ function drawNumbers() {
 
     if (stepCount >= 22) {
 
-      clearInterval(interval);
+      clearInterval(activeDrawInterval);
+      activeDrawInterval = null;
 
       if (prev) {
         prev.classList.remove('spark');
@@ -1586,7 +1583,6 @@ function drawNumbers() {
         }
       };
 
-      // 선생님(?) 모드: 선생님이 남아있으면 무조건 첫 번째로 추출
       if (
         currentMode === 'teacher-mystery' &&
         selected.length < count
@@ -1688,28 +1684,19 @@ function drawNumbers() {
       const resultText = selected.join(', ');
 
       const showResult = () => {
-
         numberDisplay.textContent = resultText;
-
         numberDisplay.style.fontSize =
           adjustFontSize(resultText);
-
         numberDisplay.classList.remove(
           'placeholder',
           'notice'
         );
-
         bigNumber.textContent = resultText;
-
         bigNumber.style.fontSize =
           adjustFontSize(resultText);
-
         bigOverlay.classList.add('show');
-
         updatePickedNumbers();
-
         playSound();
-
         drawButton.disabled = false;
       };
 
@@ -1725,6 +1712,8 @@ function drawNumbers() {
     }
 
   }, 140);
+
+  activeDrawInterval = interval;
 }
 
 function applyPinballResult(selected) {
@@ -1796,6 +1785,7 @@ function resetDraw(options = {}) {
   if (!options.force && isBlockingDialogOpen()) return;
 
   stopPinballMode();
+  stopBasicDrawAnimation();
 
   closeSongRequest();
 
@@ -1861,6 +1851,11 @@ drawButton.addEventListener(
 resetButton.addEventListener(
   'click',
   resetDraw
+);
+
+document.addEventListener(
+  'app:stop-active-work',
+  stopBasicDrawAnimation
 );
 
 document.addEventListener('keydown', (event) => {
