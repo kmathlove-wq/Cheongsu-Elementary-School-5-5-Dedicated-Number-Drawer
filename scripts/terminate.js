@@ -26,6 +26,15 @@ function stopActiveWork() {
   stopAllSounds();
 }
 
+function isTypingTarget(target) {
+
+  return target instanceof HTMLElement &&
+    (
+      target.isContentEditable ||
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+    );
+}
+
 export function terminateProgram(options = {}) {
 
   const {
@@ -62,16 +71,21 @@ export function setupMemeTerminateShortcut() {
 
     if (event.repeat || event.code !== 'Space') return;
 
-    event.preventDefault();
-    event.stopPropagation();
-
     const now = Date.now();
+    const isTyping = isTypingTarget(event.target);
 
     if (now - lastSpacePress <= SPACE_TERMINATE_WINDOW) {
       lastSpacePress = 0;
+      event.preventDefault();
+      event.stopPropagation();
       terminateProgram({ variant: 'meme' });
       playExplosionSound();
       return;
+    }
+
+    if (!isTyping) {
+      event.preventDefault();
+      event.stopPropagation();
     }
 
     lastSpacePress = now;
