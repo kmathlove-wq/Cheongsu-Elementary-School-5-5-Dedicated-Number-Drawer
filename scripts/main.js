@@ -88,7 +88,7 @@ const MODE_LABELS = {
 
 const baseNumbers =
   Array.from(
-    { length: 26 },
+    { length: 27 },
     (_, i) => String(i + 1)
   ).filter((n) => n !== '19');
 
@@ -111,7 +111,7 @@ const DEFAULT_MODE_POOLS = {
   gumball: [...baseNumbers], pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
-  'eleven-song-pinball': Array.from({ length: 25 }, () => '11'),
+  'eleven-song-pinball': Array.from({ length: 26 }, () => '11'),
 };
 
 const DEFAULT_MODE_OPTIONS =
