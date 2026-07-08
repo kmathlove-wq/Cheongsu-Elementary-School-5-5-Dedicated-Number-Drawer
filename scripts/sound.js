@@ -1,3 +1,5 @@
+import { getMotionMultiplier } from './motion.js';
+
 let audioCtx = null;
 let soundEnabled = true;
 let soundTheme = 'bright';
@@ -104,7 +106,13 @@ function playTone({
 
   if ((!soundEnabled && !force) || !ac) return;
 
-  const start = ac.currentTime + delay;
+  const motionMultiplier = force ? 1 : getMotionMultiplier();
+  const scaledDelay = delay * motionMultiplier;
+  const scaledDuration =
+    Math.max(0.015, duration * motionMultiplier);
+  const attack =
+    Math.min(0.08, Math.max(0.006, 0.015 * motionMultiplier));
+  const start = ac.currentTime + scaledDelay;
   const osc = ac.createOscillator();
   const g = ac.createGain();
 
@@ -122,22 +130,22 @@ function playTone({
   if (slideTo) {
     osc.frequency.exponentialRampToValueAtTime(
       slideTo,
-      start + duration
+      start + scaledDuration
     );
   }
 
   g.gain.setValueAtTime(0.0001, start);
   g.gain.exponentialRampToValueAtTime(
     volume,
-    start + 0.015
+    start + attack
   );
   g.gain.exponentialRampToValueAtTime(
     0.0001,
-    start + duration
+    start + scaledDuration
   );
 
   osc.start(start);
-  osc.stop(start + duration + 0.02);
+  osc.stop(start + scaledDuration + 0.02);
 }
 
 export function stopAllSounds() {

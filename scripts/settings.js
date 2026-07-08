@@ -8,6 +8,7 @@ import {
   setSoundEnabled,
   setSoundTheme,
 } from './sound.js';
+import { scaleMotionTime } from './motion.js';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');
@@ -108,11 +109,11 @@ function previewSound(kind) {
 
   if (kind === 'gumball') {
     playGumballTurnSound();
-    setTimeout(playGumballDropSound, 280);
+    setTimeout(playGumballDropSound, scaleMotionTime(280));
   } else if (kind === 'pinball') {
     playBumperBeep();
-    setTimeout(playBumperBeep, 120);
-    setTimeout(playBumperBeep, 240);
+    setTimeout(playBumperBeep, scaleMotionTime(120));
+    setTimeout(playBumperBeep, scaleMotionTime(240));
   } else {
     playDrawTick();
     playSound();
@@ -120,7 +121,7 @@ function previewSound(kind) {
 
   setTimeout(() => {
     setSoundEnabled(restoreEnabled);
-  }, 650);
+  }, scaleMotionTime(650));
 }
 
 export function setupAppSettings(options) {
