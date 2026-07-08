@@ -8,13 +8,17 @@ import {
   playExplosionSound,
   stopAllSounds,
 } from './sound.js';
+import { setMotionMode } from './motion.js';
 
 const terminateScreen =
   document.getElementById('terminateScreen');
+const terminateMemeText =
+  document.querySelector('.terminate-meme-text');
 
-const SPACE_TERMINATE_WINDOW = 430;
+const MEME_TERMINATE_WINDOW = 430;
+const MEME_TERMINATE_COUNT = 5;
 
-let lastSpacePress = 0;
+let memeKeyState = { code: '', count: 0, lastPress: 0 };
 let memeShortcutReady = false;
 
 function stopActiveWork() {
@@ -41,25 +45,44 @@ export function terminateProgram(options = {}) {
   const {
     variant = 'default',
   } = options;
+  const isMeme = variant.startsWith('meme');
 
-  if (variant === 'meme') {
+  if (isMeme) {
     stopActiveWork();
   }
 
   document.body.classList.add('terminated');
   document.body.classList.toggle(
     'meme-terminated',
-    variant === 'meme'
+    isMeme
   );
 
-  if (variant !== 'meme') {
+  if (terminateMemeText && isMeme) {
+    terminateMemeText.textContent =
+      '스페이스바가 세계를 멸망시켰습니다';
+  }
+
+  if (!isMeme) {
     window.close();
   }
 
   setTimeout(() => {
     terminateScreen?.classList.add('show');
     terminateScreen?.setAttribute('aria-hidden', 'false');
-  }, variant === 'meme' ? 0 : 300);
+  }, isMeme ? 0 : 300);
+}
+
+function getMemeVariant(code) {
+
+  if (code === 'Space') return 'meme';
+  return '';
+}
+
+function getSpeedMode(code) {
+
+  if (code === 'ShiftLeft' || code === 'ShiftRight') return 'slow';
+  if (code === 'AltLeft' || code === 'AltRight') return 'fast';
+  return '';
 }
 
 export function setupMemeTerminateShortcut() {
@@ -70,25 +93,40 @@ export function setupMemeTerminateShortcut() {
 
   document.addEventListener('keydown', (event) => {
 
-    if (event.repeat || event.code !== 'Space') return;
+    const variant = getMemeVariant(event.code);
+    const speedMode = getSpeedMode(event.code);
+    if (event.repeat || (!variant && !speedMode)) return;
 
     const now = Date.now();
     const isTyping = isTypingTarget(event.target);
 
-    if (now - lastSpacePress <= SPACE_TERMINATE_WINDOW) {
-      lastSpacePress = 0;
+    if (
+      memeKeyState.code === event.code &&
+      now - memeKeyState.lastPress <= MEME_TERMINATE_WINDOW
+    ) {
+      memeKeyState.count++;
+    } else {
+      memeKeyState = { code: event.code, count: 1, lastPress: now };
+    }
+
+    memeKeyState.lastPress = now;
+
+    if (memeKeyState.count >= MEME_TERMINATE_COUNT) {
+      memeKeyState = { code: '', count: 0, lastPress: 0 };
       event.preventDefault();
       event.stopPropagation();
-      terminateProgram({ variant: 'meme' });
-      playExplosionSound();
+      if (speedMode) {
+        setMotionMode(speedMode);
+      } else {
+        terminateProgram({ variant });
+        playExplosionSound();
+      }
       return;
     }
 
-    if (!isTyping) {
+    if (!isTyping || speedMode) {
       event.preventDefault();
       event.stopPropagation();
     }
-
-    lastSpacePress = now;
   }, true);
 }

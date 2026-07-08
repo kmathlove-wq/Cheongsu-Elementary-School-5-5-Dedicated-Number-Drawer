@@ -35,6 +35,7 @@ import {
   setupMemeTerminateShortcut,
   terminateProgram,
 } from './terminate.js';
+import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 
 const drawButton = document.getElementById('drawButton');
@@ -1711,7 +1712,7 @@ function drawNumbers() {
       showResult();
     }
 
-  }, 140);
+  }, scaleMotionTime(140));
 
   activeDrawInterval = interval;
 }

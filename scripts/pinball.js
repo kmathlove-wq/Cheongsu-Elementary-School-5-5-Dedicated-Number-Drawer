@@ -1,3 +1,8 @@
+import {
+  getMotionMultiplier,
+  scaleMotionTime,
+} from './motion.js';
+
 let pinballRafId = null;
 
 let pinballFinalizeTimer = null;
@@ -486,10 +491,12 @@ export function drawNumbersPinball({
 
     const active =
       balls.filter(b => b.active && !b.exited);
+    const motionStep =
+      Math.max(0.25, Math.min(2.5, 1 / getMotionMultiplier()));
 
     // 스피너 각도 갱신 (프레임당 1회)
     for (const sp of spinners) {
-      sp.ang += sp.angVel;
+      sp.ang += sp.angVel * motionStep;
       const h = sp.len / 2;
       const cos = Math.cos(sp.ang);
       const sin = Math.sin(sp.ang);
@@ -508,7 +515,7 @@ export function drawNumbersPinball({
         ball.noBallCollisionFrames--;
       }
 
-      ball.vy += 0.28;
+      ball.vy += 0.28 * motionStep;
 
       const spd =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
@@ -522,8 +529,8 @@ export function drawNumbersPinball({
 
       keepBallInPlayArea(ball);
 
-      ball.x += ball.vx;
-      ball.y += ball.vy;
+      ball.x += ball.vx * motionStep;
+      ball.y += ball.vy * motionStep;
 
       keepBallInPlayArea(ball);
 
@@ -575,7 +582,7 @@ export function drawNumbersPinball({
           ) {
             doneHandled = true;
             pinballFinalizeTimer =
-              setTimeout(finalize, 1600);
+              setTimeout(finalize, scaleMotionTime(1600));
           }
         }
       }

@@ -1,3 +1,5 @@
+import { scaleMotionTime } from './motion.js';
+
 const gumballStage =
   document.getElementById('gumballStage');
 
@@ -107,9 +109,9 @@ export function renderGumballMachine({
           wobbleY: 6 + Math.random() * 20,
           gravityPull: 8 + Math.random() * 20,
           spin: Math.random() > 0.5 ? 360 : -360,
-          orbitDuration: 0.95 + Math.random() * 0.8,
-          tumbleDuration: 0.42 + Math.random() * 0.5,
-          bounceDuration: 0.5 + Math.random() * 0.65,
+          orbitDuration: scaleMotionTime(950 + Math.random() * 800) / 1000,
+          tumbleDuration: scaleMotionTime(420 + Math.random() * 500) / 1000,
+          bounceDuration: scaleMotionTime(500 + Math.random() * 650) / 1000,
         };
       })
       .sort((a, b) => a.order - b.order);
@@ -401,8 +403,8 @@ export function drawNumbersGumball({
         return;
       }
 
-      gumballDrawTimer = setTimeout(showResult, 900);
-    }, index === 0 ? 2600 : 1300);
+        gumballDrawTimer = setTimeout(showResult, scaleMotionTime(900));
+    }, scaleMotionTime(index === 0 ? 2600 : 1300));
   };
 
   releaseBall(0);
@@ -448,7 +450,7 @@ export function bindGumballHandle({
       handlePressTimer = null;
       gumballHandle.classList.remove('is-holding');
       onDraw();
-    }, HANDLE_HOLD_MS);
+    }, scaleMotionTime(HANDLE_HOLD_MS));
   });
 
   gumballHandle.addEventListener('pointerup', cancelHandleHold);
