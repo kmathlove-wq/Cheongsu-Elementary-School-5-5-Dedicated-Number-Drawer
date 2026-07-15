@@ -97,11 +97,13 @@ export function drawNumbersPinball({
 
   // ── 플레이 영역 (세계 좌표) ──
   const PLAY_W = Math.min(
-    W * (isMobilePinball ? 0.78 : 0.62),
+    W * (isMobilePinball ? 0.62 : 0.62),
     720
   );
 
-  const PLAY_X = (W - PLAY_W) / 2;
+  const PLAY_X = isMobilePinball
+    ? 8
+    : (W - PLAY_W) / 2;
 
   const PLAY_X2 = PLAY_X + PLAY_W;
 
@@ -1016,31 +1018,27 @@ export function drawNumbersPinball({
     const cfsz = Math.max(18, Math.floor(W * 0.022));
 
     // 당첨 순위 목록
-    const denseList = count >= 20 || isMobilePinball;
-    const listX = isMobilePinball ? 12 : PLAY_X2 + 18;
+    const denseList = count >= 20;
+    const listX = isMobilePinball ? PLAY_X2 + 8 : PLAY_X2 + 18;
     const counterY = 16;
     const listY0 =
-      isMobilePinball
-        ? counterY + cfsz + 18
-        : denseList
+      denseList
         ? counterY + cfsz + 16
         : H * 0.06;
     const listW =
       isMobilePinball
-        ? W - listX * 2
+        ? Math.max(72, W - listX - 8)
         : Math.max(60, W - listX - 20);
     const availH = H - listY0 - 20;
     const colGap = denseList ? 10 : 0;
     const maxCols =
       isMobilePinball
-        ? Math.max(1, Math.min(3, Math.floor(listW / 110)))
+        ? 1
         : denseList
         ? Math.max(1, Math.min(2, Math.floor(listW / 150)))
         : 1;
     const colCount =
-      isMobilePinball
-        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 8)))
-        : denseList
+      denseList
         ? Math.max(1, Math.min(maxCols, Math.ceil(count / 13)))
         : 1;
     const rowsPerCol = Math.ceil(count / colCount);
@@ -1048,13 +1046,15 @@ export function drawNumbersPinball({
       (listW - colGap * (colCount - 1)) / colCount;
     const maxLineH =
       isMobilePinball
-        ? Math.max(34, H * 0.06)
+        ? Math.max(22, H * 0.055)
         : denseList
           ? Math.max(42, H * 0.07)
           : Math.max(54, H * 0.09);
     const lineH =
       Math.min(maxLineH, availH / rowsPerCol);
-    const minRankFont = isMobilePinball ? 14 : denseList ? 16 : 20;
+    const minRankFont = isMobilePinball
+      ? (denseList ? 10 : 13)
+      : denseList ? 16 : 20;
     let rfsz = Math.max(minRankFont, Math.min(
       Math.floor(lineH * 0.82),
       Math.floor(colW / 2.8)
