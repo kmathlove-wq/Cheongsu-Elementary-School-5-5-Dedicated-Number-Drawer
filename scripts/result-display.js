@@ -33,7 +33,7 @@ export function renderResultSummary(container, items, limit = 20) {
 
   container.innerHTML = '';
   const total = document.createElement('strong');
-  total.className = 'result-summary-total';
+  total.className = 'result-summary-row result-summary-total';
   total.textContent = `총 ${labels.length}명`;
   container.appendChild(total);
 

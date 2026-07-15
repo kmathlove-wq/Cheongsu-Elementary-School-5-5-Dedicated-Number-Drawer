@@ -1,4 +1,4 @@
-import { resetGumballMode } from './gumball.js?v=large-pools-8';
+import { resetGumballMode } from './gumball.js?v=large-pools-summary';
 import { stopPinballMode } from './pinball.js?v=large-pools-rank-scroll';
 import {
   closeSongRequest,

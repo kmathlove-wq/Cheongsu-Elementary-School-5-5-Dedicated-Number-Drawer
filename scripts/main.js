@@ -4,7 +4,7 @@ import {
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=large-pools-8';
+} from './gumball.js?v=large-pools-summary';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -28,11 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=large-pools-rank-scroll';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=large-pools-summary';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { setupAdminBulkMode } from './admin-bulk.js?v=admin-bulk-7';
-import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=large-pools-8';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=large-pools-summary';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');

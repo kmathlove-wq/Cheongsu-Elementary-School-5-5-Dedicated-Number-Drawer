@@ -156,7 +156,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - `AGENTS.md`와 `CLAUDE.md`는 각각 200줄을 넘기지 않는다. 수정 후 `wc -l AGENTS.md CLAUDE.md`로 확인한다.
 - 코드나 문서를 수정한 뒤에는 사용자가 금지하지 않는 한 커밋하고 GitHub에 push한다.
 - 커밋 메시지는 한/영 혼용 가능하며 변경 내용을 구체적으로 쓴다.
-- 화면 하단의 `.build-info`는 현재 기능 이름으로 갱신하되 `몇 차` 같은 차수는 붙이지 않는다.
+- 화면 하단의 `.build-info`는 현재 기능 이름과 간단한 변경 설명으로 갱신하되 `몇 차` 같은 차수는 붙이지 않는다.
 
 ## 배포/인증 주의
 - `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포.
