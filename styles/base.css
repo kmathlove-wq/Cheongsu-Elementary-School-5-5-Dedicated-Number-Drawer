@@ -39,12 +39,10 @@ body {
 }
 
 .build-info {
-  position: fixed;
-  right: 14px;
-  bottom: 10px;
-  z-index: 20;
-  max-width: calc(100vw - 28px);
-  padding: 7px 10px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 8px;
+  padding: 8px 12px;
   border: 1px solid rgba(90, 92, 255, 0.16);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.88);
