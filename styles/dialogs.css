@@ -320,6 +320,29 @@
   gap: 10px;
 }
 
+.admin-bulk-overlay {
+  z-index: 1500;
+}
+
+.admin-bulk-panel {
+  max-width: 440px;
+}
+
+.admin-bulk-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-bulk-actions button {
+  min-height: 48px;
+}
+
+.admin-bulk-actions .secondary {
+  background: #eef0ff;
+  color: var(--text);
+}
+
 .admin-mode-label {
 
   display: block;

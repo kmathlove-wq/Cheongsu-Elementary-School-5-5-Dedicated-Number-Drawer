@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
 const files = [
+  'scripts/admin-bulk.js',
   'scripts/main.js',
   'scripts/gumball.js',
   'scripts/manitto.js',

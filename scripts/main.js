@@ -1,7 +1,4 @@
-import {
-  drawNumbersPinball,
-  stopPinballMode,
-} from './pinball.js?v=pinball-spawn-6';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=pinball-spawn-6';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -31,12 +28,10 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import {
-  setupMemeTerminateShortcut,
-  terminateProgram,
-} from './terminate.js?v=pinball-spawn-6';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-spawn-6';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
+import { setupAdminBulkMode } from './admin-bulk.js?v=admin-bulk-7';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
@@ -1251,6 +1246,20 @@ function addAdminItem(value) {
   commitAdminPoolChange(mode);
 }
 
+function addAdminItemsBulk(item, count) {
+  const mode = adminModeSelect.value;
+  if (!saveAdminListInputs(adminEditingMode)) return false;
+  if (isElevenOnlyMode(mode) && item !== '11') {
+    setAdminManageError('이 모드에는 11번만 추가할 수 있습니다.');
+    return false;
+  }
+  modeOptions[mode].allowDuplicates = true;
+  for (let i = 0; i < count; i++) modePools[mode].push(item);
+  commitAdminPoolChange(mode);
+  setAdminManageError(`${item}번을 ${count}개 추가했습니다.`);
+  return true;
+}
+
 function renameAdminItem(index, value) {
 
   const mode = adminModeSelect.value;
@@ -1318,25 +1327,11 @@ function deleteAdminItem(index) {
 
 // 글자 길이에 따라 자동 크기 조절
 function adjustFontSize(text) {
-
   const length = text.length;
-
-  if (length <= 10) {
-    return '5rem';
-  }
-
-  if (length <= 20) {
-    return '4rem';
-  }
-
-  if (length <= 35) {
-    return '3rem';
-  }
-
-  if (length <= 55) {
-    return '2.2rem';
-  }
-
+  if (length <= 10) return '5rem';
+  if (length <= 20) return '4rem';
+  if (length <= 35) return '3rem';
+  if (length <= 55) return '2.2rem';
   return '1.5rem';
 }
 
@@ -1992,5 +1987,7 @@ setupAppSettings({
 setupManittoMode({ numberGrid, bigOverlay, bigNumber, getResultLabel, adjustFontSize, playSound });
 
 setupMemeTerminateShortcut();
+
+setupAdminBulkMode(addAdminItemsBulk);
 
 openAppSettings({ required: true });
