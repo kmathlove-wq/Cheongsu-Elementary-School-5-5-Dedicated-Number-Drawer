@@ -27,7 +27,7 @@ const styleFiles = [
 
 const html = readFileSync('index.html', 'utf8');
 
-if (!html.includes('src="scripts/main.js"')) {
+if (!/src="scripts\/main\.js(?:\?[^"\s]*)?"/.test(html)) {
   throw new Error('index.html must load scripts/main.js');
 }
 

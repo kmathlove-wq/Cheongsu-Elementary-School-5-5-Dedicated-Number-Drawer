@@ -1,5 +1,5 @@
 import { resetGumballMode } from './gumball.js';
-import { stopPinballMode } from './pinball.js';
+import { stopPinballMode } from './pinball.js?v=mobile-pinball-5';
 import {
   closeSongRequest,
   closeYouTubePlayer,

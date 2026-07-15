@@ -74,16 +74,24 @@ export function drawNumbersPinball({
 
   const ctx = canvas.getContext('2d');
 
+  const viewportWidth =
+    window.visualViewport?.width ||
+    document.documentElement.clientWidth ||
+    window.innerWidth;
+  const viewportHeight =
+    window.visualViewport?.height ||
+    document.documentElement.clientHeight ||
+    window.innerHeight;
   const isMobilePinball =
-    window.innerWidth <= 900 ||
+    viewportWidth <= 1200 ||
     navigator.maxTouchPoints > 0 ||
     window.matchMedia('(pointer: coarse)').matches;
   // 휴대폰은 캔버스 해상도·장애물·프레임 수를 줄여 발열과 끊김을 낮춘다.
   const renderScale = isMobilePinball ? 0.84 : 1;
 
-  canvas.width = Math.round(window.innerWidth * renderScale);
+  canvas.width = Math.round(viewportWidth * renderScale);
 
-  canvas.height = Math.round(window.innerHeight * renderScale);
+  canvas.height = Math.round(viewportHeight * renderScale);
 
   const W = canvas.width;
 
@@ -98,7 +106,7 @@ export function drawNumbersPinball({
 
   // ── 플레이 영역 (세계 좌표) ──
   const MOBILE_HUD_W = isMobilePinball
-    ? Math.max(108, W * 0.32)
+    ? Math.max(112, W * 0.34)
     : 0;
   const PLAY_W = Math.min(
     isMobilePinball ? W - MOBILE_HUD_W - 14 : W * 0.62,
@@ -106,7 +114,7 @@ export function drawNumbersPinball({
   );
 
   const PLAY_X = isMobilePinball
-    ? 8
+    ? 2
     : (W - PLAY_W) / 2;
 
   const PLAY_X2 = PLAY_X + PLAY_W;
@@ -1032,6 +1040,14 @@ export function drawNumbersPinball({
       ctx.lineTo(MOBILE_HUD_X, H);
       ctx.stroke();
       ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      ctx.font = `bold ${Math.max(12, Math.floor(W * 0.035))}px sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('순위', MOBILE_HUD_X + 8, 12);
+      ctx.restore();
     }
 
     const cfsz = Math.max(18, Math.floor(W * 0.022));
@@ -1039,9 +1055,11 @@ export function drawNumbersPinball({
     // 당첨 순위 목록
     const denseList = count >= 20;
     const listX = isMobilePinball ? MOBILE_HUD_X + 8 : PLAY_X2 + 18;
-    const counterY = 16;
+    const counterY = isMobilePinball ? 38 : 16;
     const listY0 =
-      denseList
+      isMobilePinball
+        ? counterY + cfsz + 14
+        : denseList
         ? counterY + cfsz + 16
         : H * 0.06;
     const listW =
