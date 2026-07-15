@@ -8,7 +8,11 @@ import {
   setSoundEnabled,
   setSoundTheme,
 } from './sound.js';
-import { scaleMotionTime } from './motion.js';
+import {
+  getMotionMode,
+  scaleMotionTime,
+  setMotionMode,
+} from './motion.js';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');
@@ -32,6 +36,7 @@ const soundThemeSelect =
   document.getElementById('soundThemeSelect');
 
 let pendingDrawStyle = 'basic';
+let pendingMotionMode = 'normal';
 let appSettingsRequired = true;
 let getCurrentDrawStyle = () => 'basic';
 let setCurrentDrawStyle = () => {};
@@ -57,6 +62,18 @@ function updateAppModeOptions() {
     });
 }
 
+function updateMotionModeOptions() {
+
+  document
+    .querySelectorAll('.motion-speed-button')
+    .forEach((button) => {
+      button.classList.toggle(
+        'active',
+        button.dataset.motionMode === pendingMotionMode
+      );
+    });
+}
+
 export function isAppSettingsOpen() {
 
   return appSettingsOverlay.classList.contains('show');
@@ -68,8 +85,10 @@ export function openAppSettings({ required = false } = {}) {
 
   appSettingsRequired = required;
   pendingDrawStyle = getCurrentDrawStyle();
+  pendingMotionMode = getMotionMode();
   soundEnabledInput.checked = isSoundEnabled();
   updateAppModeOptions();
+  updateMotionModeOptions();
   beforeOpen({ required });
 
   appSettingsClose.hidden = required;
@@ -91,6 +110,7 @@ function applyAppSettings() {
 
   setSoundEnabled(soundEnabledInput.checked);
   setSoundTheme(soundThemeSelect.value);
+  setMotionMode(pendingMotionMode, { toggle: false });
   setCurrentDrawStyle(pendingDrawStyle);
 
   appSettingsOverlay.classList.remove('show');
@@ -151,6 +171,15 @@ export function setupAppSettings(options) {
     .forEach((button) => {
       button.addEventListener('click', () => {
         previewSound(button.dataset.previewSound);
+      });
+    });
+
+  document
+    .querySelectorAll('.motion-speed-button')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        pendingMotionMode = button.dataset.motionMode;
+        updateMotionModeOptions();
       });
     });
 

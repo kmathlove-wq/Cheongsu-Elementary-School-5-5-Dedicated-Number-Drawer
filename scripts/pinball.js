@@ -74,23 +74,32 @@ export function drawNumbersPinball({
 
   const ctx = canvas.getContext('2d');
 
-  canvas.width = window.innerWidth;
+  const isMobilePinball = window.matchMedia(
+    '(max-width: 760px), (pointer: coarse)'
+  ).matches;
+  // 휴대폰은 캔버스 해상도·장애물·프레임 수를 줄여 발열과 끊김을 낮춘다.
+  const renderScale = isMobilePinball ? 0.84 : 1;
 
-  canvas.height = window.innerHeight;
+  canvas.width = Math.round(window.innerWidth * renderScale);
+
+  canvas.height = Math.round(window.innerHeight * renderScale);
 
   const W = canvas.width;
 
   const H = canvas.height;
 
-  // 가상 월드 (화면의 4배 높이)
-  const WORLD_H = H * 4;
+  // 가상 월드 (모바일은 이동 거리를 줄여 빠르게 끝낸다.)
+  const WORLD_H = H * (isMobilePinball ? 3.1 : 4);
 
   let cameraY = 0;
 
   overlay.classList.add('show');
 
   // ── 플레이 영역 (세계 좌표) ──
-  const PLAY_W = Math.min(W * 0.62, 720);
+  const PLAY_W = Math.min(
+    W * (isMobilePinball ? 0.78 : 0.62),
+    720
+  );
 
   const PLAY_X = (W - PLAY_W) / 2;
 
@@ -192,9 +201,9 @@ export function drawNumbersPinball({
 
   const PEG_R = PEG_THICK / 2;
 
-  const NUM_ROWS = 14;
+  const NUM_ROWS = isMobilePinball ? 10 : 14;
 
-  const PEGS_PER_ROW = 4;
+  const PEGS_PER_ROW = isMobilePinball ? 3 : 4;
 
   const pegTop = H * 0.12;
 
@@ -259,7 +268,7 @@ export function drawNumbersPinball({
   // ── 원형 범퍼 (추가 장애물) ──
   const BUMPER_R = Math.max(16, Math.floor(PLAY_W / 22));
 
-  const bumpers = [
+  const bumperLayout = [
     {
       x: PLAY_X + PLAY_W * 0.25,
       y: WORLD_H * 0.20,
@@ -297,17 +306,26 @@ export function drawNumbersPinball({
     },
   ];
 
+  const bumpers = isMobilePinball
+    ? bumperLayout.filter((_, index) => index !== 1 && index !== 3)
+    : bumperLayout;
+
   // ── 회전 핀 (스피너) ──
   const SPINNER_LEN = PEG_LEN * 2.8;
 
-  const spinners = [
+  const spinnerLayout = [
     { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.10, angVel:  0.030 },
     { cx: PLAY_X + PLAY_W * 0.18, cy: WORLD_H * 0.30, angVel: -0.025 },
     { cx: PLAY_X + PLAY_W * 0.82, cy: WORLD_H * 0.30, angVel:  0.025 },
     { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.52, angVel: -0.032 },
     { cx: PLAY_X + PLAY_W * 0.22, cy: WORLD_H * 0.76, angVel:  0.028 },
     { cx: PLAY_X + PLAY_W * 0.78, cy: WORLD_H * 0.76, angVel: -0.028 },
-  ].map((s, i) => ({
+  ];
+
+  const spinners = (isMobilePinball
+    ? spinnerLayout.filter((_, index) => index % 2 === 0)
+    : spinnerLayout
+  ).map((s, i) => ({
     ...s,
     ang: (Math.PI / 6) * i,
     len: SPINNER_LEN,
@@ -484,15 +502,24 @@ export function drawNumbersPinball({
       minimapHover = false;
     }
   }
-  canvas.addEventListener('mousemove', onMMMove);
-  canvas.addEventListener('mouseleave', () => { minimapHover = false; });
+  if (!isMobilePinball) {
+    canvas.addEventListener('mousemove', onMMMove);
+    canvas.addEventListener('mouseleave', () => { minimapHover = false; });
+  }
 
-  function update() {
+  let mobilePhysicsFrame = 0;
+
+  function update(frameScale = 1) {
 
     const active =
       balls.filter(b => b.active && !b.exited);
     const motionStep =
-      Math.max(0.25, Math.min(2.5, 1 / getMotionMultiplier()));
+      Math.max(
+        0.25,
+        Math.min(2.5, (1 / getMotionMultiplier()) * frameScale)
+      );
+
+    mobilePhysicsFrame++;
 
     // 스피너 각도 갱신 (프레임당 1회)
     for (const sp of spinners) {
@@ -588,20 +615,23 @@ export function drawNumbersPinball({
       }
     }
 
-    for (let i = 0; i < active.length; i++) {
-      for (let j = i + 1; j < active.length; j++) {
-        if (active[i].isForced || active[j].isForced) {
-          continue;
-        }
+    // 공끼리 충돌은 휴대폰에서 한 프레임씩 건너뛰어 부담을 크게 줄인다.
+    if (!isMobilePinball || mobilePhysicsFrame % 2 === 0) {
+      for (let i = 0; i < active.length; i++) {
+        for (let j = i + 1; j < active.length; j++) {
+          if (active[i].isForced || active[j].isForced) {
+            continue;
+          }
 
-        if (
-          active[i].noBallCollisionFrames > 0 ||
-          active[j].noBallCollisionFrames > 0
-        ) {
-          continue;
-        }
+          if (
+            active[i].noBallCollisionFrames > 0 ||
+            active[j].noBallCollisionFrames > 0
+          ) {
+            continue;
+          }
 
-        hitBall(active[i], active[j]);
+          hitBall(active[i], active[j]);
+        }
       }
     }
 
@@ -1075,7 +1105,7 @@ export function drawNumbersPinball({
     );
     ctx.restore();
 
-    drawMinimap();
+    if (!isMobilePinball) drawMinimap();
   }
 
   function finalize() {
@@ -1136,11 +1166,29 @@ export function drawNumbersPinball({
     drawButton.disabled = false;
   }
 
-  function loop() {
+  let lastFrameAt = 0;
+  const mobileFrameMs = 1000 / 30;
+
+  function loop(now) {
 
     if (stopPinball) return;
 
-    update();
+    if (
+      isMobilePinball &&
+      lastFrameAt &&
+      now - lastFrameAt < mobileFrameMs
+    ) {
+      pinballRafId = requestAnimationFrame(loop);
+      return;
+    }
+
+    const elapsed = lastFrameAt ? now - lastFrameAt : 1000 / 60;
+    lastFrameAt = now;
+    const frameScale = isMobilePinball
+      ? Math.max(1, Math.min(1.7, elapsed / (1000 / 60)))
+      : 1;
+
+    update(frameScale);
 
     drawScene();
 

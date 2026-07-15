@@ -182,7 +182,8 @@
 }
 
 .app-mode-options,
-.sound-preview-options {
+.sound-preview-options,
+.motion-speed-options {
 
   display: grid;
 
@@ -192,7 +193,8 @@
 }
 
 .app-mode-option,
-.sound-preview-button {
+.sound-preview-button,
+.motion-speed-button {
 
   min-height: 54px;
 
@@ -208,6 +210,14 @@
 }
 
 .app-mode-option.active {
+
+  background:
+    linear-gradient(135deg, #5a5cff, #2ea6b2);
+
+  color: white;
+}
+
+.motion-speed-button.active {
 
   background:
     linear-gradient(135deg, #5a5cff, #2ea6b2);
