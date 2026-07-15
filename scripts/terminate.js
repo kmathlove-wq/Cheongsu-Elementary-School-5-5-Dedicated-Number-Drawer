@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js';
-import { stopPinballMode } from './pinball.js?v=pinball-spawn-6';
+import { resetGumballMode } from './gumball.js?v=large-pools-8';
+import { stopPinballMode } from './pinball.js?v=large-pools-8';
 import {
   closeSongRequest,
   closeYouTubePlayer,

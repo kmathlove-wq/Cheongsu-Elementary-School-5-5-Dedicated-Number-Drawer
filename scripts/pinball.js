@@ -1074,8 +1074,17 @@ export function drawNumbersPinball({
 
     const cfsz = Math.max(18, Math.floor(W * 0.022));
 
-    // 당첨 순위 목록
-    const denseList = count >= 20;
+    // 대량 추첨은 최근 순위만 보여 주고 실제 순위 번호는 유지한다.
+    const compactRankList = count > 30;
+    const rankDisplayLimit = isMobilePinball ? 10 : 16;
+    const visibleWinners = compactRankList
+      ? winners.slice(-rankDisplayLimit)
+      : winners;
+    const firstVisibleRank = winners.length - visibleWinners.length;
+    const layoutCount = compactRankList
+      ? Math.min(count, rankDisplayLimit)
+      : count;
+    const denseList = layoutCount >= 20;
     const listX = isMobilePinball ? MOBILE_HUD_X + 8 : PLAY_X2 + 18;
     const counterY = isMobilePinball ? 38 : 16;
     const listY0 =
@@ -1098,9 +1107,9 @@ export function drawNumbersPinball({
         : 1;
     const colCount =
       denseList
-        ? Math.max(1, Math.min(maxCols, Math.ceil(count / 13)))
+        ? Math.max(1, Math.min(maxCols, Math.ceil(layoutCount / 13)))
         : 1;
-    const rowsPerCol = Math.ceil(count / colCount);
+    const rowsPerCol = Math.ceil(layoutCount / colCount);
     const colW =
       (listW - colGap * (colCount - 1)) / colCount;
     const maxLineH =
@@ -1123,9 +1132,9 @@ export function drawNumbersPinball({
       ctx.save();
       ctx.font = `bold ${rfsz}px Noto Sans KR, sans-serif`;
       const widestRankText =
-        winners.reduce((widest, ball, index) => {
+        visibleWinners.reduce((widest, ball, index) => {
           const text =
-            `#${index + 1} ${getResultLabel(ball.num)}`;
+            `#${firstVisibleRank + index + 1} ${getResultLabel(ball.num)}`;
           return Math.max(widest, ctx.measureText(text).width);
         }, 0);
       ctx.restore();
@@ -1135,13 +1144,14 @@ export function drawNumbersPinball({
       rfsz -= 1;
     }
 
-    for (let i = 0; i < winners.length; i++) {
+    for (let i = 0; i < visibleWinners.length; i++) {
 
       const col = Math.floor(i / rowsPerCol);
       const row = i % rowsPerCol;
       const x = listX + col * (colW + colGap);
       const y = listY0 + row * lineH;
-      const c = RANK_COLORS[i % RANK_COLORS.length];
+      const rankIndex = firstVisibleRank + i;
+      const c = RANK_COLORS[rankIndex % RANK_COLORS.length];
 
       ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -1159,11 +1169,11 @@ export function drawNumbersPinball({
         `bold ${rfsz}px Noto Sans KR, sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      const rankText = `#${i + 1} `;
+      const rankText = `#${rankIndex + 1} `;
       const rankW = ctx.measureText(rankText).width;
       const nameText =
         fitText(
-          getResultLabel(winners[i].num),
+          getResultLabel(visibleWinners[i].num),
           Math.max(12, colW - rankW - 8)
         );
       ctx.fillText(

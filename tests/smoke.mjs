@@ -8,6 +8,7 @@ const files = [
   'scripts/manitto.js',
   'scripts/mode-menu.js',
   'scripts/pinball.js',
+  'scripts/result-display.js',
   'scripts/settings.js',
   'scripts/song.js',
   'scripts/sound.js',

@@ -34,6 +34,10 @@
 
   min-height: 300px;
 
+  max-height: 88vh;
+
+  overflow: auto;
+
   border-radius: 28px;
 
   display: grid;
@@ -63,4 +67,51 @@
   box-shadow:
     0 60px 120px
     rgba(120,40,200,0.22);
+}
+
+.result-summary-list {
+  display: block;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: center;
+}
+
+.number-display.result-summary-list {
+  max-height: 360px;
+  font-size: 2rem;
+}
+
+.result-summary-total {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: block;
+  margin-bottom: 14px;
+  padding: 10px;
+  border-radius: 12px;
+  background: inherit;
+  font-size: clamp(2rem, 6vw, 4.5rem);
+}
+
+.result-summary-row {
+  display: block;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: clamp(1.7rem, 5vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.number-display .result-summary-row {
+  border-bottom-color: var(--border);
+  font-size: clamp(1.4rem, 4vw, 2.5rem);
+}
+
+.number-display .result-summary-more {
+  color: var(--muted);
+}
+
+.result-summary-more {
+  color: rgba(255, 255, 255, 0.82);
 }

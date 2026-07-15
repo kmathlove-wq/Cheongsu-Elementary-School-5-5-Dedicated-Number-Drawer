@@ -1,10 +1,10 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=pinball-spawn-6';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=large-pools-8';
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js';
+} from './gumball.js?v=large-pools-8';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -28,10 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-spawn-6';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=large-pools-8';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { setupAdminBulkMode } from './admin-bulk.js?v=admin-bulk-7';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=large-pools-8';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
@@ -669,26 +670,7 @@ function handleBasicModeAdminTap() {
 }
 
 function updatePickedNumbers() {
-
-  if (pickedNumbers.length === 0) {
-
-    pickedNumbersContainer.textContent =
-      '아직 뽑은 번호가 없습니다.';
-
-    return;
-  }
-
-  pickedNumbersContainer.innerHTML = '';
-
-  pickedNumbers.forEach((num) => {
-
-    const tag =
-      document.createElement('span');
-
-    tag.textContent = num;
-
-    pickedNumbersContainer.appendChild(tag);
-  });
+  renderPickedSummary(pickedNumbersContainer, pickedNumbers);
 }
 
 function renderManittoSettings() {
@@ -1336,19 +1318,15 @@ function adjustFontSize(text) {
 }
 
 function showPinballResult(selected) {
-  const resultText =
-    selected
-      .map((entry) => getEntryItem(entry))
-      .join(', ');
-  numberDisplay.textContent = resultText;
-  numberDisplay.style.fontSize =
-    adjustFontSize(resultText);
+  const items = selected.map((entry) => getEntryItem(entry));
+  const resultText = formatResultSummary(items);
+  const isSummary = renderResultSummary(numberDisplay, items);
+  numberDisplay.style.fontSize = isSummary ? '' : adjustFontSize(resultText);
   numberDisplay.classList.remove(
     'placeholder', 'notice'
   );
-  bigNumber.textContent = resultText;
-  bigNumber.style.fontSize =
-    adjustFontSize(resultText);
+  renderResultSummary(bigNumber, items);
+  bigNumber.style.fontSize = isSummary ? '' : adjustFontSize(resultText);
   bigOverlay.classList.add('show');
   updatePickedNumbers();
   playSound();
@@ -1496,6 +1474,7 @@ function drawNumbers() {
     Array.from(
       document.querySelectorAll('.number-cell')
     );
+  const eligibleKeys = new Set(eligibleEntries.map((entry) => entry.key));
 
   let prev = null;
 
@@ -1509,9 +1488,7 @@ function drawNumbers() {
 
     const availableCells =
       cells.filter((cell) =>
-        eligibleEntries.some((entry) =>
-          entry.key === cell.dataset.key
-        )
+        eligibleKeys.has(cell.dataset.key)
       );
 
     const randomCell =
@@ -1677,19 +1654,17 @@ function drawNumbers() {
 
       selected.sort(compareItems);
 
-      const resultText = selected.join(', ');
+      const resultText = formatResultSummary(selected);
 
       const showResult = () => {
-        numberDisplay.textContent = resultText;
-        numberDisplay.style.fontSize =
-          adjustFontSize(resultText);
+        const isSummary = renderResultSummary(numberDisplay, selected);
+        numberDisplay.style.fontSize = isSummary ? '' : adjustFontSize(resultText);
         numberDisplay.classList.remove(
           'placeholder',
           'notice'
         );
-        bigNumber.textContent = resultText;
-        bigNumber.style.fontSize =
-          adjustFontSize(resultText);
+        renderResultSummary(bigNumber, selected);
+        bigNumber.style.fontSize = isSummary ? '' : adjustFontSize(resultText);
         bigOverlay.classList.add('show');
         updatePickedNumbers();
         playSound();
@@ -1812,6 +1787,10 @@ function resetDraw(options = {}) {
   numberDisplay.style.fontSize = '';
 
   bigNumber.style.fontSize = '';
+
+  numberDisplay.classList.remove('result-summary-list');
+
+  bigNumber.classList.remove('result-summary-list');
 
   numberDisplay.classList.add('placeholder');
 

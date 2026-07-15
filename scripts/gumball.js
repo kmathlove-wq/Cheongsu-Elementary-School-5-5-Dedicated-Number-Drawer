@@ -1,4 +1,5 @@
 import { scaleMotionTime } from './motion.js';
+import { formatResultSummary, renderResultSummary } from './result-display.js?v=large-pools-8';
 
 const gumballStage =
   document.getElementById('gumballStage');
@@ -328,20 +329,17 @@ export function drawNumbersGumball({
     const displayItems =
       [...selectedItems].sort(compareItems);
 
-    const resultText =
-      displayItems.join(', ');
+    const resultText = formatResultSummary(displayItems);
 
     Promise.resolve(beforeShowResult(selectedEntries))
       .then(() => {
 
-        numberDisplay.textContent = resultText;
-        numberDisplay.style.fontSize =
-          adjustFontSize(resultText);
+        const isSummary = renderResultSummary(numberDisplay, displayItems);
+        numberDisplay.style.fontSize = isSummary ? '' : adjustFontSize(resultText);
         numberDisplay.classList.remove('placeholder', 'notice');
 
-        bigNumber.textContent = resultText;
-        bigNumber.style.fontSize =
-          adjustFontSize(resultText);
+        renderResultSummary(bigNumber, displayItems);
+        bigNumber.style.fontSize = isSummary ? '' : adjustFontSize(resultText);
         bigOverlay.classList.add('show');
 
         addPickedNumbers(selectedItems);
