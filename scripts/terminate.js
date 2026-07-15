@@ -1,5 +1,5 @@
 import { resetGumballMode } from './gumball.js?v=large-pools-8';
-import { stopPinballMode } from './pinball.js?v=large-pools-8';
+import { stopPinballMode } from './pinball.js?v=large-pools-rank-scroll';
 import {
   closeSongRequest,
   closeYouTubePlayer,

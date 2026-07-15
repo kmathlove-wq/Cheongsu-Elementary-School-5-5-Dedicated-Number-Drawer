@@ -9,6 +9,8 @@ let pinballFinalizeTimer = null;
 
 let stopPinball = false;
 
+let pinballCleanup = null;
+
 export function stopPinballMode() {
 
   stopPinball = true;
@@ -21,6 +23,11 @@ export function stopPinballMode() {
   if (pinballFinalizeTimer) {
     clearTimeout(pinballFinalizeTimer);
     pinballFinalizeTimer = null;
+  }
+
+  if (pinballCleanup) {
+    pinballCleanup();
+    pinballCleanup = null;
   }
 
   const pinballOv =
@@ -508,6 +515,9 @@ export function drawNumbersPinball({
   const sonicBooms = [];
 
   let doneHandled = false;
+  let rankScrollOffset = 0;
+  let rankDragStartY = null;
+  const RANK_DISPLAY_LIMIT = isMobilePinball ? 10 : 16;
 
   // ── 미니맵 마우스 이벤트 ──
   function onMMMove(e) {
@@ -527,10 +537,58 @@ export function drawNumbersPinball({
       minimapHover = false;
     }
   }
+
+  function onMMLeave() {
+    minimapHover = false;
+  }
+
+  function isRankPanelPoint(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * canvas.width / rect.width;
+    return x >= (isMobilePinball ? MOBILE_HUD_X : PLAY_X2);
+  }
+
+  function scrollRanks(amount) {
+    const maxOffset = Math.max(0, winners.length - RANK_DISPLAY_LIMIT);
+    rankScrollOffset = Math.max(
+      0,
+      Math.min(maxOffset, rankScrollOffset + amount)
+    );
+  }
+
+  function onRankWheel(event) {
+    if (count <= 30 || !isRankPanelPoint(event.clientX)) return;
+    event.preventDefault();
+    scrollRanks(event.deltaY < 0 ? 3 : -3);
+  }
+
+  function onRankPointerDown(event) {
+    if (count > 30 && isRankPanelPoint(event.clientX)) {
+      rankDragStartY = event.clientY;
+    }
+  }
+
+  function onRankPointerUp(event) {
+    if (rankDragStartY === null) return;
+    const distance = event.clientY - rankDragStartY;
+    rankDragStartY = null;
+    if (Math.abs(distance) >= 20) scrollRanks(distance > 0 ? 3 : -3);
+  }
+
   if (!isMobilePinball) {
     canvas.addEventListener('mousemove', onMMMove);
-    canvas.addEventListener('mouseleave', () => { minimapHover = false; });
+    canvas.addEventListener('mouseleave', onMMLeave);
   }
+  canvas.addEventListener('wheel', onRankWheel, { passive: false });
+  canvas.addEventListener('pointerdown', onRankPointerDown);
+  canvas.addEventListener('pointerup', onRankPointerUp);
+  pinballCleanup = () => {
+    canvas.removeEventListener('mousemove', onMMMove);
+    canvas.removeEventListener('mouseleave', onMMLeave);
+    canvas.removeEventListener('wheel', onRankWheel);
+    canvas.removeEventListener('pointerdown', onRankPointerDown);
+    canvas.removeEventListener('pointerup', onRankPointerUp);
+  };
 
   let mobilePhysicsFrame = 0;
 
@@ -639,6 +697,8 @@ export function drawNumbersPinball({
         if (winners.length < count) {
 
           winners.push(ball);
+
+          if (rankScrollOffset > 0) rankScrollOffset++;
 
           if (
             winners.length === count &&
@@ -1076,13 +1136,15 @@ export function drawNumbersPinball({
 
     // 대량 추첨은 최근 순위만 보여 주고 실제 순위 번호는 유지한다.
     const compactRankList = count > 30;
-    const rankDisplayLimit = isMobilePinball ? 10 : 16;
-    const visibleWinners = compactRankList
-      ? winners.slice(-rankDisplayLimit)
-      : winners;
-    const firstVisibleRank = winners.length - visibleWinners.length;
+    const rankEnd = compactRankList
+      ? Math.max(0, winners.length - rankScrollOffset)
+      : winners.length;
+    const firstVisibleRank = compactRankList
+      ? Math.max(0, rankEnd - RANK_DISPLAY_LIMIT)
+      : 0;
+    const visibleWinners = winners.slice(firstVisibleRank, rankEnd);
     const layoutCount = compactRankList
-      ? Math.min(count, rankDisplayLimit)
+      ? Math.min(count, RANK_DISPLAY_LIMIT)
       : count;
     const denseList = layoutCount >= 20;
     const listX = isMobilePinball ? MOBILE_HUD_X + 8 : PLAY_X2 + 18;
@@ -1195,6 +1257,24 @@ export function drawNumbersPinball({
     );
     ctx.restore();
 
+    if (compactRankList && winners.length > RANK_DISPLAY_LIMIT) {
+      const rangeStart = firstVisibleRank + 1;
+      const rangeEnd = rankEnd;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.78)';
+      ctx.fillRect(listX - 4, H - 34, listW, 28);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = `bold ${Math.max(11, Math.floor(cfsz * 0.65))}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        `↕ #${rangeStart}-#${rangeEnd} / #${winners.length}`,
+        listX + listW / 2 - 4,
+        H - 20
+      );
+      ctx.restore();
+    }
+
     if (!isMobilePinball) drawMinimap();
   }
 
@@ -1205,7 +1285,10 @@ export function drawNumbersPinball({
     if (stopPinball) return;
 
     stopPinball = true;
-    canvas.removeEventListener('mousemove', onMMMove);
+    if (pinballCleanup) {
+      pinballCleanup();
+      pinballCleanup = null;
+    }
 
     overlay.classList.remove('show');
 

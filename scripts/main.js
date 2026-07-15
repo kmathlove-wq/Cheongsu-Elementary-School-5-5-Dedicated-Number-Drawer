@@ -1,4 +1,4 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=large-pools-8';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=large-pools-rank-scroll';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -28,7 +28,7 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=large-pools-8';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=large-pools-rank-scroll';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { setupAdminBulkMode } from './admin-bulk.js?v=admin-bulk-7';
