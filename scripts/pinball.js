@@ -74,9 +74,10 @@ export function drawNumbersPinball({
 
   const ctx = canvas.getContext('2d');
 
-  const isMobilePinball = window.matchMedia(
-    '(max-width: 760px), (pointer: coarse)'
-  ).matches;
+  const isMobilePinball =
+    window.innerWidth <= 900 ||
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia('(pointer: coarse)').matches;
   // 휴대폰은 캔버스 해상도·장애물·프레임 수를 줄여 발열과 끊김을 낮춘다.
   const renderScale = isMobilePinball ? 0.84 : 1;
 
@@ -96,8 +97,11 @@ export function drawNumbersPinball({
   overlay.classList.add('show');
 
   // ── 플레이 영역 (세계 좌표) ──
+  const MOBILE_HUD_W = isMobilePinball
+    ? Math.max(108, W * 0.32)
+    : 0;
   const PLAY_W = Math.min(
-    W * (isMobilePinball ? 0.62 : 0.62),
+    isMobilePinball ? W - MOBILE_HUD_W - 14 : W * 0.62,
     720
   );
 
@@ -106,6 +110,8 @@ export function drawNumbersPinball({
     : (W - PLAY_W) / 2;
 
   const PLAY_X2 = PLAY_X + PLAY_W;
+
+  const MOBILE_HUD_X = PLAY_X2 + 6;
 
   const PLAY_TOP = H * 0.04;
 
@@ -1015,11 +1021,24 @@ export function drawNumbersPinball({
 
     // ── HUD (화면 좌표) ──
 
+    if (isMobilePinball) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(5, 8, 18, 0.94)';
+      ctx.fillRect(MOBILE_HUD_X, 0, W - MOBILE_HUD_X, H);
+      ctx.strokeStyle = 'rgba(255,255,255,0.78)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(MOBILE_HUD_X, 0);
+      ctx.lineTo(MOBILE_HUD_X, H);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     const cfsz = Math.max(18, Math.floor(W * 0.022));
 
     // 당첨 순위 목록
     const denseList = count >= 20;
-    const listX = isMobilePinball ? PLAY_X2 + 8 : PLAY_X2 + 18;
+    const listX = isMobilePinball ? MOBILE_HUD_X + 8 : PLAY_X2 + 18;
     const counterY = 16;
     const listY0 =
       denseList
@@ -1060,7 +1079,7 @@ export function drawNumbersPinball({
       Math.floor(colW / 2.8)
     ));
 
-    while (denseList && rfsz > minRankFont) {
+    while ((denseList || isMobilePinball) && rfsz > minRankFont) {
       ctx.save();
       ctx.font = `bold ${rfsz}px Noto Sans KR, sans-serif`;
       const widestRankText =
