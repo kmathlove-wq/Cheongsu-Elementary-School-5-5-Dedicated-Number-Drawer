@@ -97,9 +97,6 @@ export function drawNumbersPinball({
 
   const H = canvas.height;
 
-  // 가상 월드 (모바일은 이동 거리를 줄여 빠르게 끝낸다.)
-  const WORLD_H = H * (isMobilePinball ? 3.1 : 4);
-
   let cameraY = 0;
 
   overlay.classList.add('show');
@@ -123,6 +120,23 @@ export function drawNumbersPinball({
 
   const PLAY_TOP = H * 0.04;
 
+  const BALL_R =
+    Math.max(13, Math.min(21, PLAY_W / 27));
+
+  const BALL_GAP = BALL_R * 2.35;
+
+  const DROP_COLS = Math.max(
+    1,
+    Math.min(
+      remainingEntries.length,
+      Math.floor(PLAY_W / BALL_GAP)
+    )
+  );
+
+  const DROP_ROWS = Math.ceil(
+    remainingEntries.length / DROP_COLS
+  );
+  const WORLD_H = H * (isMobilePinball ? 3.1 : 4);
   const PLAY_BOT = WORLD_H * 0.95;
 
   // ── 미니맵 ──
@@ -148,9 +162,6 @@ export function drawNumbersPinball({
   let minimapTargetCamY = 0;
 
   // ── 공 ──
-  const BALL_R =
-    Math.max(13, Math.min(21, PLAY_W / 27));
-
   const PALETTE = [
     '#ff6b6b', '#ffd56b', '#6bffb0', '#6bffff',
     '#b06bff', '#ff6bff', '#ff9f6b', '#b0ff6b',
@@ -171,23 +182,13 @@ export function drawNumbersPinball({
   const dropItems =
     shuffledItems;
 
-  const BALL_GAP = BALL_R * 2.35;
-
-  const DROP_COLS =
-    Math.max(
-      1,
-      Math.min(
-        dropItems.length,
-        Math.floor(PLAY_W / BALL_GAP)
-      )
-    );
-
   const balls = dropItems.map((entry, i) => {
     const num = entry.item;
     const isTeacher = num === '선생님';
     const isForced = forcedSet.has(entry.key);
     const col = i % DROP_COLS;
     const row = Math.floor(i / DROP_COLS);
+    const rowFromBottom = DROP_ROWS - 1 - row;
     const rowCount =
       Math.min(DROP_COLS, dropItems.length - row * DROP_COLS);
     const rowW = (rowCount - 1) * BALL_GAP;
@@ -195,7 +196,7 @@ export function drawNumbersPinball({
       num,
       key: entry.key,
       x: PLAY_X + PLAY_W / 2 - rowW / 2 + col * BALL_GAP,
-      y: PLAY_TOP + BALL_R + row * BALL_GAP,
+      y: -BALL_R - 4 - rowFromBottom * BALL_GAP,
       vx: 0,
       vy: 0,
       r: BALL_R,
@@ -586,11 +587,23 @@ export function drawNumbersPinball({
       keepBallInPlayArea(ball);
 
       if (!ball.isForced) {
-        for (const peg of pegs) hitPeg(ball, peg);
+        for (const peg of pegs) {
+          if (Math.abs(peg.cy - ball.y) < PEG_LEN + ball.r) {
+            hitPeg(ball, peg);
+          }
+        }
 
-        for (const bumper of bumpers) hitBumper(ball, bumper);
+        for (const bumper of bumpers) {
+          if (Math.abs(bumper.y - ball.y) < bumper.r + ball.r) {
+            hitBumper(ball, bumper);
+          }
+        }
 
-        for (const sp of spinners) hitPeg(ball, sp);
+        for (const sp of spinners) {
+          if (Math.abs(sp.cy - ball.y) < sp.len / 2 + ball.r) {
+            hitPeg(ball, sp);
+          }
+        }
       }
 
       keepBallInPlayArea(ball);
@@ -639,23 +652,32 @@ export function drawNumbersPinball({
       }
     }
 
-    // 공끼리 충돌은 휴대폰에서 한 프레임씩 건너뛰어 부담을 크게 줄인다.
+    // 공간 격자로 가까운 공만 검사해 항목 수가 늘어도 연산량 폭증을 막는다.
     if (!isMobilePinball || mobilePhysicsFrame % 2 === 0) {
-      for (let i = 0; i < active.length; i++) {
-        for (let j = i + 1; j < active.length; j++) {
-          if (active[i].isForced || active[j].isForced) {
-            continue;
-          }
+      const collisionCellSize = BALL_R * 2.5;
+      const collisionGrid = new Map();
 
-          if (
-            active[i].noBallCollisionFrames > 0 ||
-            active[j].noBallCollisionFrames > 0
-          ) {
-            continue;
-          }
+      for (const ball of active) {
+        if (ball.isForced || ball.noBallCollisionFrames > 0) continue;
 
-          hitBall(active[i], active[j]);
+        const cellX = Math.floor(ball.x / collisionCellSize);
+        const cellY = Math.floor(ball.y / collisionCellSize);
+
+        for (let ox = -1; ox <= 1; ox++) {
+          for (let oy = -1; oy <= 1; oy++) {
+            const nearby = collisionGrid.get(
+              `${cellX + ox}:${cellY + oy}`
+            );
+            if (!nearby) continue;
+
+            for (const other of nearby) hitBall(other, ball);
+          }
         }
+
+        const cellKey = `${cellX}:${cellY}`;
+        const cell = collisionGrid.get(cellKey) || [];
+        cell.push(ball);
+        collisionGrid.set(cellKey, cell);
       }
     }
 

@@ -1,7 +1,7 @@
 import {
   drawNumbersPinball,
   stopPinballMode,
-} from './pinball.js?v=mobile-pinball-5';
+} from './pinball.js?v=pinball-spawn-6';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -34,7 +34,7 @@ import {
 import {
   setupMemeTerminateShortcut,
   terminateProgram,
-} from './terminate.js?v=mobile-pinball-5';
+} from './terminate.js?v=pinball-spawn-6';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 
