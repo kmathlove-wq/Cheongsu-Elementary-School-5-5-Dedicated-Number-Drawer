@@ -517,6 +517,8 @@ export function drawNumbersPinball({
   let doneHandled = false;
   let rankScrollOffset = 0;
   let rankDragStartY = null;
+  let rankThumbDrag = null;
+  let rankUi = null;
   const RANK_DISPLAY_LIMIT = isMobilePinball ? 10 : 16;
 
   // ── 미니맵 마우스 이벤트 ──
@@ -542,10 +544,22 @@ export function drawNumbersPinball({
     minimapHover = false;
   }
 
-  function isRankPanelPoint(clientX) {
+  function getCanvasPoint(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) * canvas.width / rect.width;
-    return x >= (isMobilePinball ? MOBILE_HUD_X : PLAY_X2);
+    return {
+      x: (clientX - rect.left) * canvas.width / rect.width,
+      y: (clientY - rect.top) * canvas.height / rect.height,
+    };
+  }
+
+  function isRankPanelPoint(clientX, clientY = 0) {
+    const point = getCanvasPoint(clientX, clientY);
+    return point.x >= (isMobilePinball ? MOBILE_HUD_X : PLAY_X2);
+  }
+
+  function containsPoint(rect, point) {
+    return rect && point.x >= rect.x && point.x <= rect.x + rect.w &&
+      point.y >= rect.y && point.y <= rect.y + rect.h;
   }
 
   function scrollRanks(amount) {
@@ -557,22 +571,66 @@ export function drawNumbersPinball({
   }
 
   function onRankWheel(event) {
-    if (count <= 30 || !isRankPanelPoint(event.clientX)) return;
+    if (count <= 30 || !isRankPanelPoint(event.clientX, event.clientY)) return;
     event.preventDefault();
     scrollRanks(event.deltaY < 0 ? 3 : -3);
   }
 
   function onRankPointerDown(event) {
-    if (count > 30 && isRankPanelPoint(event.clientX)) {
-      rankDragStartY = event.clientY;
+    if (count <= 30) return;
+    const point = getCanvasPoint(event.clientX, event.clientY);
+    if (containsPoint(rankUi?.downButton, point)) {
+      rankScrollOffset = 0;
+      return;
+    }
+    if (containsPoint(rankUi?.thumb, point)) {
+      rankThumbDrag = {
+        pointerId: event.pointerId,
+        startY: point.y,
+        startOffset: rankScrollOffset,
+      };
+      canvas.setPointerCapture?.(event.pointerId);
+      return;
+    }
+    if (containsPoint(rankUi?.track, point)) {
+      const ratio = (point.y - rankUi.track.y) / rankUi.track.h;
+      rankScrollOffset = Math.round(rankUi.maxOffset * (1 - ratio));
+      scrollRanks(0);
+      return;
+    }
+    if (isRankPanelPoint(event.clientX, event.clientY)) {
+      rankDragStartY = point.y;
     }
   }
 
+  function onRankPointerMove(event) {
+    if (!rankThumbDrag || !rankUi ||
+        rankThumbDrag.pointerId !== event.pointerId) return;
+    const point = getCanvasPoint(event.clientX, event.clientY);
+    const travel = Math.max(1, rankUi.track.h - rankUi.thumb.h);
+    const delta = point.y - rankThumbDrag.startY;
+    rankScrollOffset = Math.round(
+      rankThumbDrag.startOffset - delta / travel * rankUi.maxOffset
+    );
+    scrollRanks(0);
+  }
+
   function onRankPointerUp(event) {
+    if (rankThumbDrag?.pointerId === event.pointerId) {
+      rankThumbDrag = null;
+      canvas.releasePointerCapture?.(event.pointerId);
+      return;
+    }
     if (rankDragStartY === null) return;
-    const distance = event.clientY - rankDragStartY;
+    const point = getCanvasPoint(event.clientX, event.clientY);
+    const distance = point.y - rankDragStartY;
     rankDragStartY = null;
     if (Math.abs(distance) >= 20) scrollRanks(distance > 0 ? 3 : -3);
+  }
+
+  function onRankPointerCancel() {
+    rankThumbDrag = null;
+    rankDragStartY = null;
   }
 
   if (!isMobilePinball) {
@@ -581,13 +639,17 @@ export function drawNumbersPinball({
   }
   canvas.addEventListener('wheel', onRankWheel, { passive: false });
   canvas.addEventListener('pointerdown', onRankPointerDown);
+  canvas.addEventListener('pointermove', onRankPointerMove);
   canvas.addEventListener('pointerup', onRankPointerUp);
+  canvas.addEventListener('pointercancel', onRankPointerCancel);
   pinballCleanup = () => {
     canvas.removeEventListener('mousemove', onMMMove);
     canvas.removeEventListener('mouseleave', onMMLeave);
     canvas.removeEventListener('wheel', onRankWheel);
     canvas.removeEventListener('pointerdown', onRankPointerDown);
+    canvas.removeEventListener('pointermove', onRankPointerMove);
     canvas.removeEventListener('pointerup', onRankPointerUp);
+    canvas.removeEventListener('pointercancel', onRankPointerCancel);
   };
 
   let mobilePhysicsFrame = 0;
@@ -1157,9 +1219,9 @@ export function drawNumbersPinball({
         : H * 0.06;
     const listW =
       isMobilePinball
-        ? Math.max(72, W - listX - 8)
-        : Math.max(60, W - listX - 20);
-    const availH = H - listY0 - 20;
+        ? Math.max(54, W - listX - (compactRankList ? 30 : 8))
+        : Math.max(48, W - listX - (compactRankList ? 42 : 20));
+    const availH = H - listY0 - (compactRankList ? 58 : 20);
     const colGap = denseList ? 10 : 0;
     const maxCols =
       isMobilePinball
@@ -1257,20 +1319,70 @@ export function drawNumbersPinball({
     );
     ctx.restore();
 
+    rankUi = null;
     if (compactRankList && winners.length > RANK_DISPLAY_LIMIT) {
       const rangeStart = firstVisibleRank + 1;
       const rangeEnd = rankEnd;
+      const maxOffset = winners.length - RANK_DISPLAY_LIMIT;
+      const trackX = listX + listW + 8;
+      const trackY = listY0 - lineH * 0.45;
+      const trackH = Math.max(48, H - trackY - 58);
+      const thumbH = Math.max(
+        24,
+        trackH * Math.min(1, RANK_DISPLAY_LIMIT / winners.length)
+      );
+      const thumbTravel = Math.max(0, trackH - thumbH);
+      const thumbY = trackY +
+        (1 - rankScrollOffset / maxOffset) * thumbTravel;
+      const downButton = {
+        x: trackX - 12,
+        y: H - 42,
+        w: 30,
+        h: 30,
+      };
+      rankUi = {
+        maxOffset,
+        track: { x: trackX - 6, y: trackY, w: 16, h: trackH },
+        thumb: { x: trackX - 5, y: thumbY, w: 14, h: thumbH },
+        downButton,
+      };
+
       ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,0.78)';
-      ctx.fillRect(listX - 4, H - 34, listW, 28);
+      ctx.fillRect(listX - 4, H - 40, listW, 34);
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.font = `bold ${Math.max(11, Math.floor(cfsz * 0.65))}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(
-        `↕ #${rangeStart}-#${rangeEnd} / #${winners.length}`,
+        `#${rangeStart}-#${rangeEnd} / #${winners.length}`,
         listX + listW / 2 - 4,
-        H - 20
+        H - 23
+      );
+
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
+      ctx.fillRect(trackX, trackY, 4, trackH);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillRect(trackX - 3, thumbY, 10, thumbH);
+
+      ctx.fillStyle = rankScrollOffset === 0
+        ? 'rgba(74,222,128,0.9)'
+        : 'rgba(255,255,255,0.2)';
+      ctx.beginPath();
+      ctx.arc(
+        downButton.x + downButton.w / 2,
+        downButton.y + downButton.h / 2,
+        downButton.w / 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+      ctx.fillStyle = rankScrollOffset === 0 ? '#08120c' : '#fff';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(
+        '▼',
+        downButton.x + downButton.w / 2,
+        downButton.y + downButton.h / 2 + 1
       );
       ctx.restore();
     }

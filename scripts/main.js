@@ -1,4 +1,4 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=large-pools-rank-scroll';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=rank-scrollbar-admin-range';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -28,10 +28,10 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=large-pools-summary';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=rank-scrollbar-admin-range';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
-import { setupAdminBulkMode } from './admin-bulk.js?v=admin-bulk-7';
+import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
 import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=large-pools-summary';
 
 const drawButton = document.getElementById('drawButton');
@@ -1242,6 +1242,23 @@ function addAdminItemsBulk(item, count) {
   return true;
 }
 
+function deleteAdminItemsRange(start, end) {
+  const mode = adminModeSelect.value;
+  if (!saveAdminListInputs(adminEditingMode)) return false;
+  const result = createRangeDeletion(
+    modePools[mode], modeOptions[mode].forcedItems,
+    modeOptions[mode].blockedItems, start, end,
+    (item, index) => isProtectedAdminItem(mode, item, index)
+  );
+  if (result.removed === 0) return false;
+  modePools[mode] = result.items;
+  modeOptions[mode].forcedItems = result.forcedItems;
+  modeOptions[mode].blockedItems = result.blockedItems;
+  commitAdminPoolChange(mode);
+  setAdminManageError(`${start}~${end} 범위에서 ${result.removed}개를 삭제했습니다.`);
+  return true;
+}
+
 function renameAdminItem(index, value) {
 
   const mode = adminModeSelect.value;
@@ -1918,11 +1935,6 @@ adminResetButton.addEventListener('click', () => {
   setAdminManageError('기본값으로 되돌렸습니다.');
 });
 
-adminCloseButton.addEventListener(
-  'click',
-  closeAdminMode
-);
-
 adminOverlay.addEventListener('click', (event) => {
 
   if (event.target === adminOverlay) {
@@ -1967,6 +1979,10 @@ setupManittoMode({ numberGrid, bigOverlay, bigNumber, getResultLabel, adjustFont
 
 setupMemeTerminateShortcut();
 
-setupAdminBulkMode(addAdminItemsBulk);
+setupAdminBulkMode({
+  addItems: addAdminItemsBulk,
+  deleteRange: deleteAdminItemsRange,
+  closeParent: closeAdminMode,
+});
 
 openAppSettings({ required: true });

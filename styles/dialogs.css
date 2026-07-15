@@ -328,6 +328,23 @@
   max-width: 440px;
 }
 
+.admin-bulk-panel h3 {
+  margin: 18px 0 12px;
+}
+
+.admin-bulk-divider {
+  margin: 22px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.admin-bulk-range {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 12px;
+}
+
 .admin-bulk-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -341,6 +358,11 @@
 .admin-bulk-actions .secondary {
   background: #eef0ff;
   color: var(--text);
+}
+
+.admin-bulk-delete.danger {
+  background: #ffe7e7;
+  color: #b4232a;
 }
 
 .admin-mode-label {

@@ -123,7 +123,7 @@
     </div>
 
     <footer class="build-info" aria-label="현재 수정 버전">
-      수정 버전: 대량 항목 · 큰 글자 요약 · 핀볼 순위 스크롤
+      수정 버전: 대량 항목 · 핀볼 순위 스크롤바 · 관리자 범위 삭제
     </footer>
 
   </main>
@@ -339,7 +339,7 @@
 
   <div class="admin-overlay admin-bulk-overlay" id="adminBulkOverlay" aria-hidden="true">
     <section class="admin-panel admin-bulk-panel" role="dialog" aria-modal="true">
-      <button class="admin-close" id="adminBulkClose" type="button" aria-label="대량 추가 닫기">
+      <button class="admin-close" id="adminBulkClose" type="button" aria-label="관리자 모드의 관리자 모드 닫기">
         ×
       </button>
       <h2>관리자 모드의 관리자 모드</h2>
@@ -354,10 +354,22 @@
           <button class="secondary" id="adminBulkCancel" type="button">취소</button>
         </div>
       </form>
+      <hr class="admin-bulk-divider" />
+      <h3>번호 범위 삭제</h3>
+      <form class="admin-login-form" id="adminBulkDeleteForm">
+        <div class="admin-bulk-range">
+          <label for="adminBulkDeleteStart">시작 번호</label>
+          <input id="adminBulkDeleteStart" type="number" step="1" inputmode="numeric" />
+          <label for="adminBulkDeleteEnd">끝 번호</label>
+          <input id="adminBulkDeleteEnd" type="number" step="1" inputmode="numeric" />
+        </div>
+        <p class="admin-error" id="adminBulkDeleteError"></p>
+        <button class="danger admin-bulk-delete" type="submit">범위 삭제</button>
+      </form>
     </section>
   </div>
 
-<script type="module" src="scripts/main.js?v=large-pools-summary"></script>
+<script type="module" src="scripts/main.js?v=rank-scrollbar-admin-range"></script>
 
 </body>
 </html>
