@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=factory-water-continuous-route';
+} from './pinball-maps.js?v=route-bounds-summary-50';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=factory-water-continuous-route';
+} from './pinball-maps.js?v=route-bounds-summary-50';
 import {
   getPinballMap,
-} from './settings.js?v=factory-water-continuous-route';
+} from './settings.js?v=route-bounds-summary-50';
 
 let pinballRafId = null;
 
@@ -515,14 +515,20 @@ export function drawNumbersPinball({
       if (climb) {
         const entry = climb.points[0];
         const maxOffset = Math.max(0, climb.width / 2 - ball.r * 1.2);
+        const laneOffset = Math.max(
+          -maxOffset,
+          Math.min(maxOffset, ball.x - entry.x)
+        );
+        const routeStart = getWaterClimbPoint(climb, 0);
         ball.activeWaterClimb = {
           climb,
           distance: 0,
-          laneOffset: Math.max(
-            -maxOffset,
-            Math.min(maxOffset, ball.x - entry.x)
-          ),
+          laneOffset,
         };
+        ball.x =
+          routeStart.x - Math.sin(routeStart.angle) * laneOffset;
+        ball.y =
+          routeStart.y + Math.cos(routeStart.angle) * laneOffset;
         ball.noBallCollisionFrames = 60;
         ball.vx = 0;
         ball.vy = 0;
@@ -905,12 +911,16 @@ export function drawNumbersPinball({
         ball.vy = ball.vy / spd * maxSpeed;
       }
 
-      keepBallInPlayArea(ball);
+      if (!waterMotion) {
+        keepBallInPlayArea(ball);
+      }
 
       ball.x += ball.vx * motionStep;
       ball.y += ball.vy * motionStep;
 
-      keepBallInPlayArea(ball);
+      if (!waterMotion) {
+        keepBallInPlayArea(ball);
+      }
 
       if (!ball.isForced && !waterMotion) {
         for (const peg of pegs) {
@@ -942,7 +952,9 @@ export function drawNumbersPinball({
         }
       }
 
-      keepBallInPlayArea(ball);
+      if (!waterMotion) {
+        keepBallInPlayArea(ball);
+      }
 
       // 끼임 감지 → 위치 분리와 짧은 충돌 무시로 탈출
       const bSpeed =
@@ -1100,21 +1112,37 @@ export function drawNumbersPinball({
         winners: winners.length,
         winnerWaterCourses:
           winners.map((ball) => ball.usedWaterClimbs.size),
-        balls: trackingBalls.map((ball) => ({
-          x: ball.x,
-          y: ball.y,
-          r: ball.r,
-          inWater: Boolean(
-            ball.activeWaterLift ||
-            (
-              ball.activeWaterClimb &&
-              ball.activeWaterClimb.distance >=
-                ball.activeWaterClimb.climb.waterStartDistance &&
-              ball.activeWaterClimb.distance <=
-                ball.activeWaterClimb.climb.waterEndDistance
+        balls: trackingBalls.map((ball) => {
+          const detour = ball.activeWaterClimb;
+          const routePoint = detour
+            ? getWaterClimbPoint(
+              detour.climb,
+              detour.distance
             )
-          ),
-        })),
+            : null;
+          const routeDeviation = routePoint
+            ? Math.hypot(
+              ball.x - routePoint.x,
+              ball.y - routePoint.y
+            )
+            : 0;
+          return {
+            x: ball.x,
+            y: ball.y,
+            r: ball.r,
+            inDetour: Boolean(detour),
+            insideDetour: !detour ||
+              routeDeviation <= detour.climb.width / 2 + ball.r,
+            inWater: Boolean(
+              ball.activeWaterLift ||
+              (
+                detour &&
+                detour.distance >= detour.climb.waterStartDistance &&
+                detour.distance <= detour.climb.waterEndDistance
+              )
+            ),
+          };
+        }),
       });
     }
 

@@ -7,7 +7,12 @@ function countItems(items) {
   return counts;
 }
 
-export function formatResultSummary(items, limit = 20) {
+export const RESULT_SUMMARY_LIMIT = 50;
+
+export function formatResultSummary(
+  items,
+  limit = RESULT_SUMMARY_LIMIT
+) {
   const labels = items.map(String);
   if (labels.length <= limit) return labels.join(', ');
 
@@ -21,7 +26,11 @@ export function formatResultSummary(items, limit = 20) {
   return `${visible.join(', ')} (총 ${labels.length}명)`;
 }
 
-export function renderResultSummary(container, items, limit = 20) {
+export function renderResultSummary(
+  container,
+  items,
+  limit = RESULT_SUMMARY_LIMIT
+) {
   const labels = items.map(String);
   const isSummary = labels.length > limit;
   container.classList.toggle('result-summary-list', isSummary);

@@ -56,6 +56,30 @@ for (const mapId of ['classic', 'zigzag', 'curves', 'factory']) {
 const pinballMapModule = await import(
   `data:text/javascript;base64,${Buffer.from(pinballMaps).toString('base64')}`
 );
+const resultDisplaySource = readFileSync(
+  'scripts/result-display.js',
+  'utf8'
+);
+const resultDisplayModule = await import(
+  `data:text/javascript;base64,${Buffer.from(resultDisplaySource).toString('base64')}`
+);
+
+if (
+  resultDisplayModule.formatResultSummary(
+    Array.from({ length: 26 }, (_, index) => index + 1)
+  ).includes('총 26명')
+) {
+  throw new Error('A normal 26-person result must not use bulk summary');
+}
+
+if (
+  !resultDisplayModule.formatResultSummary(
+    Array.from({ length: 51 }, (_, index) => index + 1)
+  ).includes('총 51명')
+) {
+  throw new Error('Results over 50 people must use bulk summary');
+}
+
 const mapBounds = {
   playX: 100,
   playW: 700,

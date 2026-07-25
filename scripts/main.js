@@ -1,10 +1,10 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=factory-water-continuous-route';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=route-bounds-summary-50';
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=large-pools-summary';
+} from './gumball.js?v=route-bounds-summary-50';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=factory-water-continuous-route';
+} from './settings.js?v=route-bounds-summary-50';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,11 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=factory-water-continuous-route';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=route-bounds-summary-50';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
-import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=large-pools-summary';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=route-bounds-summary-50';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');

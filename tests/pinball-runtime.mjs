@@ -148,6 +148,11 @@ for (const frame of frames) {
   ) {
     throw new Error('Pinball runtime produced invalid coordinates');
   }
+  if (frame.balls.some((ball) =>
+    ball.inDetour && !ball.insideDetour
+  )) {
+    throw new Error('A pinball escaped the continuous detour course');
+  }
   if (
     frame.balls.length > 0 &&
     !frame.balls.some((ball) =>

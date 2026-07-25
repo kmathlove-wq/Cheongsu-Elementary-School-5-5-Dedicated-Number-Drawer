@@ -1,5 +1,5 @@
 import { scaleMotionTime } from './motion.js';
-import { formatResultSummary, renderResultSummary } from './result-display.js?v=large-pools-summary';
+import { formatResultSummary, renderResultSummary } from './result-display.js?v=route-bounds-summary-50';
 
 const gumballStage =
   document.getElementById('gumballStage');
