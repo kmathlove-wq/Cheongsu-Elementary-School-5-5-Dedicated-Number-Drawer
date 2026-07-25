@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=distinct-pinball-map-personalities';
+} from './pinball-maps.js?v=factory-water-lifts';
 import {
   getPinballMap,
-} from './settings.js?v=distinct-pinball-map-personalities';
+} from './settings.js?v=factory-water-lifts';
 
 let pinballRafId = null;
 
@@ -222,6 +222,8 @@ export function drawNumbersPinball({
       sonicCooldown: 0,
       boosterCooldown: 0,
       usedBoosters: new Set(),
+      usedWaterLifts: new Set(),
+      activeWaterLift: null,
       isTeacher,
       isForced,
     };
@@ -248,7 +250,7 @@ export function drawNumbersPinball({
     isMobile: isMobilePinball,
   });
   const {
-    pegs, bumpers, spinners, boosters,
+    pegs, bumpers, spinners, boosters, waterLifts,
   } = pinballMap;
   const startLane = pinballMap.course.at(0);
   for (const ball of balls) {
@@ -372,6 +374,94 @@ export function drawNumbersPinball({
     ball.boosterCooldown = 28;
     booster.lit = 18;
     playBumperBeep();
+  }
+
+  function getWaterLiftBounds(
+    lift,
+    worldY,
+    widthRatio = lift.widthRatio
+  ) {
+
+    const lane = pinballMap.course.at(worldY);
+    const laneWidth = lane.right - lane.left;
+    const center =
+      lane.left + laneWidth * lift.position;
+    const width = laneWidth * widthRatio;
+    return {
+      left: center - width / 2,
+      right: center + width / 2,
+      center,
+    };
+  }
+
+  function updateWaterLift(ball, motionStep) {
+
+    if (!ball.activeWaterLift) {
+      const lift = waterLifts.find((candidate) => {
+        if (ball.usedWaterLifts.has(candidate.id)) return false;
+        const inlet = getWaterLiftBounds(
+          candidate,
+          candidate.bottomY,
+          candidate.inletWidthRatio
+        );
+        return (
+          ball.y >= candidate.bottomY - ball.r * 3 &&
+          ball.y <= candidate.bottomY + ball.r * 2 &&
+          ball.x >= inlet.left + ball.r &&
+          ball.x <= inlet.right - ball.r
+        );
+      });
+
+      if (lift) {
+        ball.activeWaterLift = lift;
+        ball.noBallCollisionFrames = 45;
+        ball.vy = -Math.max(5, lift.riseSpeed * 0.55);
+        const water = getWaterLiftBounds(lift, ball.y);
+        ball.x += (water.center - ball.x) * 0.32;
+        playBumperBeep();
+      }
+    }
+
+    const lift = ball.activeWaterLift;
+    if (!lift) return false;
+
+    const water = getWaterLiftBounds(lift, ball.y);
+    ball.vx += (water.center - ball.x) * 0.07 * motionStep;
+    ball.vx *= Math.pow(0.84, motionStep);
+    ball.vy = Math.max(
+      -lift.riseSpeed,
+      ball.vy - 0.72 * motionStep
+    );
+
+    if (ball.y <= lift.topY + ball.r * 1.3) {
+      ball.y = lift.topY + ball.r * 1.3;
+      const outlet = getWaterLiftBounds(lift, ball.y);
+      const lane = pinballMap.course.at(ball.y);
+      const exitSide = lift.position < 0.5 ? 1 : -1;
+      ball.x = exitSide > 0
+        ? Math.min(
+          lane.right - ball.r,
+          outlet.right + ball.r * 1.8
+        )
+        : Math.max(
+          lane.left + ball.r,
+          outlet.left - ball.r * 1.8
+        );
+      ball.usedWaterLifts.add(lift.id);
+      ball.activeWaterLift = null;
+      ball.vx = exitSide * (4 + Math.random() * 2);
+      ball.vy = lift.dropSpeed;
+      ball.noBallCollisionFrames = 55;
+      sonicBooms.push({
+        x: ball.x,
+        y: ball.y,
+        r: ball.r,
+        alpha: 1,
+      });
+      playBumperBeep();
+    }
+
+    return true;
   }
 
   function hitBall(a, b) {
@@ -662,7 +752,12 @@ export function drawNumbersPinball({
         ball.boosterCooldown--;
       }
 
-      ball.vy += 0.28 * motionStep;
+      const waterMotion =
+        updateWaterLift(ball, motionStep);
+
+      if (!waterMotion) {
+        ball.vy += 0.28 * motionStep;
+      }
 
       const spd =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
@@ -682,7 +777,7 @@ export function drawNumbersPinball({
 
       keepBallInPlayArea(ball);
 
-      if (!ball.isForced) {
+      if (!ball.isForced && !waterMotion) {
         for (const peg of pegs) {
           if (
             Math.abs(peg.cy - ball.y) <
@@ -728,6 +823,7 @@ export function drawNumbersPinball({
       }
       if (
         !ball.isForced &&
+        !waterMotion &&
         (bSpeed < 1.05 || moved < 0.35)
       ) {
         if (ball.stuckSince === null) ball.stuckSince = nowMs;
@@ -766,7 +862,11 @@ export function drawNumbersPinball({
       const collisionGrid = new Map();
 
       for (const ball of active) {
-        if (ball.isForced || ball.noBallCollisionFrames > 0) continue;
+        if (
+          ball.isForced ||
+          ball.activeWaterLift ||
+          ball.noBallCollisionFrames > 0
+        ) continue;
 
         const cellX = Math.floor(ball.x / collisionCellSize);
         const cellY = Math.floor(ball.y / collisionCellSize);
@@ -882,6 +982,88 @@ export function drawNumbersPinball({
     ctx.restore();
   }
 
+  function drawWaterLift(
+    lift,
+    getX = (value) => value,
+    getY = (value) => value,
+    detailed = true
+  ) {
+
+    const points = [];
+    const steps = detailed ? 28 : 12;
+    for (let index = 0; index <= steps; index++) {
+      const y =
+        lift.topY +
+        (lift.bottomY - lift.topY) * index / steps;
+      points.push({ y, ...getWaterLiftBounds(lift, y) });
+    }
+
+    ctx.save();
+    ctx.fillStyle = detailed
+      ? 'rgba(30, 170, 255, 0.28)'
+      : 'rgba(30, 170, 255, 0.55)';
+    ctx.strokeStyle = lift.color;
+    ctx.lineWidth = detailed ? Math.max(3, PEG_THICK * 0.55) : 1.4;
+    ctx.shadowBlur = detailed ? 22 : 3;
+    ctx.shadowColor = lift.color;
+    ctx.beginPath();
+    ctx.moveTo(getX(points[0].left), getY(points[0].y));
+    for (const point of points) {
+      ctx.lineTo(getX(point.left), getY(point.y));
+    }
+    for (let index = points.length - 1; index >= 0; index--) {
+      const point = points[index];
+      ctx.lineTo(getX(point.right), getY(point.y));
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    const inlet = getWaterLiftBounds(
+      lift,
+      lift.bottomY,
+      lift.inletWidthRatio
+    );
+    ctx.lineWidth = detailed ? Math.max(7, PEG_THICK) : 2;
+    ctx.beginPath();
+    ctx.moveTo(getX(inlet.left), getY(inlet.y));
+    ctx.lineTo(getX(inlet.right), getY(inlet.y));
+    ctx.stroke();
+
+    if (detailed) {
+      const now = performance.now() * 0.001;
+      const span = lift.bottomY - lift.topY;
+      ctx.fillStyle = 'rgba(210, 250, 255, 0.82)';
+      for (let index = 0; index < 16; index++) {
+        const progress =
+          (now * (0.12 + index % 3 * 0.025) + index / 16) % 1;
+        const y = lift.bottomY - span * progress;
+        const water = getWaterLiftBounds(lift, y);
+        const wave = Math.sin(now * 2.4 + index * 1.7);
+        const x =
+          water.center + wave * (water.right - water.left) * 0.34;
+        ctx.beginPath();
+        ctx.arc(x, y, 3 + index % 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = '#e7fbff';
+      ctx.lineWidth = 4;
+      for (let index = 1; index <= 4; index++) {
+        const y =
+          lift.topY + span * index / 5;
+        const water = getWaterLiftBounds(lift, y);
+        const size = Math.max(9, BALL_R * 0.55);
+        ctx.beginPath();
+        ctx.moveTo(water.center - size, y + size * 0.55);
+        ctx.lineTo(water.center, y - size * 0.45);
+        ctx.lineTo(water.center + size, y + size * 0.55);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawCourse(getX = (value) => value, getY = (value) => value) {
 
     const samples = pinballMap.course.samples;
@@ -933,6 +1115,10 @@ export function drawNumbersPinball({
     ctx.lineWidth = 1.4;
     drawCourse(mmX, mmY);
     ctx.restore();
+
+    for (const lift of waterLifts) {
+      drawWaterLift(lift, mmX, mmY, false);
+    }
 
     // 결승선
     const finishLane = pinballMap.course.at(PLAY_BOT);
@@ -1090,6 +1276,10 @@ export function drawNumbersPinball({
     ctx.lineWidth = Math.max(3, PEG_THICK * 0.6);
     drawCourse();
     ctx.restore();
+
+    for (const lift of waterLifts) {
+      drawWaterLift(lift);
+    }
 
     // 결승선 (노란 점선)
     const finishLane = pinballMap.course.at(PLAY_BOT);

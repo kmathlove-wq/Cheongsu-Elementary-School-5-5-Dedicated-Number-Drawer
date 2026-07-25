@@ -148,6 +148,7 @@ function createBuilder(bounds, course) {
   const bumpers = [];
   const spinners = [];
   const boosters = [];
+  const waterLifts = [];
 
   function laneX(ratioX, ratioY) {
     const lane = course.at(y(ratioY));
@@ -296,16 +297,32 @@ function createBuilder(bounds, course) {
     }
   }
 
+  function addWaterLift(top, bottom, options = {}) {
+    waterLifts.push({
+      id: waterLifts.length,
+      topY: y(top),
+      bottomY: y(bottom),
+      position: options.position || 0.5,
+      widthRatio: options.widthRatio || 0.86,
+      inletWidthRatio: options.inletWidthRatio || 1,
+      riseSpeed: options.riseSpeed || 10,
+      dropSpeed: options.dropSpeed || 22,
+      color: options.color || '#38d9ff',
+    });
+  }
+
   return {
     pegs,
     bumpers,
     spinners,
     boosters,
+    waterLifts,
     addPeg,
     addBumper,
     addSpinner,
     addBooster,
     addPegField,
+    addWaterLift,
     isMobile,
   };
 }
@@ -440,7 +457,8 @@ function buildCurves(builder, bounds) {
 
 function buildFactory(builder, bounds) {
   const {
-    addPegField, addBumper, addSpinner, addBooster, isMobile,
+    addPegField, addBumper, addSpinner,
+    addBooster, addWaterLift, isMobile,
   } = builder;
   const { bumperR, spinnerLen } = bounds;
   addPegField({
@@ -529,19 +547,12 @@ function buildFactory(builder, bounds) {
     });
 
   [
-    [0.50, 0.11, -16, '#ff4d6d'],
-    [0.50, 0.20, 8, '#4ade80'],
-    [0.50, 0.37, -18, '#ff4d6d'],
-    [0.50, 0.48, 9, '#4ade80'],
-    [0.50, 0.64, -17, '#ff4d6d'],
-    [0.50, 0.76, 9, '#4ade80'],
-    [0.50, 0.88, -15, '#ff4d6d'],
-    [0.50, 0.96, 10, '#4ade80'],
+    [0.50, 0.29, 10],
+    [0.50, 0.60, 11],
+    [0.50, 0.90, 12],
   ]
-    .filter((_, index) =>
-      !isMobile || [0, 3, 4, 7].includes(index)
-    )
-    .forEach(([px, py, vy, color]) => {
+    .filter((_, index) => !isMobile || index !== 1)
+    .forEach(([px, py, vy]) => {
       addBooster(
         px,
         py,
@@ -549,9 +560,25 @@ function buildFactory(builder, bounds) {
         0.006,
         0,
         vy,
-        color,
+        '#4ade80',
         { oncePerBall: true }
       );
+    });
+
+  [
+    [0.12, 0.24, 10.5, 22, 0.24],
+    [0.42, 0.55, 11, 22, 0.76],
+    [0.70, 0.84, 11.5, 22, 0.26],
+  ]
+    .filter((_, index) => !isMobile || index !== 1)
+    .forEach(([top, bottom, riseSpeed, dropSpeed, position]) => {
+      addWaterLift(top, bottom, {
+        position,
+        widthRatio: 0.38,
+        inletWidthRatio: 1,
+        riseSpeed,
+        dropSpeed,
+      });
     });
 }
 
@@ -583,7 +610,9 @@ export function createPinballMap(mapId, bounds) {
   else if (selected === 'factory') buildFactory(builder, bounds);
   else buildClassic(builder, bounds);
 
-  const { pegs, bumpers, spinners, boosters } = builder;
+  const {
+    pegs, bumpers, spinners, boosters, waterLifts,
+  } = builder;
   const filteredPegs = pegs.filter((peg) => !bumpers.some((bumper) => {
     const clearance = bumper.r + peg.thick / 2 + 4;
     return distanceToSegment(bumper.x, bumper.y, peg) < clearance;
@@ -597,5 +626,6 @@ export function createPinballMap(mapId, bounds) {
     bumpers,
     spinners,
     boosters,
+    waterLifts,
   };
 }

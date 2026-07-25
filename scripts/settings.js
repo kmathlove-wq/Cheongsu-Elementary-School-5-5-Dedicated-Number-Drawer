@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=distinct-pinball-map-personalities';
+} from './pinball-maps.js?v=factory-water-lifts';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

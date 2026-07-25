@@ -134,10 +134,20 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       map.bumpers.filter((bumper) => bumper.oneShot).length < 4 ||
       map.spinners.filter((spinner) => spinner.moveSpeed).length < 4 ||
       map.spinners.filter((spinner) => spinner.len > 250).length < 4 ||
-      map.boosters.filter((booster) => booster.vy < 0).length < 3
+      map.waterLifts.length < 2
     )
   ) {
     throw new Error('Chaos factory special obstacles are incomplete');
+  }
+
+  if (map.waterLifts.some((lift) =>
+    lift.topY >= lift.bottomY ||
+    lift.widthRatio < 0.3 ||
+    lift.inletWidthRatio < 0.9 ||
+    lift.riseSpeed <= 0 ||
+    lift.dropSpeed <= lift.riseSpeed
+  )) {
+    throw new Error(`Pinball water lift is invalid: ${id}`);
   }
 }
 
