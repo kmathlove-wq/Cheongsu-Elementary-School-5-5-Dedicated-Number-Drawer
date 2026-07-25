@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=factory-water-course-fix';
+} from './pinball-maps.js?v=factory-water-runtime-fix';
 import {
   getPinballMap,
-} from './settings.js?v=factory-water-course-fix';
+} from './settings.js?v=factory-water-runtime-fix';
 
 let pinballRafId = null;
 
@@ -56,6 +56,8 @@ export function drawNumbersPinball({
   playBumperBeep,
   forcedItems = [],
   applyPinballResult,
+  pinballMapOverride = null,
+  debugFrame = null,
 }) {
 
   if (remainingEntries.length === 0) {
@@ -112,7 +114,8 @@ export function drawNumbersPinball({
   const H = canvas.height;
 
   let cameraY = 0;
-  const selectedPinballMap = getPinballMap();
+  const selectedPinballMap =
+    pinballMapOverride || getPinballMap();
 
   overlay.classList.add('show');
 
@@ -844,6 +847,29 @@ export function drawNumbersPinball({
 
     for (const ball of active) {
 
+      if (
+        !Number.isFinite(ball.x) ||
+        !Number.isFinite(ball.y) ||
+        !Number.isFinite(ball.vx) ||
+        !Number.isFinite(ball.vy)
+      ) {
+        const recoveryY = Math.max(
+          0,
+          Math.min(
+            PLAY_BOT - ball.r * 4,
+            (Number.isFinite(cameraY) ? cameraY : 0) + H * 0.28
+          )
+        );
+        const recoveryLane = pinballMap.course.at(recoveryY);
+        ball.x = (recoveryLane.left + recoveryLane.right) / 2;
+        ball.y = recoveryY;
+        ball.vx = 0;
+        ball.vy = 2;
+        ball.activeWaterLift = null;
+        ball.activeWaterClimb = null;
+        ball.noBallCollisionFrames = 45;
+      }
+
       const prevX = ball.x;
       const prevY = ball.y;
 
@@ -1017,17 +1043,20 @@ export function drawNumbersPinball({
       if (sonicBooms[i].alpha <= 0) sonicBooms.splice(i, 1);
     }
 
+    const trackingBalls =
+      balls.filter((ball) => ball.active && !ball.exited);
+
     // 카메라: 미니맵 호버 시 해당 위치, 기본은 공 추적
     if (minimapHover) {
       cameraY += (minimapTargetCamY - cameraY) * 0.12;
-    } else if (active.length > 0) {
-      const maxY = Math.max(...active.map(b => b.y));
+    } else if (trackingBalls.length > 0) {
+      const maxY = Math.max(...trackingBalls.map((ball) => ball.y));
       const target = Math.max(
         0,
         Math.min(maxY - H * 0.55, WORLD_H - H)
       );
       const waterClimbActive =
-        active.some((ball) => ball.activeWaterClimb);
+        trackingBalls.some((ball) => ball.activeWaterClimb);
       const cameraFollow = waterClimbActive
         ? target < cameraY
           ? 0.42
@@ -1043,6 +1072,37 @@ export function drawNumbersPinball({
       } else {
         cameraY += (target - cameraY) * cameraFollow * frameScale;
       }
+    }
+
+    if (!Number.isFinite(cameraY)) cameraY = 0;
+    if (trackingBalls.length > 0) {
+      const visibleBall = trackingBalls.some((ball) =>
+        ball.y + ball.r >= cameraY &&
+        ball.y - ball.r <= cameraY + H
+      );
+      if (!visibleBall) {
+        const focusY = Math.max(...trackingBalls.map((ball) => ball.y));
+        cameraY = Math.max(
+          0,
+          Math.min(focusY - H * 0.55, WORLD_H - H)
+        );
+      }
+    }
+
+    if (typeof debugFrame === 'function') {
+      debugFrame({
+        cameraY,
+        viewportHeight: H,
+        winners: winners.length,
+        balls: trackingBalls.map((ball) => ({
+          x: ball.x,
+          y: ball.y,
+          r: ball.r,
+          inWater: Boolean(
+            ball.activeWaterLift || ball.activeWaterClimb
+          ),
+        })),
+      });
     }
 
   }
@@ -1223,11 +1283,11 @@ export function drawNumbersPinball({
       }
       const entry = climb.points[0];
       const entryLane = pinballMap.course.at(entry.y);
-      edges.left[0] = {
+      left[0] = {
         x: getX(entryLane.left),
         y: getY(entry.y),
       };
-      edges.right[0] = {
+      right[0] = {
         x: getX(entryLane.right),
         y: getY(entry.y),
       };

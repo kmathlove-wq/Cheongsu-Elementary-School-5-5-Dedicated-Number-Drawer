@@ -1,5 +1,6 @@
 {
+  "type": "module",
   "scripts": {
-    "test": "node tests/smoke.mjs"
+    "test": "node tests/smoke.mjs && node tests/pinball-runtime.mjs"
   }
 }

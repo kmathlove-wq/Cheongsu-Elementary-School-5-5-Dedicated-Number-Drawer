@@ -22,7 +22,9 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 │   ├── song.js     # 노래추첨 핀볼 YouTube 검색/선택/재생
 │   ├── sound.js    # Web Audio 효과음
 │   └── terminate.js # 종료 화면/스페이스 폭발 종료
-├── tests/smoke.mjs # 정적 스모크 검사
+├── tests/
+│   ├── smoke.mjs # 정적 스모크 검사
+│   └── pinball-runtime.mjs # 가짜 캔버스 핀볼 프레임 실행 검사
 ├── .learning/      # 프로젝트 폐쇄형 학습 루프
 │   ├── USER.md     # 검증된 사용자 선호
 │   ├── MEMORY.md   # 검증된 짧은 프로젝트 교훈
@@ -125,7 +127,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - `sound.js`: 일반 뽑기, 핀볼, 공 뽑기에서 쓰는 Web Audio 효과음.
 - `styles/app.css`: CSS import 진입점. 실제 스타일은 `styles/*.css` 모듈에 나눈다.
 - `.github/workflows/deploy.yml`: `main` 브랜치 push 시 GitHub Pages 배포.
-- `tests/smoke.mjs`: HTML 진입점과 JS 모듈 문법을 확인하는 무의존성 검사.
+- `tests/smoke.mjs`: HTML 진입점과 JS 모듈 문법을 확인하고, `pinball-runtime.mjs`는 실제 핀볼 프레임을 구동해 실행 오류와 빈 화면을 검사한다.
 
 ## main.js 주요 함수
 | 함수 | 역할 |

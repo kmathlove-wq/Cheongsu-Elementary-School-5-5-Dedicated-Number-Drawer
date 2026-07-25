@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=factory-water-course-fix';
+} from './pinball-maps.js?v=factory-water-runtime-fix';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');
