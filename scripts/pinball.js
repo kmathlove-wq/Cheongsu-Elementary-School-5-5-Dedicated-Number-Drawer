@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=smooth-detour-camera-edge-pegs';
+} from './pinball-maps.js?v=natural-water-stable-camera';
 import {
   getPinballMap,
-} from './settings.js?v=smooth-detour-camera-edge-pegs';
+} from './settings.js?v=natural-water-stable-camera';
 
 let pinballRafId = null;
 
@@ -114,6 +114,7 @@ export function drawNumbersPinball({
   const H = canvas.height;
 
   let cameraY = 0;
+  let cameraFocusBall = null;
   const selectedPinballMap =
     pinballMapOverride || getPinballMap();
 
@@ -351,6 +352,7 @@ export function drawNumbersPinball({
             y: bumper.y,
             r: bumper.r,
             alpha: 1,
+            reason: 'bumper',
           });
         }
       }
@@ -458,13 +460,6 @@ export function drawNumbersPinball({
       ball.vx = exitSide * (4 + Math.random() * 2);
       ball.vy = lift.dropSpeed;
       ball.noBallCollisionFrames = 55;
-      sonicBooms.push({
-        x: ball.x,
-        y: ball.y,
-        r: ball.r,
-        alpha: 1,
-      });
-      playBumperBeep();
     }
 
     return true;
@@ -581,13 +576,6 @@ export function drawNumbersPinball({
         Math.sin(target.angle) * exitSpeed
       );
       ball.noBallCollisionFrames = 60;
-      sonicBooms.push({
-        x: ball.x,
-        y: ball.y,
-        r: ball.r,
-        alpha: 1,
-      });
-      playBumperBeep();
     }
 
     return true;
@@ -673,7 +661,11 @@ export function drawNumbersPinball({
     keepBallInPlayArea(ball);
 
     sonicBooms.push({
-      x: ball.x, y: ball.y, r: 0, alpha: 1.0,
+      x: ball.x,
+      y: ball.y,
+      r: 0,
+      alpha: 1.0,
+      reason: 'stuck',
     });
     playBumperBeep();
   }
@@ -1075,6 +1067,7 @@ export function drawNumbersPinball({
 
     const trackingBalls =
       balls.filter((ball) => ball.active && !ball.exited);
+    const cameraFrameStart = cameraY;
 
     // 카메라: 미니맵 호버 시 해당 위치, 기본은 공 추적
     if (minimapHover) {
@@ -1083,7 +1076,7 @@ export function drawNumbersPinball({
       const activeClimbers = trackingBalls.filter(
         (ball) => ball.activeWaterClimb
       );
-      const focusBall = activeClimbers.reduce((leader, ball) => {
+      const routeLeader = activeClimbers.reduce((leader, ball) => {
         if (!leader) return ball;
         const progress =
           ball.activeWaterClimb.distance /
@@ -1093,24 +1086,38 @@ export function drawNumbersPinball({
           leader.activeWaterClimb.climb.totalLength;
         return progress > leaderProgress ? ball : leader;
       }, null);
-      const focusY = focusBall
-        ? focusBall.y
-        : Math.max(...trackingBalls.map((ball) => ball.y));
+      const lowestBall = trackingBalls.reduce((leader, ball) =>
+        !leader || ball.y > leader.y ? ball : leader
+      , null);
+      const candidate = routeLeader || lowestBall;
+      const focusIsActive =
+        cameraFocusBall &&
+        trackingBalls.includes(cameraFocusBall);
+      if (
+        !focusIsActive ||
+        (
+          lowestBall &&
+          lowestBall.y > cameraFocusBall.y + H * 0.72
+        )
+      ) {
+        cameraFocusBall = candidate;
+      }
+      const focusY = cameraFocusBall?.y ?? candidate.y;
       const target = Math.max(
         0,
         Math.min(focusY - H * 0.55, WORLD_H - H)
       );
-      const waterClimbActive = activeClimbers.length > 0;
+      const waterClimbActive =
+        Boolean(cameraFocusBall?.activeWaterClimb);
       const cameraFollow = waterClimbActive
-        ? isMobilePinball ? 0.13 : 0.09
+        ? isMobilePinball ? 0.16 : 0.12
         : isMobilePinball
           ? 0.17
-          : 0.04;
+          : 0.09;
       const cameraDelta =
         (target - cameraY) * cameraFollow * frameScale;
       const maxCameraStep =
-        H * (waterClimbActive ? 0.035 : 0.025) *
-        Math.max(0.6, frameScale);
+        H * (waterClimbActive ? 0.045 : 0.04);
       cameraY += Math.max(
         -maxCameraStep,
         Math.min(maxCameraStep, cameraDelta)
@@ -1124,25 +1131,34 @@ export function drawNumbersPinball({
         ball.y - ball.r <= cameraY + H
       );
       if (!visibleBall) {
-        const focusY = Math.max(...trackingBalls.map((ball) => ball.y));
+        const focusY =
+          cameraFocusBall?.y ??
+          Math.max(...trackingBalls.map((ball) => ball.y));
         const recoveryTarget = Math.max(
           0,
           Math.min(focusY - H * 0.55, WORLD_H - H)
         );
         const recoveryDelta = recoveryTarget - cameraY;
-        const maxRecoveryStep = H * 0.06 * Math.max(0.6, frameScale);
+        const maxRecoveryStep = H * 0.06;
         cameraY += Math.max(
           -maxRecoveryStep,
           Math.min(maxRecoveryStep, recoveryDelta)
         );
       }
     }
+    const cameraFrameLimit = H * 0.06;
+    cameraY = cameraFrameStart + Math.max(
+      -cameraFrameLimit,
+      Math.min(cameraFrameLimit, cameraY - cameraFrameStart)
+    );
 
     if (typeof debugFrame === 'function') {
       debugFrame({
         cameraY,
+        cameraFocusKey: cameraFocusBall?.key || null,
         viewportHeight: H,
         winners: winners.length,
+        sonicReasons: sonicBooms.map((boom) => boom.reason),
         winnerWaterCourses:
           winners.map((ball) => ball.usedWaterClimbs.size),
         balls: trackingBalls.map((ball) => {
@@ -1330,6 +1346,10 @@ export function drawNumbersPinball({
 
     const getCourseEdges = (pathPoints, connectEnds = false) => {
       const lastIndex = pathPoints.length - 1;
+      const blendCount = Math.max(
+        3,
+        Math.floor(lastIndex * 0.08)
+      );
       const left = [];
       const right = [];
       for (let index = 0; index <= lastIndex; index++) {
@@ -1341,14 +1361,13 @@ export function drawNumbersPinball({
           after.x - before.x
         );
         const entryBlend = connectEnds
-          ? index === 0 ? 1 : index === 1 ? 0.35 : 0
+          ? Math.max(0, 1 - index / blendCount) ** 2
           : 0;
         const exitBlend = connectEnds
-          ? index === lastIndex
-            ? 1
-            : index === lastIndex - 1
-              ? 0.35
-              : 0
+          ? Math.max(
+            0,
+            1 - (lastIndex - index) / blendCount
+          ) ** 2
           : 0;
         const halfWidth = (
           climb.width +
@@ -1404,47 +1423,77 @@ export function drawNumbersPinball({
       ctx.closePath();
     };
 
+    const traceCenterline = (pathPoints) => {
+      ctx.beginPath();
+      ctx.moveTo(
+        getX(pathPoints[0].x),
+        getY(pathPoints[0].y)
+      );
+      for (const point of pathPoints.slice(1)) {
+        ctx.lineTo(getX(point.x), getY(point.y));
+      }
+    };
+
+    const drawConnector = (edges, start, end) => {
+      ctx.beginPath();
+      ctx.moveTo(edges.left[start].x, edges.left[start].y);
+      for (let index = start + 1; index <= end; index++) {
+        ctx.lineTo(edges.left[index].x, edges.left[index].y);
+      }
+      for (let index = end; index >= start; index--) {
+        ctx.lineTo(edges.right[index].x, edges.right[index].y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    };
+
     const routeEdges = getCourseEdges(climb.points, true);
     const waterEdges =
       getCourseEdges(climb.waterPath.points);
+    const connectorCount = Math.max(
+      3,
+      Math.floor((climb.points.length - 1) * 0.08)
+    );
+    const routeLast = climb.points.length - 1;
+    const borderWidth = detailed ? Math.max(6, PEG_THICK) : 2;
+    const routeWidth = climb.width * widthScale;
 
     ctx.save();
     ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.shadowBlur = detailed ? 16 : 2;
     ctx.shadowColor = pinballMap.course.color;
     ctx.fillStyle = detailed
       ? 'rgba(12,20,32,0.82)'
       : 'rgba(30,45,65,0.78)';
-    drawCourseArea(routeEdges);
-    ctx.fill();
+    drawConnector(routeEdges, 0, connectorCount);
+    drawConnector(
+      routeEdges,
+      routeLast - connectorCount,
+      routeLast
+    );
+
+    ctx.strokeStyle = pinballMap.course.color;
+    ctx.lineWidth = routeWidth + borderWidth * 2;
+    traceCenterline(climb.points);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = detailed
+      ? 'rgba(12,20,32,0.96)'
+      : 'rgba(30,45,65,0.94)';
+    ctx.lineWidth = routeWidth;
+    traceCenterline(climb.points);
+    ctx.stroke();
 
     ctx.shadowBlur = detailed ? 22 : 3;
     ctx.shadowColor = climb.color;
-    ctx.fillStyle = detailed
-      ? 'rgba(18, 151, 222, 0.86)'
-      : 'rgba(28, 167, 238, 0.92)';
-    drawCourseArea(waterEdges);
-    ctx.fill();
-
-    ctx.strokeStyle = pinballMap.course.color;
-    ctx.lineWidth = detailed ? Math.max(6, PEG_THICK) : 2;
-    for (const edge of [routeEdges.left, routeEdges.right]) {
-      ctx.beginPath();
-      ctx.moveTo(edge[0].x, edge[0].y);
-      for (const point of edge.slice(1)) {
-        ctx.lineTo(point.x, point.y);
-      }
-      ctx.stroke();
-    }
-
-    ctx.strokeStyle = 'rgba(217,251,255,0.82)';
-    ctx.lineWidth = detailed ? Math.max(3, PEG_THICK * 0.45) : 1;
-    for (const index of [0, waterEdges.left.length - 1]) {
-      ctx.beginPath();
-      ctx.moveTo(waterEdges.left[index].x, waterEdges.left[index].y);
-      ctx.lineTo(waterEdges.right[index].x, waterEdges.right[index].y);
-      ctx.stroke();
-    }
+    ctx.strokeStyle = detailed
+      ? 'rgba(18, 151, 222, 0.90)'
+      : 'rgba(28, 167, 238, 0.94)';
+    ctx.lineWidth = Math.max(2, routeWidth - borderWidth * 0.35);
+    traceCenterline(climb.waterPath.points);
+    ctx.stroke();
 
     if (detailed) {
       ctx.save();

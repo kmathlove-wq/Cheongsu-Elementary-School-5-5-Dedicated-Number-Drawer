@@ -1,5 +1,5 @@
 import { scaleMotionTime } from './motion.js';
-import { formatResultSummary, renderResultSummary } from './result-display.js?v=smooth-detour-camera-edge-pegs';
+import { formatResultSummary, renderResultSummary } from './result-display.js?v=natural-water-stable-camera';
 
 const gumballStage =
   document.getElementById('gumballStage');

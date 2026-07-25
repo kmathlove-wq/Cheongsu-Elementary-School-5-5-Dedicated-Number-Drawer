@@ -173,6 +173,12 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     if (edgePegs.length < 24) {
       throw new Error('Classic map must keep dense pegs along both walls');
     }
+    const edgeAngles = new Set(
+      edgePegs.map((peg) => Math.round(peg.ang * 100))
+    );
+    if (edgeAngles.size < 6) {
+      throw new Error('Classic wall pegs must not repeat one rigid pattern');
+    }
   }
 
   if (

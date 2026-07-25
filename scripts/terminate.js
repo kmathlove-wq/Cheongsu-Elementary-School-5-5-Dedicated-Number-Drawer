@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js?v=smooth-detour-camera-edge-pegs';
-import { stopPinballMode } from './pinball.js?v=smooth-detour-camera-edge-pegs';
+import { resetGumballMode } from './gumball.js?v=natural-water-stable-camera';
+import { stopPinballMode } from './pinball.js?v=natural-water-stable-camera';
 import {
   closeSongRequest,
   closeYouTubePlayer,

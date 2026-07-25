@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=smooth-detour-camera-edge-pegs';
+} from './pinball-maps.js?v=natural-water-stable-camera';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');
