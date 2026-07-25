@@ -173,11 +173,22 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     if (edgePegs.length < 24) {
       throw new Error('Classic map must keep dense pegs along both walls');
     }
+    const leftEdgePegs = edgePegs.filter((peg) => {
+      const lane = map.course.at(peg.cy);
+      return peg.cx < (lane.left + lane.right) / 2;
+    });
+    const rightEdgePegs = edgePegs.filter((peg) => {
+      const lane = map.course.at(peg.cy);
+      return peg.cx >= (lane.left + lane.right) / 2;
+    });
+    if (leftEdgePegs.length !== rightEdgePegs.length) {
+      throw new Error('Classic wall pegs must use a symmetric pattern');
+    }
     const edgeAngles = new Set(
-      edgePegs.map((peg) => Math.round(peg.ang * 100))
+      edgePegs.map((peg) => Math.round(Math.abs(peg.ang) * 100))
     );
-    if (edgeAngles.size < 6) {
-      throw new Error('Classic wall pegs must not repeat one rigid pattern');
+    if (leftEdgePegs.length !== 18 || edgeAngles.size !== 1) {
+      throw new Error('Classic wall pegs must keep regular spacing and tilt');
     }
   }
 

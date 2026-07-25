@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js?v=natural-water-stable-camera';
-import { stopPinballMode } from './pinball.js?v=natural-water-stable-camera';
+import { resetGumballMode } from './gumball.js?v=regular-pegs-leader-camera';
+import { stopPinballMode } from './pinball.js?v=regular-pegs-leader-camera';
 import {
   closeSongRequest,
   closeYouTubePlayer,

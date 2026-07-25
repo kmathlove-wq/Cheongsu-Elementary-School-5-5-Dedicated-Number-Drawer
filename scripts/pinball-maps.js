@@ -445,33 +445,12 @@ function buildClassic(builder, bounds) {
     rows: isMobile ? 10 : 14,
     columns: isMobile ? 3 : 4,
   });
-  const edgeRows = isMobile ? 12 : 15;
-  const edgeTilts = [0.64, -0.48, 0.76, -0.58, 0.52];
-  const edgeLengths = [0.54, 0.62, 0.48, 0.58];
+  const edgeRows = isMobile ? 13 : 18;
   for (let row = 0; row < edgeRows; row++) {
-    const py =
-      0.045 + 0.90 * (row + 0.5) / edgeRows +
-      Math.sin(row * 2.17) * 0.005;
-    const leftX = 0.068 + (row % 4) * 0.011;
-    const rightX = 0.932 - ((row + 2) % 4) * 0.011;
-    const leftTilt = edgeTilts[row % edgeTilts.length];
-    const rightTilt =
-      -edgeTilts[(row + 2) % edgeTilts.length] +
-      (row % 3 - 1) * 0.08;
-    addPeg(
-      leftX,
-      py,
-      pegLen * edgeLengths[row % edgeLengths.length],
-      leftTilt,
-      '#00e5ff'
-    );
-    addPeg(
-      rightX,
-      py + Math.cos(row * 1.73) * 0.004,
-      pegLen * edgeLengths[(row + 1) % edgeLengths.length],
-      rightTilt,
-      '#00e5ff'
-    );
+    const py = 0.045 + 0.90 * (row + 0.5) / edgeRows;
+    const tilt = row % 2 ? Math.PI / 4 : -Math.PI / 4;
+    addPeg(0.07, py, pegLen * 0.58, tilt, '#00e5ff');
+    addPeg(0.93, py, pegLen * 0.58, -tilt, '#00e5ff');
   }
 
   [

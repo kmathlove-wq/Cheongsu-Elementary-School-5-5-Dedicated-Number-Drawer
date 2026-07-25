@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=natural-water-stable-camera';
+} from './pinball-maps.js?v=regular-pegs-leader-camera';
 import {
   getPinballMap,
-} from './settings.js?v=natural-water-stable-camera';
+} from './settings.js?v=regular-pegs-leader-camera';
 
 let pinballRafId = null;
 
@@ -230,6 +230,7 @@ export function drawNumbersPinball({
       activeWaterLift: null,
       usedWaterClimbs: new Set(),
       activeWaterClimb: null,
+      raceProgress: 0,
       isTeacher,
       isForced,
     };
@@ -1007,6 +1008,22 @@ export function drawNumbersPinball({
           }
         }
       }
+
+      const climbProgress = ball.activeWaterClimb
+        ? ball.activeWaterClimb.climb.gapTopY +
+          (
+            ball.activeWaterClimb.climb.gapBottomY -
+            ball.activeWaterClimb.climb.gapTopY
+          ) *
+          (
+            ball.activeWaterClimb.distance /
+            ball.activeWaterClimb.climb.totalLength
+          )
+        : ball.y;
+      ball.raceProgress = Math.max(
+        ball.raceProgress,
+        climbProgress
+      );
     }
 
     // 공간 격자로 가까운 공만 검사해 항목 수가 늘어도 연산량 폭증을 막는다.
@@ -1073,36 +1090,13 @@ export function drawNumbersPinball({
     if (minimapHover) {
       cameraY += (minimapTargetCamY - cameraY) * 0.12;
     } else if (trackingBalls.length > 0) {
-      const activeClimbers = trackingBalls.filter(
-        (ball) => ball.activeWaterClimb
-      );
-      const routeLeader = activeClimbers.reduce((leader, ball) => {
+      cameraFocusBall = trackingBalls.reduce((leader, ball) => {
         if (!leader) return ball;
-        const progress =
-          ball.activeWaterClimb.distance /
-          ball.activeWaterClimb.climb.totalLength;
-        const leaderProgress =
-          leader.activeWaterClimb.distance /
-          leader.activeWaterClimb.climb.totalLength;
-        return progress > leaderProgress ? ball : leader;
+        return ball.raceProgress > leader.raceProgress
+          ? ball
+          : leader;
       }, null);
-      const lowestBall = trackingBalls.reduce((leader, ball) =>
-        !leader || ball.y > leader.y ? ball : leader
-      , null);
-      const candidate = routeLeader || lowestBall;
-      const focusIsActive =
-        cameraFocusBall &&
-        trackingBalls.includes(cameraFocusBall);
-      if (
-        !focusIsActive ||
-        (
-          lowestBall &&
-          lowestBall.y > cameraFocusBall.y + H * 0.72
-        )
-      ) {
-        cameraFocusBall = candidate;
-      }
-      const focusY = cameraFocusBall?.y ?? candidate.y;
+      const focusY = cameraFocusBall.y;
       const target = Math.max(
         0,
         Math.min(focusY - H * 0.55, WORLD_H - H)
@@ -1156,6 +1150,13 @@ export function drawNumbersPinball({
       debugFrame({
         cameraY,
         cameraFocusKey: cameraFocusBall?.key || null,
+        cameraFocusProgress:
+          cameraFocusBall?.raceProgress ?? null,
+        leadingProgress: trackingBalls.reduce(
+          (progress, ball) =>
+            Math.max(progress, ball.raceProgress),
+          0
+        ),
         viewportHeight: H,
         winners: winners.length,
         sonicReasons: sonicBooms.map((boom) => boom.reason),
@@ -1180,6 +1181,7 @@ export function drawNumbersPinball({
             x: ball.x,
             y: ball.y,
             r: ball.r,
+            raceProgress: ball.raceProgress,
             inDetour: Boolean(detour),
             insideDetour: !detour ||
               routeDeviation <= detour.climb.width / 2 + ball.r,

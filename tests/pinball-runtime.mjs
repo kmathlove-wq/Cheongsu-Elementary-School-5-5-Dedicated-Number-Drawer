@@ -140,7 +140,6 @@ if (frames.length < 100) {
 let invisibleStreak = 0;
 let longestInvisibleStreak = 0;
 let previousFrame = null;
-let cameraFocusChanges = 0;
 for (const frame of frames) {
   if (
     !Number.isFinite(frame.cameraY) ||
@@ -170,11 +169,10 @@ for (const frame of frames) {
     throw new Error('A sonic boom occurred without a physical collision');
   }
   if (
-    previousFrame?.cameraFocusKey &&
-    frame.cameraFocusKey &&
-    previousFrame.cameraFocusKey !== frame.cameraFocusKey
+    frame.cameraFocusProgress !== null &&
+    frame.cameraFocusProgress + 0.01 < frame.leadingProgress
   ) {
-    cameraFocusChanges++;
+    throw new Error('Pinball camera did not follow the leading ball');
   }
   if (previousFrame) {
     const previousBalls = new Map(
@@ -208,12 +206,6 @@ for (const frame of frames) {
     invisibleStreak = 0;
   }
   previousFrame = frame;
-}
-
-if (cameraFocusChanges > 12) {
-  throw new Error(
-    `Pinball camera changed targets ${cameraFocusChanges} times`
-  );
 }
 
 if (longestInvisibleStreak > 30) {

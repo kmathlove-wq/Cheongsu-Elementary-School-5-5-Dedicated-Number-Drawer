@@ -1,5 +1,5 @@
 import { scaleMotionTime } from './motion.js';
-import { formatResultSummary, renderResultSummary } from './result-display.js?v=natural-water-stable-camera';
+import { formatResultSummary, renderResultSummary } from './result-display.js?v=regular-pegs-leader-camera';
 
 const gumballStage =
   document.getElementById('gumballStage');
