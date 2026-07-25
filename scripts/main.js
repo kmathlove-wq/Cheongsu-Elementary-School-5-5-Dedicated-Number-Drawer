@@ -1,10 +1,10 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=clean-pegs-seamless-branches';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=pinball-renderer-split';
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=clean-pegs-seamless-branches';
+} from './gumball.js?v=pinball-renderer-split';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=clean-pegs-seamless-branches';
+} from './settings.js?v=pinball-renderer-split';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,11 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=clean-pegs-seamless-branches';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-renderer-split';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
-import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=clean-pegs-seamless-branches';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=pinball-renderer-split';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');

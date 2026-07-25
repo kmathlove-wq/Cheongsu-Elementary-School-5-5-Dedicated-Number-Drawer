@@ -619,7 +619,8 @@ function buildCurves(builder, bounds) {
 function buildFactory(builder, bounds) {
   const {
     addPegField, addBumper, addSpinner,
-    addBooster, addWaterLift, addWaterClimb, isMobile,
+    addBooster, addWaterLift, addWaterClimb,
+    waterClimbs, isMobile,
   } = builder;
   const { bumperR, spinnerLen } = bounds;
   addPegField({
@@ -743,6 +744,7 @@ function buildFactory(builder, bounds) {
 
   addWaterClimb([
     [0.25, 0.24],
+    [0.15, 0.27],
     [0.08, 0.34],
     [0.09, 0.46],
     [0.14, 0.53],
@@ -756,6 +758,8 @@ function buildFactory(builder, bounds) {
     [0.57, 0.44],
     [0.57, 0.52],
     [0.55, 0.58],
+    [0.38, 0.59],
+    [0.18, 0.605],
     [0.25, 0.62],
   ], {
     absoluteX: true,
@@ -766,8 +770,8 @@ function buildFactory(builder, bounds) {
     entryMinRatio: 0,
     entryMaxRatio: 0.5,
     resumeY: 0.62,
-    waterStartIndex: 4,
-    waterEndIndex: 8,
+    waterStartIndex: 5,
+    waterEndIndex: 9,
     smoothSteps: isMobile ? 12 : 16,
     widthRatio: 0.31,
     constantWidth: true,
@@ -777,13 +781,15 @@ function buildFactory(builder, bounds) {
 
   addWaterClimb([
     [0.79, 0.24],
-    [0.90, 0.29],
-    [0.77, 0.34],
-    [0.91, 0.39],
-    [0.76, 0.44],
-    [0.90, 0.49],
-    [0.76, 0.54],
-    [0.88, 0.58],
+    [0.44, 0.27],
+    [0.62, 0.31],
+    [0.82, 0.35],
+    [0.68, 0.40],
+    [0.86, 0.45],
+    [0.70, 0.50],
+    [0.84, 0.54],
+    [0.66, 0.57],
+    [0.46, 0.60],
     [0.79, 0.62],
   ], {
     kind: 'dry',
@@ -798,10 +804,23 @@ function buildFactory(builder, bounds) {
     smoothSteps: isMobile ? 12 : 16,
     widthRatio: 0.27,
     constantWidth: true,
-    travelSpeed: 11,
+    travelSpeed: 6,
     dropSpeed: 18,
     color: '#ffcf66',
   });
+
+  const waterBranch = waterClimbs.find(
+    (climb) => climb.kind === 'water'
+  );
+  const dryBranch = waterClimbs.find(
+    (climb) => climb.kind === 'dry'
+  );
+  if (waterBranch && dryBranch) {
+    const targetTravelTime =
+      waterBranch.totalLength / waterBranch.travelSpeed;
+    dryBranch.travelSpeed =
+      dryBranch.totalLength / targetTravelTime;
+  }
 }
 
 function distanceToSegment(pointX, pointY, peg) {

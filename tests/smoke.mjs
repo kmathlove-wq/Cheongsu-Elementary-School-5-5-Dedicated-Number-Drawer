@@ -9,6 +9,7 @@ const files = [
   'scripts/mode-menu.js',
   'scripts/pinball.js',
   'scripts/pinball-maps.js',
+  'scripts/pinball-water-renderer.js',
   'scripts/result-display.js',
   'scripts/settings.js',
   'scripts/song.js',
@@ -229,6 +230,15 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     const branches = map.waterClimbs.toSorted(
       (a, b) => a.entryPosition - b.entryPosition
     );
+    const travelTimes = branches.map(
+      (branch) => branch.totalLength / branch.travelSpeed
+    );
+    const tangentIsNatural = (branch, fromStart) => {
+      const start = fromStart ? branch.points[0] : branch.points.at(-17);
+      const end = fromStart ? branch.points[16] : branch.points.at(-1);
+      return Math.abs(end.x - start.x) <=
+        Math.abs(end.y - start.y) * 0.3;
+    };
     const entryLane = map.course.at(branches[0].gapTopY);
     const resumeLane = map.course.at(branches[0].gapBottomY);
     const entryEdges = branches.map((branch) => {
@@ -257,9 +267,16 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       Math.abs(entryEdges[1][1] - entryLane.right) > tolerance ||
       Math.abs(resumeEdges[0][0] - resumeLane.left) > tolerance ||
       Math.abs(resumeEdges[0][1] - resumeEdges[1][0]) > tolerance ||
-      Math.abs(resumeEdges[1][1] - resumeLane.right) > tolerance
+      Math.abs(resumeEdges[1][1] - resumeLane.right) > tolerance ||
+      Math.max(...travelTimes) / Math.min(...travelTimes) > 1.05 ||
+      branches.some((branch) =>
+        !tangentIsNatural(branch, true) ||
+        !tangentIsNatural(branch, false)
+      )
     ) {
-      throw new Error('Chaos factory branches must join without gaps');
+      throw new Error(
+        'Chaos factory branches must join naturally at similar speeds'
+      );
     }
   }
 
@@ -375,6 +392,9 @@ for (const file of files) {
   execFileSync('node', ['--check', file], {
     stdio: 'inherit',
   });
+  if (readFileSync(file, 'utf8').split('\n').length - 1 > 2000) {
+    throw new Error(`${file} must not exceed 2000 lines`);
+  }
 }
 
 console.log('Smoke checks passed.');
