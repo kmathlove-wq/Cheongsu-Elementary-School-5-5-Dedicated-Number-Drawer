@@ -22,6 +22,11 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 │   ├── sound.js    # Web Audio 효과음
 │   └── terminate.js # 종료 화면/스페이스 폭발 종료
 ├── tests/smoke.mjs # 정적 스모크 검사
+├── .learning/      # 프로젝트 폐쇄형 학습 루프
+│   ├── USER.md     # 검증된 사용자 선호
+│   ├── MEMORY.md   # 검증된 짧은 프로젝트 교훈
+│   ├── PENDING.md  # 승인 전 추론 후보
+│   └── skills/     # 필요할 때 불러오는 재사용 절차
 ├── styles/         # CSS 모듈과 스타일 진입점
 │   ├── app.css     # CSS import 진입점
 │   ├── base.css    # 기본 레이아웃/번호판
@@ -153,10 +158,16 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 ## 작업 규칙
 - 사용자 요청 없이 기존 변경사항을 되돌리지 않는다.
 - 새로 알게 된 프로젝트 지식은 필요할 때 `AGENTS.md` 또는 `CLAUDE.md`에 반영한다.
+- 작업 시작 시 `.learning/USER.md`와 `.learning/MEMORY.md`를 읽고 현재 요청에 관련된 항목만 적용한다.
+- 사용자 교정, 5회 이상의 도구 호출이 필요한 복잡한 성공 작업, 실패 뒤 해결한 절차, 반복 가능한 새 워크플로가 있으면 실제 작업과 검증을 마친 뒤 `.learning/skills/project-learning-loop/SKILL.md`에 따라 짧게 회고한다.
+- 안정적인 프로젝트 규칙은 `AGENTS.md`와 `CLAUDE.md`, 사용자 선호는 `.learning/USER.md`, 검증된 짧은 교훈은 `.learning/MEMORY.md`, 긴 절차는 `.learning/skills/`에 저장한다. 같은 내용을 여러 저장소에 중복하지 않는다.
+- 직접 받은 사용자 교정과 테스트로 확인한 사실만 즉시 학습한다. 추론은 `.learning/PENDING.md`에 보류하며 승인 전에는 행동 규칙으로 사용하지 않는다.
+- 새 지식이 기존 내용과 충돌하면 최신 사용자 지시를 우선해 오래된 항목을 교체한다. 비밀, 토큰, 개인정보, 원시 로그, 일회성 상태는 학습 파일에 저장하지 않는다.
+- 학습 파일을 바꾼 경우 최종 응답에 `학습 반영:` 한 줄로 변경 내용을 알린다. 빈 회고는 알리지 않는다.
 - `AGENTS.md`와 `CLAUDE.md`는 각각 200줄을 넘기지 않는다. 수정 후 `wc -l AGENTS.md CLAUDE.md`로 확인한다.
 - 코드나 문서를 수정한 뒤에는 사용자가 금지하지 않는 한 커밋하고 GitHub에 push한다.
 - 커밋 메시지는 한/영 혼용 가능하며 변경 내용을 구체적으로 쓴다.
-- 화면 하단의 `.build-info`는 현재 기능 이름과 간단한 변경 설명으로 갱신하되 `몇 차` 같은 차수는 붙이지 않는다.
+- 화면 하단의 `.build-info`는 이번 작업에서 실제로 바꾼 기능과 간단한 설명만 표시한다. 이전 작업의 무관한 기능명이나 `몇 차` 같은 차수를 남기지 않는다.
 
 ## 배포/인증 주의
 - `main` 브랜치 push → GitHub Actions → GitHub Pages 자동 배포.
