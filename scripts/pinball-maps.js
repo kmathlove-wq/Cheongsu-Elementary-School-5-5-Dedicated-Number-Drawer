@@ -621,22 +621,22 @@ function buildFactory(builder, bounds) {
 
   const waterClimbLayouts = [
     [
-      [0.50, 0.48],
-      [0.72, 0.50],
-      [0.82, 0.45],
-      [0.74, 0.38],
-      [0.52, 0.32],
-      [0.27, 0.34],
-      [0.18, 0.28],
-      [0.38, 0.22],
+      [0.50, 0.52],
+      [0.70, 0.50],
+      [0.79, 0.45],
+      [0.72, 0.39],
+      [0.57, 0.34],
+      [0.40, 0.29],
+      [0.25, 0.23],
+      [0.34, 0.17],
     ],
   ];
   waterClimbLayouts
     .forEach((points, index) => {
       addWaterClimb(points, {
-        widthRatio: isMobile ? 0.72 : 0.78,
+        widthRatio: isMobile ? 0.66 : 0.68,
         entryWidthRatio: 1,
-        travelSpeed: 10.5 + index,
+        travelSpeed: 13 + index,
         dropSpeed: 22,
       });
     });

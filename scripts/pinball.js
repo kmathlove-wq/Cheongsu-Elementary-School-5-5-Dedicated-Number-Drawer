@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=factory-water-course';
+} from './pinball-maps.js?v=factory-water-course-fix';
 import {
   getPinballMap,
-} from './settings.js?v=factory-water-course';
+} from './settings.js?v=factory-water-course-fix';
 
 let pinballRafId = null;
 
@@ -1026,8 +1026,23 @@ export function drawNumbersPinball({
         0,
         Math.min(maxY - H * 0.55, WORLD_H - H)
       );
-      const cameraFollow = isMobilePinball ? 0.17 : 0.04;
-      cameraY += (target - cameraY) * cameraFollow * frameScale;
+      const waterClimbActive =
+        active.some((ball) => ball.activeWaterClimb);
+      const cameraFollow = waterClimbActive
+        ? target < cameraY
+          ? 0.42
+          : 0.20
+        : isMobilePinball
+          ? 0.17
+          : 0.04;
+      if (
+        waterClimbActive &&
+        Math.abs(target - cameraY) > H * 0.62
+      ) {
+        cameraY = target;
+      } else {
+        cameraY += (target - cameraY) * cameraFollow * frameScale;
+      }
     }
 
   }
