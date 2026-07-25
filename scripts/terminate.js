@@ -1,5 +1,5 @@
 import { resetGumballMode } from './gumball.js?v=large-pools-summary';
-import { stopPinballMode } from './pinball.js?v=factory-water-main-route';
+import { stopPinballMode } from './pinball.js?v=factory-water-continuous-route';
 import {
   closeSongRequest,
   closeYouTubePlayer,

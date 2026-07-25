@@ -323,38 +323,59 @@ function createBuilder(bounds, course) {
     const entryY = rawPoints[0][1];
     const entryLane = course.at(y(entryY));
     const entryCenter = (entryLane.left + entryLane.right) / 2;
-    if (options.attachToCourse) {
-      points[0].x = entryCenter;
-      if (points[1]) points[1].x = entryCenter;
-    }
-    let totalLength = 0;
-    const segments = [];
-    for (let index = 1; index < points.length; index++) {
-      const start = points[index - 1];
-      const end = points[index];
-      const length = Math.hypot(end.x - start.x, end.y - start.y);
-      segments.push({
-        start,
-        end,
-        startDistance: totalLength,
-        length,
-      });
-      totalLength += length;
-    }
-    const entryWidth = entryLane.right - entryLane.left;
     const resumeY = y(options.resumeY || entryY + 0.14);
     const resumeLane = course.at(resumeY);
+    const resumeCenter = (resumeLane.left + resumeLane.right) / 2;
+    if (options.attachToCourse) {
+      points[0].x = entryCenter;
+    }
+    if (options.attachResume) {
+      points[points.length - 1].x = resumeCenter;
+      points[points.length - 1].y = resumeY;
+    }
+
+    function createPath(pathPoints) {
+      let totalLength = 0;
+      const segments = [];
+      for (let index = 1; index < pathPoints.length; index++) {
+        const start = pathPoints[index - 1];
+        const end = pathPoints[index];
+        const length = Math.hypot(end.x - start.x, end.y - start.y);
+        segments.push({
+          start,
+          end,
+          startDistance: totalLength,
+          length,
+        });
+        totalLength += length;
+      }
+      return { points: pathPoints, segments, totalLength };
+    }
+
+    const route = createPath(points);
+    const waterStartIndex = options.waterStartIndex || 0;
+    const waterEndIndex =
+      options.waterEndIndex ?? points.length - 1;
+    const waterPath = createPath(
+      points.slice(waterStartIndex, waterEndIndex + 1)
+    );
+    const waterStartDistance =
+      route.segments[waterStartIndex]?.startDistance || 0;
+    const entryWidth = entryLane.right - entryLane.left;
     waterClimbs.push({
       id: waterClimbs.length,
-      points,
-      segments,
-      totalLength,
+      ...route,
+      waterPath,
+      waterStartIndex,
+      waterEndIndex,
+      waterStartDistance,
+      waterEndDistance: waterStartDistance + waterPath.totalLength,
       width: entryWidth * (options.widthRatio || 0.68),
       entryWidth,
       gapTopY: y(entryY),
       gapBottomY: resumeY,
       resumePoint: {
-        x: (resumeLane.left + resumeLane.right) / 2,
+        x: resumeCenter,
         y: resumeY,
       },
       entryWidthRatio: options.entryWidthRatio || 1,
@@ -555,12 +576,12 @@ function buildFactory(builder, bounds) {
   }
 
   const longSpinnerLayout = [
-    [0.50, 0.13, 0.019, 0.00],
-    [0.50, 0.27, -0.022, 0.04],
-    [0.50, 0.41, 0.018, 0.08],
-    [0.50, 0.56, -0.021, 0.12],
-    [0.50, 0.71, 0.020, 0.16],
-    [0.50, 0.85, -0.019, 0.20],
+    [0.50, 0.08, 0.019, 0.00],
+    [0.50, 0.18, -0.022, 0.04],
+    [0.50, 0.27, 0.018, 0.08],
+    [0.50, 0.70, -0.021, 0.12],
+    [0.50, 0.82, 0.020, 0.16],
+    [0.50, 0.90, -0.019, 0.20],
   ];
   longSpinnerLayout
     .filter((_, index) => !isMobile || index % 2 === 0)
@@ -637,14 +658,20 @@ function buildFactory(builder, bounds) {
 
   const waterClimbLayouts = [
     [
-      [0.50, 0.42],
-      [0.50, 0.47],
-      [0.68, 0.51],
-      [0.80, 0.47],
-      [0.86, 0.39],
-      [0.86, 0.30],
-      [0.84, 0.22],
-      [0.80, 0.16],
+      [0.50, 0.24],
+      [0.30, 0.39],
+      [0.25, 0.49],
+      [0.30, 0.54],
+      [0.46, 0.51],
+      [0.58, 0.45],
+      [0.62, 0.37],
+      [0.60, 0.31],
+      [0.68, 0.27],
+      [0.78, 0.32],
+      [0.81, 0.41],
+      [0.78, 0.51],
+      [0.68, 0.58],
+      [0.50, 0.62],
     ],
   ];
   waterClimbLayouts
@@ -652,7 +679,10 @@ function buildFactory(builder, bounds) {
       addWaterClimb(points, {
         absoluteX: true,
         attachToCourse: true,
-        resumeY: 0.56,
+        attachResume: true,
+        resumeY: 0.62,
+        waterStartIndex: 3,
+        waterEndIndex: 7,
         widthRatio: isMobile ? 0.34 : 0.36,
         entryWidthRatio: 1,
         travelSpeed: 13 + index,

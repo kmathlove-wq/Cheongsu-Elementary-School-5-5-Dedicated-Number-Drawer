@@ -158,8 +158,18 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     climb.gapTopY >= climb.gapBottomY ||
     climb.resumePoint.y !== climb.gapBottomY ||
     climb.dropSpeed <= climb.travelSpeed ||
-    !climb.segments.some((segment) => segment.end.y < segment.start.y) ||
-    climb.segments.slice(2).some((segment) => segment.end.y >= segment.start.y)
+    climb.points[0].y !== climb.gapTopY ||
+    climb.points.at(-1).y !== climb.gapBottomY ||
+    climb.points.some((point) =>
+      point.y < climb.gapTopY || point.y > climb.gapBottomY
+    ) ||
+    climb.waterPath.totalLength <= 0 ||
+    climb.waterPath.segments.some((segment) =>
+      segment.end.y >= segment.start.y
+    ) ||
+    climb.segments
+      .slice(climb.waterEndIndex + 1)
+      .some((segment) => segment.end.y <= segment.start.y)
   )) {
     throw new Error(`Pinball water climb is invalid: ${id}`);
   }
