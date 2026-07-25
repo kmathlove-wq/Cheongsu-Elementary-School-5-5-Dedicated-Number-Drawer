@@ -4,10 +4,10 @@ import {
 } from './motion.js';
 import {
   createPinballMap,
-} from './pinball-maps.js?v=pinball-map-selection';
+} from './pinball-maps.js?v=twisted-pinball-courses';
 import {
   getPinballMap,
-} from './settings.js?v=pinball-map-selection';
+} from './settings.js?v=twisted-pinball-courses';
 
 let pinballRafId = null;
 
@@ -131,8 +131,6 @@ export function drawNumbersPinball({
 
   const MOBILE_HUD_X = PLAY_X2 + 6;
 
-  const PLAY_TOP = H * 0.04;
-
   const BALL_R =
     Math.max(13, Math.min(21, PLAY_W / 27));
 
@@ -248,6 +246,14 @@ export function drawNumbersPinball({
   const {
     pegs, bumpers, spinners, boosters,
   } = pinballMap;
+  const startLane = pinballMap.course.at(0);
+  for (const ball of balls) {
+    const startRatio = (ball.x - PLAY_X) / PLAY_W;
+    const usableWidth =
+      Math.max(0, startLane.right - startLane.left - ball.r * 2);
+    ball.x =
+      startLane.left + ball.r + usableWidth * startRatio;
+  }
 
   // ── 충돌 함수들 ──
 
@@ -375,28 +381,46 @@ export function drawNumbersPinball({
 
   function keepBallInPlayArea(ball) {
 
-    if (ball.x - ball.r < PLAY_X) {
-      ball.x = PLAY_X + ball.r;
-      ball.vx = Math.abs(ball.vx) * 0.65;
+    const lane = pinballMap.course.at(ball.y);
+    const left = lane.left + ball.r;
+    const right = lane.right - ball.r;
+    let nx = 0;
+    let ny = 0;
+
+    if (ball.x < left) {
+      ball.x = left;
+      const length = Math.hypot(1, lane.leftSlope);
+      nx = 1 / length;
+      ny = -lane.leftSlope / length;
+    } else if (ball.x > right) {
+      ball.x = right;
+      const length = Math.hypot(1, lane.rightSlope);
+      nx = -1 / length;
+      ny = lane.rightSlope / length;
     }
 
-    if (ball.x + ball.r > PLAY_X2) {
-      ball.x = PLAY_X2 - ball.r;
-      ball.vx = -Math.abs(ball.vx) * 0.65;
+    if (nx !== 0) {
+      const dot = ball.vx * nx + ball.vy * ny;
+      if (dot < 0) {
+        ball.vx -= 1.55 * dot * nx;
+        ball.vy -= 1.55 * dot * ny;
+      }
     }
   }
 
   function releaseStuckBall(ball) {
 
+    const lane = pinballMap.course.at(ball.y);
+    const laneCenter = (lane.left + lane.right) / 2;
     const side =
-      ball.x < PLAY_X + PLAY_W / 2
+      ball.x < laneCenter
         ? 1
         : -1;
 
     ball.x += side * ball.r * 1.8;
-    ball.y -= ball.r * 2.4;
-    ball.vx = side * 7;
-    ball.vy = -18;
+    ball.y += ball.r * 1.4;
+    ball.vx = side * 6;
+    ball.vy = 9;
     ball.stuckSince = null;
     ball.noBallCollisionFrames = 32;
     ball.sonicCooldown = 45;
@@ -806,6 +830,33 @@ export function drawNumbersPinball({
     ctx.restore();
   }
 
+  function drawCourse(getX = (value) => value, getY = (value) => value) {
+
+    const samples = pinballMap.course.samples;
+    const visible = samples.filter((sample) => sample.y <= PLAY_BOT);
+
+    ctx.beginPath();
+    ctx.moveTo(getX(visible[0].left), getY(visible[0].y));
+    for (const sample of visible) {
+      ctx.lineTo(getX(sample.left), getY(sample.y));
+    }
+    for (let index = visible.length - 1; index >= 0; index--) {
+      const sample = visible[index];
+      ctx.lineTo(getX(sample.right), getY(sample.y));
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    for (const side of ['left', 'right']) {
+      ctx.beginPath();
+      ctx.moveTo(getX(visible[0][side]), getY(visible[0].y));
+      for (const sample of visible) {
+        ctx.lineTo(getX(sample[side]), getY(sample.y));
+      }
+      ctx.stroke();
+    }
+  }
+
   function drawMinimap() {
     if (MM_W < 20) return;
 
@@ -824,7 +875,15 @@ export function drawNumbersPinball({
     function mmX(wx) { return MM_X + (wx - PLAY_X) * MM_SCALE_X; }
     function mmY(wy) { return MM_Y + wy * MM_SCALE_Y; }
 
+    ctx.save();
+    ctx.fillStyle = 'rgba(30,45,65,0.58)';
+    ctx.strokeStyle = pinballMap.course.color;
+    ctx.lineWidth = 1.4;
+    drawCourse(mmX, mmY);
+    ctx.restore();
+
     // 결승선
+    const finishLane = pinballMap.course.at(PLAY_BOT);
     ctx.save();
     ctx.shadowBlur = 4;
     ctx.shadowColor = '#ffe066';
@@ -832,8 +891,8 @@ export function drawNumbersPinball({
     ctx.lineWidth = 1.5;
     ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.moveTo(MM_X, mmY(PLAY_BOT));
-    ctx.lineTo(MM_X + MM_W, mmY(PLAY_BOT));
+    ctx.moveTo(mmX(finishLane.left), mmY(PLAY_BOT));
+    ctx.lineTo(mmX(finishLane.right), mmY(PLAY_BOT));
     ctx.stroke();
     ctx.restore();
 
@@ -966,19 +1025,18 @@ export function drawNumbersPinball({
     ctx.save();
     ctx.translate(0, -cameraY);
 
-    // 플레이 영역 경계선
+    // 맵 자체가 휘어지는 코스와 좌우 경계선
     ctx.save();
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = 'rgba(255,255,255,0.7)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
-      PLAY_X, PLAY_TOP,
-      PLAY_W, PLAY_BOT - PLAY_TOP
-    );
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = pinballMap.course.color;
+    ctx.fillStyle = 'rgba(12,20,32,0.72)';
+    ctx.strokeStyle = pinballMap.course.color;
+    ctx.lineWidth = Math.max(3, PEG_THICK * 0.6);
+    drawCourse();
     ctx.restore();
 
     // 결승선 (노란 점선)
+    const finishLane = pinballMap.course.at(PLAY_BOT);
     ctx.save();
     ctx.shadowBlur = 24;
     ctx.shadowColor = '#ffe066';
@@ -986,8 +1044,8 @@ export function drawNumbersPinball({
     ctx.lineWidth = 3;
     ctx.setLineDash([18, 10]);
     ctx.beginPath();
-    ctx.moveTo(PLAY_X, PLAY_BOT);
-    ctx.lineTo(PLAY_X2, PLAY_BOT);
+    ctx.moveTo(finishLane.left, PLAY_BOT);
+    ctx.lineTo(finishLane.right, PLAY_BOT);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();

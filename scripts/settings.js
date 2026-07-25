@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=pinball-map-selection';
+} from './pinball-maps.js?v=twisted-pinball-courses';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

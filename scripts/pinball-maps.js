@@ -7,21 +7,125 @@ export const PINBALL_MAPS = [
 
 const MAP_IDS = new Set(PINBALL_MAPS.map((map) => map.id));
 
+const COURSE_SHAPES = {
+  classic: [
+    [0, 0.50, 1.00],
+    [1, 0.50, 1.00],
+  ],
+  zigzag: [
+    [0, 0.50, 0.94],
+    [0.10, 0.28, 0.54],
+    [0.23, 0.72, 0.54],
+    [0.36, 0.30, 0.56],
+    [0.49, 0.70, 0.56],
+    [0.62, 0.27, 0.54],
+    [0.75, 0.73, 0.54],
+    [0.88, 0.32, 0.58],
+    [1, 0.50, 0.80],
+  ],
+  curves: [
+    [0, 0.50, 0.94],
+    [0.10, 0.34, 0.60],
+    [0.22, 0.28, 0.54],
+    [0.35, 0.42, 0.60],
+    [0.48, 0.72, 0.55],
+    [0.61, 0.72, 0.54],
+    [0.74, 0.55, 0.62],
+    [0.87, 0.29, 0.55],
+    [1, 0.50, 0.80],
+  ],
+  factory: [
+    [0, 0.50, 0.94],
+    [0.12, 0.40, 0.62],
+    [0.24, 0.63, 0.58],
+    [0.38, 0.36, 0.56],
+    [0.52, 0.66, 0.58],
+    [0.66, 0.38, 0.56],
+    [0.80, 0.61, 0.60],
+    [0.91, 0.43, 0.64],
+    [1, 0.50, 0.78],
+  ],
+};
+
 export function normalizePinballMap(value) {
   return MAP_IDS.has(value) ? value : 'classic';
 }
 
-function createBuilder(bounds) {
+function createCourse(mapId, bounds) {
+  const { playX, playW, worldH } = bounds;
+  const points = COURSE_SHAPES[mapId];
+
+  function rawAt(worldY) {
+    const ratio = Math.max(0, Math.min(1, worldY / worldH));
+    let index = 0;
+    while (
+      index < points.length - 2 &&
+      ratio > points[index + 1][0]
+    ) {
+      index++;
+    }
+    const current = points[index];
+    const next = points[index + 1];
+    const span = Math.max(0.0001, next[0] - current[0]);
+    const linear = Math.max(0, Math.min(1, (ratio - current[0]) / span));
+    const eased = linear * linear * (3 - 2 * linear);
+    const center = current[1] + (next[1] - current[1]) * eased;
+    const width = current[2] + (next[2] - current[2]) * eased;
+    return {
+      left: playX + playW * (center - width / 2),
+      right: playX + playW * (center + width / 2),
+    };
+  }
+
+  function at(worldY) {
+    const position = rawAt(worldY);
+    const sampleGap = Math.max(3, worldH / 900);
+    const before = rawAt(worldY - sampleGap);
+    const after = rawAt(worldY + sampleGap);
+    return {
+      ...position,
+      leftSlope: (after.left - before.left) / (sampleGap * 2),
+      rightSlope: (after.right - before.right) / (sampleGap * 2),
+    };
+  }
+
+  const sampleCount = 120;
+  const samples = Array.from({ length: sampleCount + 1 }, (_, index) => {
+    const y = worldH * index / sampleCount;
+    return { y, ...rawAt(y) };
+  });
+
+  return {
+    at,
+    samples,
+    color: mapId === 'factory'
+      ? '#ff9f43'
+      : mapId === 'curves'
+        ? '#b47aff'
+        : '#62f5ff',
+  };
+}
+
+function createBuilder(bounds, course) {
   const {
-    playX, playW, worldH, pegLen, pegThick,
+    worldH, pegLen, pegThick,
     bumperR, spinnerLen, isMobile,
   } = bounds;
-  const x = (ratio) => playX + playW * ratio;
   const y = (ratio) => worldH * ratio;
   const pegs = [];
   const bumpers = [];
   const spinners = [];
   const boosters = [];
+
+  function laneX(ratioX, ratioY) {
+    const lane = course.at(y(ratioY));
+    return lane.left + (lane.right - lane.left) * ratioX;
+  }
+
+  function laneWidth(ratioY) {
+    const lane = course.at(y(ratioY));
+    return lane.right - lane.left;
+  }
 
   function addBar(x1, y1, x2, y2, options = {}) {
     const dx = x2 - x1;
@@ -34,7 +138,6 @@ function createBuilder(bounds) {
       len: Math.hypot(dx, dy),
       thick: options.thick || pegThick,
       color: options.color || '#00e5ff',
-      kind: options.kind || 'peg',
       lit: 0,
     });
   }
@@ -46,54 +149,34 @@ function createBuilder(bounds) {
     addBar(cx - dx, cy - dy, cx + dx, cy + dy, options);
   }
 
-  function addPolyline(points, options = {}) {
-    for (let index = 1; index < points.length; index++) {
-      addBar(
-        x(points[index - 1][0]),
-        y(points[index - 1][1]),
-        x(points[index][0]),
-        y(points[index][1]),
-        { ...options, kind: 'rail' }
-      );
-    }
-  }
-
-  function addCurveRamp(baseY, openingX, bend, options = {}) {
-    const gap = isMobile ? 0.09 : 0.07;
-    const segments = isMobile ? 5 : 8;
-    const curveY = (pointX) => {
-      const distance = Math.abs(pointX - openingX);
-      return baseY - bend * Math.pow(distance / 0.5, 1.65);
-    };
-    const sides = [
-      [0.04, Math.max(0.05, openingX - gap)],
-      [Math.min(0.95, openingX + gap), 0.96],
-    ];
-    sides.forEach(([start, end]) => {
-      if (end <= start) return;
-      const points = [];
-      for (let index = 0; index <= segments; index++) {
-        const pointX = start + (end - start) * index / segments;
-        points.push([pointX, curveY(pointX)]);
-      }
-      addPolyline(points, {
-        color: options.color || '#62f5ff',
-        thick: options.thick || pegThick * 1.15,
-      });
-    });
+  function addPeg(px, py, length = pegLen, angle = Math.PI / 5, color) {
+    const safeLength = Math.min(length, laneWidth(py) * 0.24);
+    addCenteredBar(
+      laneX(px, py),
+      y(py),
+      safeLength,
+      angle,
+      { color }
+    );
   }
 
   function addBumper(px, py, radius = bumperR, color = '#6bffff') {
-    bumpers.push({ x: x(px), y: y(py), r: radius, color, lit: 0 });
+    bumpers.push({
+      x: laneX(px, py),
+      y: y(py),
+      r: radius,
+      color,
+      lit: 0,
+    });
   }
 
   function addSpinner(px, py, velocity, length = spinnerLen, angle = 0) {
     spinners.push({
-      cx: x(px),
+      cx: laneX(px, py),
       cy: y(py),
       angVel: velocity,
       ang: angle,
-      len: length,
+      len: Math.min(length, laneWidth(py) * 0.36),
       thick: pegThick,
       lit: 0,
       x1: 0,
@@ -105,9 +188,9 @@ function createBuilder(bounds) {
 
   function addBooster(px, py, width, height, vx, vy, color = '#4ade80') {
     boosters.push({
-      x: x(px),
+      x: laneX(px, py),
       y: y(py),
-      w: playW * width,
+      w: laneWidth(py) * width,
       h: Math.max(pegThick * 3, worldH * height),
       vx,
       vy,
@@ -116,208 +199,242 @@ function createBuilder(bounds) {
     });
   }
 
+  function addPegField({
+    rows,
+    columns,
+    top = 0.06,
+    bottom = 0.91,
+    color = '#00e5ff',
+  }) {
+    for (let row = 0; row < rows; row++) {
+      const py = top + (bottom - top) * (row + 0.5) / rows;
+      const offset = row % 2 ? 0.10 : 0;
+      for (let column = 0; column < columns; column++) {
+        const px = Math.max(
+          0.12,
+          Math.min(0.88, (column + 1) / (columns + 1) + offset)
+        );
+        addPeg(
+          px,
+          py,
+          pegLen * (row % 3 === 0 ? 0.82 : 0.68),
+          row % 2 ? -Math.PI / 4 : Math.PI / 4,
+          typeof color === 'function' ? color(row, column) : color
+        );
+      }
+    }
+  }
+
   return {
-    x, y, pegs, bumpers, spinners, boosters,
-    addBar, addCenteredBar, addPolyline, addCurveRamp,
-    addBumper, addSpinner, addBooster,
+    pegs,
+    bumpers,
+    spinners,
+    boosters,
+    addPeg,
+    addBumper,
+    addSpinner,
+    addBooster,
+    addPegField,
+    isMobile,
   };
 }
 
 function buildClassic(builder, bounds) {
   const {
-    x, y, pegs, addCenteredBar, addBumper, addSpinner,
+    addPegField, addBumper, addSpinner, isMobile,
   } = builder;
-  const {
-    pegLen, pegThick, bumperR, spinnerLen, isMobile,
-  } = bounds;
-  const rows = isMobile ? 10 : 14;
-  const columns = isMobile ? 3 : 4;
-  const top = 0.04;
-  const bottom = 0.90;
+  const { bumperR, spinnerLen } = bounds;
+  addPegField({
+    rows: isMobile ? 10 : 14,
+    columns: isMobile ? 3 : 4,
+  });
 
-  for (let row = 0; row < rows; row++) {
-    const cy = y(top + (bottom - top) * (row + 0.5) / rows);
-    const angle = row % 2 === 0 ? Math.PI / 5 : -Math.PI / 5;
-    const odd = row % 2 === 1;
-    const count = odd ? columns + 1 : columns;
-    for (let column = 0; column < count; column++) {
-      const rawRatio = (odd ? -0.5 : 0) / columns +
-        column / columns + 0.5 / columns;
-      const edge = Math.abs(Math.cos(angle) * pegLen / 2) + pegThick / 2;
-      const cx = Math.max(
-        x(0) + edge,
-        Math.min(x(1) - edge, x(rawRatio))
-      );
-      addCenteredBar(cx, cy, pegLen, angle);
-    }
-  }
-
-  const bumperLayout = [
+  [
     [0.25, 0.20, 1, '#ff4d6d'],
     [0.75, 0.20, 1, '#ff4d6d'],
     [0.50, 0.42, 1.2, '#ffe066'],
     [0.25, 0.65, 1, '#6bffff'],
     [0.75, 0.65, 1, '#6bffff'],
-  ];
-  bumperLayout
+  ]
     .filter((_, index) => !isMobile || (index !== 1 && index !== 3))
     .forEach(([px, py, scale, color]) => {
-      addBumper(px, py, Math.floor(bumperR * scale), color);
+      addBumper(px, py, bumperR * scale, color);
     });
 
-  const spinnerLayout = [
+  [
     [0.50, 0.10, 0.030],
     [0.18, 0.30, -0.025],
     [0.82, 0.30, 0.025],
     [0.50, 0.52, -0.032],
     [0.22, 0.76, 0.028],
     [0.78, 0.76, -0.028],
-  ];
-  spinnerLayout
+  ]
     .filter((_, index) => !isMobile || index % 2 === 0)
     .forEach(([px, py, velocity], index) => {
       addSpinner(px, py, velocity, spinnerLen, Math.PI / 6 * index);
     });
-
-  return pegs;
 }
 
 function buildZigzag(builder, bounds) {
   const {
-    x, y, addCenteredBar, addPolyline,
-    addBumper, addSpinner, addBooster,
+    addPegField, addBumper, addSpinner, addBooster, isMobile,
   } = builder;
-  const { pegLen, pegThick, bumperR, spinnerLen, isMobile } = bounds;
-  const turns = [
-    [[0.02, 0.14], [0.76, 0.20]],
-    [[0.98, 0.31], [0.24, 0.37]],
-    [[0.02, 0.48], [0.76, 0.54]],
-    [[0.98, 0.65], [0.24, 0.71]],
-    [[0.02, 0.82], [0.76, 0.88]],
-  ];
-  turns.forEach((points, index) => {
-    addPolyline(points, {
-      color: index % 2 ? '#ff7ab8' : '#52e5ff',
-      thick: pegThick * 1.35,
-    });
+  const { bumperR, spinnerLen } = bounds;
+  addPegField({
+    rows: isMobile ? 9 : 13,
+    columns: isMobile ? 2 : 3,
+    color: (row) => row % 2 ? '#ff7ab8' : '#52e5ff',
   });
-
-  const pegRows = isMobile ? 4 : 7;
-  for (let row = 0; row < pegRows; row++) {
-    const py = 0.10 + row * 0.125;
-    const offset = row % 2 ? 0.18 : 0.08;
-    for (let column = 0; column < (isMobile ? 2 : 3); column++) {
-      const px = offset + column * 0.30;
-      addCenteredBar(
-        x(Math.min(0.92, px)),
-        y(py),
-        pegLen * 0.72,
-        row % 2 ? -Math.PI / 4 : Math.PI / 4
-      );
-    }
-  }
 
   [
-    [0.82, 0.20, '#ff4d6d'],
-    [0.18, 0.37, '#ffe066'],
-    [0.82, 0.54, '#6bffff'],
-    [0.18, 0.71, '#ff7ab8'],
-  ].forEach(([px, py, color], index) => {
-    if (!isMobile || index % 2 === 0) {
-      addBumper(px, py, bumperR * 0.9, color);
-    }
-  });
+    [0.24, 0.15, '#ff4d6d'],
+    [0.74, 0.27, '#ffe066'],
+    [0.26, 0.39, '#6bffff'],
+    [0.72, 0.51, '#ff7ab8'],
+    [0.28, 0.64, '#ffe066'],
+    [0.74, 0.77, '#6bffff'],
+    [0.30, 0.88, '#ff4d6d'],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py, color]) => {
+      addBumper(px, py, bumperR * 0.82, color);
+    });
 
-  addSpinner(0.50, 0.44, 0.035, spinnerLen * 0.8);
-  if (!isMobile) addSpinner(0.50, 0.77, -0.038, spinnerLen * 0.8);
-  addBooster(0.84, 0.27, 0.18, 0.012, -4.5, 1.5);
-  addBooster(0.16, 0.61, 0.18, 0.012, 4.5, 1.5);
+  [
+    [0.50, 0.21, 0.034],
+    [0.48, 0.34, -0.036],
+    [0.52, 0.48, 0.038],
+    [0.48, 0.69, -0.036],
+    [0.52, 0.84, 0.034],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py, velocity], index) => {
+      addSpinner(px, py, velocity, spinnerLen * 0.66, index * 0.7);
+    });
+
+  [
+    [0.50, 0.12],
+    [0.50, 0.43],
+    [0.50, 0.72],
+    [0.50, 0.92],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py]) => {
+      addBooster(px, py, 0.30, 0.009, 0, 3.8);
+    });
 }
 
 function buildCurves(builder, bounds) {
   const {
-    addCurveRamp, addBumper, addSpinner, addBooster,
+    addPegField, addBumper, addSpinner, addBooster, isMobile,
   } = builder;
-  const { bumperR, spinnerLen, isMobile } = bounds;
-  const ramps = [
-    [0.18, 0.70, 0.055, '#51e5ff'],
-    [0.34, 0.30, 0.060, '#b47aff'],
-    [0.50, 0.68, 0.065, '#51e5ff'],
-    [0.67, 0.32, 0.060, '#b47aff'],
-    [0.83, 0.58, 0.055, '#51e5ff'],
-  ];
-  ramps.forEach(([py, opening, bend, color], index) => {
-    if (!isMobile || index !== 3) {
-      addCurveRamp(py, opening, bend, { color });
-      addBooster(opening, py + 0.012, 0.13, 0.010, 0, 3.8, '#4ade80');
-    }
+  const { bumperR, spinnerLen } = bounds;
+  addPegField({
+    rows: isMobile ? 9 : 13,
+    columns: isMobile ? 2 : 3,
+    color: (row) => row % 3 === 0 ? '#b47aff' : '#51e5ff',
   });
 
   [
-    [0.28, 0.25, '#ffe066'],
-    [0.72, 0.42, '#ff7ab8'],
-    [0.28, 0.60, '#6bffff'],
-    [0.72, 0.76, '#ffe066'],
-  ].forEach(([px, py, color], index) => {
-    if (!isMobile || index % 2 === 0) {
-      addBumper(px, py, bumperR * 0.85, color);
-    }
-  });
-  addSpinner(0.50, 0.57, -0.024, spinnerLen * 0.72);
+    [0.28, 0.15, '#ffe066'],
+    [0.72, 0.27, '#ff7ab8'],
+    [0.30, 0.39, '#6bffff'],
+    [0.70, 0.51, '#ffe066'],
+    [0.28, 0.64, '#ff7ab8'],
+    [0.72, 0.77, '#6bffff'],
+    [0.34, 0.89, '#ffe066'],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py, color]) => {
+      addBumper(px, py, bumperR * 0.80, color);
+    });
+
+  [
+    [0.52, 0.22, -0.028],
+    [0.48, 0.44, 0.030],
+    [0.52, 0.67, -0.030],
+    [0.48, 0.84, 0.028],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py, velocity], index) => {
+      addSpinner(px, py, velocity, spinnerLen * 0.62, index * 0.8);
+    });
+
+  [0.10, 0.31, 0.55, 0.74, 0.93]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach((py) => {
+      addBooster(0.50, py, 0.28, 0.009, 0, 3.6);
+    });
 }
 
 function buildFactory(builder, bounds) {
   const {
-    x, y, addCenteredBar, addBumper, addSpinner, addBooster,
+    addPegField, addBumper, addSpinner, addBooster, isMobile,
   } = builder;
-  const { pegLen, bumperR, spinnerLen, isMobile } = bounds;
-  const spinnerRows = isMobile ? 4 : 6;
-  for (let row = 0; row < spinnerRows; row++) {
-    const py = 0.13 + row * 0.14;
-    const positions = row % 2 ? [0.28, 0.72] : [0.18, 0.50, 0.82];
-    positions
-      .filter((_, index) => !isMobile || index !== 1)
-      .forEach((px, index) => {
-        addSpinner(
-          px,
-          py,
-          (row + index) % 2 ? -0.045 : 0.045,
-          spinnerLen * 0.62,
-          index * Math.PI / 3
-        );
-      });
-  }
+  const { bumperR, spinnerLen } = bounds;
+  addPegField({
+    rows: isMobile ? 9 : 12,
+    columns: isMobile ? 2 : 3,
+    color: (row, column) =>
+      (row + column) % 2 ? '#f6c453' : '#00e5ff',
+  });
 
-  for (let row = 0; row < (isMobile ? 4 : 7); row++) {
-    const py = 0.08 + row * 0.13;
-    addCenteredBar(
-      x(row % 2 ? 0.35 : 0.65),
-      y(py),
-      pegLen * 0.85,
-      row % 2 ? Math.PI / 5 : -Math.PI / 5,
-      { color: '#f6c453' }
+  [
+    [0.25, 0.13, '#ff4d6d'],
+    [0.72, 0.24, '#6bffff'],
+    [0.28, 0.36, '#ffe066'],
+    [0.70, 0.48, '#ff7ab8'],
+    [0.30, 0.60, '#6bffff'],
+    [0.72, 0.72, '#ffe066'],
+    [0.28, 0.84, '#ff4d6d'],
+    [0.68, 0.91, '#6bffff'],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py, color]) => {
+      addBumper(px, py, bumperR * 0.78, color);
+    });
+
+  const spinnerRows = isMobile ? 6 : 10;
+  for (let row = 0; row < spinnerRows; row++) {
+    const py = 0.09 + row * 0.085;
+    addSpinner(
+      row % 2 ? 0.68 : 0.32,
+      py,
+      row % 2 ? -0.046 : 0.046,
+      spinnerLen * 0.56,
+      row * 0.65
     );
   }
 
-  [
-    [0.50, 0.22, '#ff4d6d'],
-    [0.22, 0.46, '#6bffff'],
-    [0.78, 0.46, '#ff7ab8'],
-    [0.50, 0.72, '#ffe066'],
-  ].forEach(([px, py, color], index) => {
-    if (!isMobile || index !== 2) {
-      addBumper(px, py, bumperR * (index === 3 ? 1.15 : 0.82), color);
-    }
-  });
+  [0.18, 0.40, 0.62, 0.82, 0.94]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach((py) => {
+      addBooster(0.50, py, 0.32, 0.009, 0, 4.5);
+    });
+}
 
-  addBooster(0.50, 0.34, 0.42, 0.010, 0, 4.8);
-  addBooster(0.50, 0.60, 0.42, 0.010, 0, 4.8);
-  addBooster(0.50, 0.86, 0.42, 0.010, 0, 5.5);
+function distanceToSegment(pointX, pointY, peg) {
+  const dx = peg.x2 - peg.x1;
+  const dy = peg.y2 - peg.y1;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) {
+    return Math.hypot(pointX - peg.x1, pointY - peg.y1);
+  }
+  const ratio = Math.max(0, Math.min(
+    1,
+    ((pointX - peg.x1) * dx + (pointY - peg.y1) * dy) /
+      lengthSquared
+  ));
+  return Math.hypot(
+    pointX - (peg.x1 + ratio * dx),
+    pointY - (peg.y1 + ratio * dy)
+  );
 }
 
 export function createPinballMap(mapId, bounds) {
   const selected = normalizePinballMap(mapId);
-  const builder = createBuilder(bounds);
+  const course = createCourse(selected, bounds);
+  const builder = createBuilder(bounds, course);
 
   if (selected === 'zigzag') buildZigzag(builder, bounds);
   else if (selected === 'curves') buildCurves(builder, bounds);
@@ -325,25 +442,6 @@ export function createPinballMap(mapId, bounds) {
   else buildClassic(builder, bounds);
 
   const { pegs, bumpers, spinners, boosters } = builder;
-
-  function distanceToSegment(pointX, pointY, peg) {
-    const dx = peg.x2 - peg.x1;
-    const dy = peg.y2 - peg.y1;
-    const lengthSquared = dx * dx + dy * dy;
-    if (lengthSquared === 0) {
-      return Math.hypot(pointX - peg.x1, pointY - peg.y1);
-    }
-    const ratio = Math.max(0, Math.min(
-      1,
-      ((pointX - peg.x1) * dx + (pointY - peg.y1) * dy) /
-        lengthSquared
-    ));
-    return Math.hypot(
-      pointX - (peg.x1 + ratio * dx),
-      pointY - (peg.y1 + ratio * dy)
-    );
-  }
-
   const filteredPegs = pegs.filter((peg) => !bumpers.some((bumper) => {
     const clearance = bumper.r + peg.thick / 2 + 4;
     return distanceToSegment(bumper.x, bumper.y, peg) < clearance;
@@ -352,6 +450,7 @@ export function createPinballMap(mapId, bounds) {
   return {
     id: selected,
     label: PINBALL_MAPS.find((map) => map.id === selected).label,
+    course,
     pegs: filteredPegs,
     bumpers,
     spinners,

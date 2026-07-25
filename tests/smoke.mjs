@@ -93,6 +93,23 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
   )) {
     throw new Error(`Pinball rail crosses the play boundary: ${id}`);
   }
+
+  if (map.course.samples.some((sample) =>
+    sample.left < mapBounds.playX ||
+    sample.right > mapBounds.playX + mapBounds.playW ||
+    sample.right - sample.left < mapBounds.playW * 0.5
+  )) {
+    throw new Error(`Pinball course is invalid or too narrow: ${id}`);
+  }
+
+  if (map.pegs.some((peg) =>
+    [[peg.x1, peg.y1], [peg.x2, peg.y2]].some(([x, y]) => {
+      const lane = map.course.at(y);
+      return x < lane.left || x > lane.right;
+    })
+  )) {
+    throw new Error(`Pinball obstacle crosses its course wall: ${id}`);
+  }
 }
 
 const appCss = readFileSync('styles/app.css', 'utf8');
