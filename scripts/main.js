@@ -1,10 +1,10 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=aligned-pegs-factory-branches';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=clean-pegs-seamless-branches';
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=aligned-pegs-factory-branches';
+} from './gumball.js?v=clean-pegs-seamless-branches';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=aligned-pegs-factory-branches';
+} from './settings.js?v=clean-pegs-seamless-branches';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,11 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=aligned-pegs-factory-branches';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=clean-pegs-seamless-branches';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
-import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=aligned-pegs-factory-branches';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=clean-pegs-seamless-branches';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');

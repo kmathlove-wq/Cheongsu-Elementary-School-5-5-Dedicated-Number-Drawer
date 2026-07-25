@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=aligned-pegs-factory-branches';
+} from './pinball-maps.js?v=clean-pegs-seamless-branches';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

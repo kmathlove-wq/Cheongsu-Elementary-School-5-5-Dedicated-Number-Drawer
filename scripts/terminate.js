@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js?v=aligned-pegs-factory-branches';
-import { stopPinballMode } from './pinball.js?v=aligned-pegs-factory-branches';
+import { resetGumballMode } from './gumball.js?v=clean-pegs-seamless-branches';
+import { stopPinballMode } from './pinball.js?v=clean-pegs-seamless-branches';
 import {
   closeSongRequest,
   closeYouTubePlayer,

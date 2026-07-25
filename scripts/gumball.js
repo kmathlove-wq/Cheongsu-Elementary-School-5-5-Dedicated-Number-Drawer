@@ -1,5 +1,5 @@
 import { scaleMotionTime } from './motion.js';
-import { formatResultSummary, renderResultSummary } from './result-display.js?v=aligned-pegs-factory-branches';
+import { formatResultSummary, renderResultSummary } from './result-display.js?v=clean-pegs-seamless-branches';
 
 const gumballStage =
   document.getElementById('gumballStage');

@@ -410,9 +410,15 @@ function createBuilder(bounds, course) {
     const courseEntryWidth = entryLane.right - entryLane.left;
     const width =
       courseEntryWidth * (options.widthRatio || 0.68);
+    const entryShare =
+      (options.entryMaxRatio ?? 1) -
+      (options.entryMinRatio ?? 0);
     const entryWidth = options.constantWidth
-      ? width
+      ? courseEntryWidth * entryShare
       : courseEntryWidth;
+    const resumeWidth = options.constantWidth
+      ? (resumeLane.right - resumeLane.left) * entryShare
+      : resumeLane.right - resumeLane.left;
     waterClimbs.push({
       id: waterClimbs.length,
       kind,
@@ -426,6 +432,7 @@ function createBuilder(bounds, course) {
         : -1,
       width,
       entryWidth,
+      resumeWidth,
       constantWidth: Boolean(options.constantWidth),
       entryPosition,
       resumePosition,
@@ -464,17 +471,29 @@ function createBuilder(bounds, course) {
 
 function buildClassic(builder, bounds) {
   const {
-    addPeg, addPegField, addBumper, addSpinner, isMobile,
+    addPeg, addBumper, addSpinner, isMobile,
   } = builder;
   const { bumperR, spinnerLen, pegLen } = bounds;
   const fieldRows = isMobile ? 10 : 14;
-  addPegField({
-    rows: fieldRows,
-    columns: isMobile ? 3 : 4,
-  });
   for (let row = 0; row < fieldRows; row++) {
     const py = 0.06 + 0.85 * (row + 0.5) / fieldRows;
     const tilt = row % 2 ? -Math.PI / 4 : Math.PI / 4;
+    const fieldPositions = isMobile
+      ? row % 2
+        ? [0.33, 0.50, 0.67]
+        : [0.25, 0.50, 0.75]
+      : row % 2
+        ? [0.30, 0.50, 0.70]
+        : [0.20, 0.40, 0.60, 0.80];
+    fieldPositions.forEach((px) => {
+      addPeg(
+        px,
+        py,
+        pegLen * (row % 3 === 0 ? 0.82 : 0.68),
+        tilt,
+        '#00e5ff'
+      );
+    });
     addPeg(0.07, py, pegLen * 0.58, tilt, '#00e5ff');
     addPeg(0.93, py, pegLen * 0.58, tilt, '#00e5ff');
   }

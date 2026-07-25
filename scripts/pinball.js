@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=aligned-pegs-factory-branches';
+} from './pinball-maps.js?v=clean-pegs-seamless-branches';
 import {
   getPinballMap,
-} from './settings.js?v=aligned-pegs-factory-branches';
+} from './settings.js?v=clean-pegs-seamless-branches';
 
 let pinballRafId = null;
 
@@ -1380,8 +1380,8 @@ export function drawNumbersPinball({
           : 0;
         const halfWidth = (
           climb.width +
-          (climb.entryWidth - climb.width) *
-            Math.max(entryBlend, exitBlend)
+          (climb.entryWidth - climb.width) * entryBlend +
+          (climb.resumeWidth - climb.width) * exitBlend
         ) * widthScale / 2;
         const nx = -Math.sin(angle);
         const ny = Math.cos(angle);
@@ -1416,11 +1416,11 @@ export function drawNumbersPinball({
           (exitLane.right - exitLane.left) *
             climb.resumePosition;
         left[lastIndex] = {
-          x: getX(exitCenter - climb.entryWidth / 2),
+          x: getX(exitCenter - climb.resumeWidth / 2),
           y: getY(exit.y),
         };
         right[lastIndex] = {
-          x: getX(exitCenter + climb.entryWidth / 2),
+          x: getX(exitCenter + climb.resumeWidth / 2),
           y: getY(exit.y),
         };
       }
@@ -1462,6 +1462,17 @@ export function drawNumbersPinball({
       }
       ctx.closePath();
       ctx.fill();
+
+      ctx.strokeStyle = pinballMap.course.color;
+      ctx.lineWidth = borderWidth;
+      for (const side of ['left', 'right']) {
+        ctx.beginPath();
+        ctx.moveTo(edges[side][start].x, edges[side][start].y);
+        for (let index = start + 1; index <= end; index++) {
+          ctx.lineTo(edges[side][index].x, edges[side][index].y);
+        }
+        ctx.stroke();
+      }
     };
 
     const routeEdges = getCourseEdges(climb.points, true);
@@ -1478,7 +1489,7 @@ export function drawNumbersPinball({
 
     ctx.save();
     ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
+    ctx.lineCap = 'butt';
     ctx.shadowBlur = detailed ? 16 : 2;
     ctx.shadowColor = pinballMap.course.color;
     ctx.fillStyle = detailed
@@ -1505,6 +1516,7 @@ export function drawNumbersPinball({
     ctx.stroke();
 
     if (waterEdges) {
+      ctx.lineCap = 'round';
       ctx.shadowBlur = detailed ? 22 : 3;
       ctx.shadowColor = climb.color;
       ctx.strokeStyle = detailed

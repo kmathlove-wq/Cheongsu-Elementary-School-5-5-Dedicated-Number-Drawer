@@ -190,6 +190,20 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     if (leftEdgePegs.length !== 14 || edgeAngles.size !== 1) {
       throw new Error('Classic wall pegs must keep regular spacing and tilt');
     }
+    const rowGroups = new Map();
+    map.pegs.forEach((peg) => {
+      const row = Math.round(peg.cy);
+      if (!rowGroups.has(row)) rowGroups.set(row, []);
+      rowGroups.get(row).push(peg);
+    });
+    if ([...rowGroups.values()].some((row) => {
+      const sorted = row.toSorted((a, b) => a.cx - b.cx);
+      return sorted.some((peg, index) =>
+        index > 0 && peg.cx - sorted[index - 1].cx < 55
+      );
+    })) {
+      throw new Error('Classic map must not place redundant pegs together');
+    }
   }
 
   if (
@@ -204,11 +218,49 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       !map.waterClimbs.some((climb) => climb.kind === 'dry') ||
       map.waterClimbs.some((climb) =>
         !climb.constantWidth ||
-        Math.abs(climb.width - climb.entryWidth) > 0.01
+        climb.entryWidth <= climb.width ||
+        climb.resumeWidth <= climb.width
       )
     )
   ) {
     throw new Error('Chaos factory special obstacles are incomplete');
+  }
+  if (id === 'factory') {
+    const branches = map.waterClimbs.toSorted(
+      (a, b) => a.entryPosition - b.entryPosition
+    );
+    const entryLane = map.course.at(branches[0].gapTopY);
+    const resumeLane = map.course.at(branches[0].gapBottomY);
+    const entryEdges = branches.map((branch) => {
+      const center =
+        entryLane.left +
+        (entryLane.right - entryLane.left) * branch.entryPosition;
+      return [
+        center - branch.entryWidth / 2,
+        center + branch.entryWidth / 2,
+      ];
+    });
+    const resumeEdges = branches.map((branch) => {
+      const center =
+        resumeLane.left +
+        (resumeLane.right - resumeLane.left) *
+          branch.resumePosition;
+      return [
+        center - branch.resumeWidth / 2,
+        center + branch.resumeWidth / 2,
+      ];
+    });
+    const tolerance = 0.01;
+    if (
+      Math.abs(entryEdges[0][0] - entryLane.left) > tolerance ||
+      Math.abs(entryEdges[0][1] - entryEdges[1][0]) > tolerance ||
+      Math.abs(entryEdges[1][1] - entryLane.right) > tolerance ||
+      Math.abs(resumeEdges[0][0] - resumeLane.left) > tolerance ||
+      Math.abs(resumeEdges[0][1] - resumeEdges[1][0]) > tolerance ||
+      Math.abs(resumeEdges[1][1] - resumeLane.right) > tolerance
+    ) {
+      throw new Error('Chaos factory branches must join without gaps');
+    }
   }
 
   if (map.waterLifts.some((lift) =>
