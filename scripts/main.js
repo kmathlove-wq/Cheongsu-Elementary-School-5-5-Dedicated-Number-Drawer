@@ -1,4 +1,4 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=twisted-pinball-courses';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=distinct-pinball-map-personalities';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=twisted-pinball-courses';
+} from './settings.js?v=distinct-pinball-map-personalities';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,7 +28,7 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=twisted-pinball-courses';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=distinct-pinball-map-personalities';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';

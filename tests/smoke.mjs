@@ -67,6 +67,14 @@ const mapBounds = {
   isMobile: false,
 };
 
+if (
+  pinballMapModule.getPinballWorldScale('factory', false) <=
+  pinballMapModule.getPinballWorldScale('curves', false) ||
+  pinballMapModule.getPinballWorldScale('factory', false) < 8
+) {
+  throw new Error('Chaos factory must remain an extra-long course');
+}
+
 for (const { id } of pinballMapModule.PINBALL_MAPS) {
   const map = pinballMapModule.createPinballMap(id, mapBounds);
   const obstacles = [
@@ -109,6 +117,27 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     })
   )) {
     throw new Error(`Pinball obstacle crosses its course wall: ${id}`);
+  }
+
+  const expectedGeometry = id === 'zigzag'
+    ? 'linear'
+    : id === 'factory'
+      ? 'mixed'
+      : 'smooth';
+  if (map.course.geometry !== expectedGeometry) {
+    throw new Error(`Wrong pinball course geometry: ${id}`);
+  }
+
+  if (
+    id === 'factory' &&
+    (
+      map.bumpers.filter((bumper) => bumper.oneShot).length < 4 ||
+      map.spinners.filter((spinner) => spinner.moveSpeed).length < 4 ||
+      map.spinners.filter((spinner) => spinner.len > 250).length < 4 ||
+      map.boosters.filter((booster) => booster.vy < 0).length < 3
+    )
+  ) {
+    throw new Error('Chaos factory special obstacles are incomplete');
   }
 }
 

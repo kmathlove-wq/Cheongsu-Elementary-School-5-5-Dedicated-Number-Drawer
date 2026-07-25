@@ -25,30 +25,48 @@ const COURSE_SHAPES = {
   ],
   curves: [
     [0, 0.50, 0.94],
-    [0.10, 0.34, 0.60],
-    [0.22, 0.28, 0.54],
-    [0.35, 0.42, 0.60],
-    [0.48, 0.72, 0.55],
-    [0.61, 0.72, 0.54],
-    [0.74, 0.55, 0.62],
-    [0.87, 0.29, 0.55],
-    [1, 0.50, 0.80],
+    [0.06, 0.38, 0.68],
+    [0.14, 0.68, 0.55],
+    [0.23, 0.31, 0.62],
+    [0.31, 0.58, 0.52],
+    [0.39, 0.72, 0.56],
+    [0.48, 0.43, 0.65],
+    [0.56, 0.28, 0.54],
+    [0.66, 0.64, 0.58],
+    [0.74, 0.70, 0.52],
+    [0.83, 0.36, 0.63],
+    [0.91, 0.29, 0.55],
+    [1, 0.50, 0.82],
   ],
   factory: [
-    [0, 0.50, 0.94],
-    [0.12, 0.40, 0.62],
-    [0.24, 0.63, 0.58],
-    [0.38, 0.36, 0.56],
-    [0.52, 0.66, 0.58],
-    [0.66, 0.38, 0.56],
-    [0.80, 0.61, 0.60],
-    [0.91, 0.43, 0.64],
-    [1, 0.50, 0.78],
+    [0, 0.50, 0.94, 'linear'],
+    [0.06, 0.32, 0.62, 'linear'],
+    [0.12, 0.68, 0.58, 'smooth'],
+    [0.18, 0.43, 0.65, 'smooth'],
+    [0.25, 0.29, 0.54, 'linear'],
+    [0.32, 0.70, 0.56, 'linear'],
+    [0.39, 0.34, 0.60, 'smooth'],
+    [0.46, 0.62, 0.52, 'smooth'],
+    [0.53, 0.72, 0.54, 'linear'],
+    [0.60, 0.29, 0.56, 'smooth'],
+    [0.68, 0.48, 0.66, 'linear'],
+    [0.75, 0.70, 0.56, 'linear'],
+    [0.82, 0.30, 0.54, 'smooth'],
+    [0.89, 0.60, 0.60, 'linear'],
+    [0.95, 0.41, 0.68, 'smooth'],
+    [1, 0.50, 0.82],
   ],
 };
 
 export function normalizePinballMap(value) {
   return MAP_IDS.has(value) ? value : 'classic';
+}
+
+export function getPinballWorldScale(mapId, isMobile) {
+  const selected = normalizePinballMap(mapId);
+  if (selected === 'factory') return isMobile ? 6.8 : 8.5;
+  if (selected === 'curves') return isMobile ? 3.8 : 4.8;
+  return isMobile ? 3.1 : 4;
 }
 
 function createCourse(mapId, bounds) {
@@ -68,7 +86,12 @@ function createCourse(mapId, bounds) {
     const next = points[index + 1];
     const span = Math.max(0.0001, next[0] - current[0]);
     const linear = Math.max(0, Math.min(1, (ratio - current[0]) / span));
-    const eased = linear * linear * (3 - 2 * linear);
+    const interpolation = mapId === 'zigzag'
+      ? 'linear'
+      : current[3] || 'smooth';
+    const eased = interpolation === 'linear'
+      ? linear
+      : linear * linear * (3 - 2 * linear);
     const center = current[1] + (next[1] - current[1]) * eased;
     const width = current[2] + (next[2] - current[2]) * eased;
     return {
@@ -89,7 +112,11 @@ function createCourse(mapId, bounds) {
     };
   }
 
-  const sampleCount = 120;
+  const sampleCount = mapId === 'factory'
+    ? 240
+    : mapId === 'curves'
+      ? 180
+      : 120;
   const samples = Array.from({ length: sampleCount + 1 }, (_, index) => {
     const y = worldH * index / sampleCount;
     return { y, ...rawAt(y) };
@@ -98,6 +125,11 @@ function createCourse(mapId, bounds) {
   return {
     at,
     samples,
+    geometry: mapId === 'zigzag'
+      ? 'linear'
+      : mapId === 'factory'
+        ? 'mixed'
+        : 'smooth',
     color: mapId === 'factory'
       ? '#ff9f43'
       : mapId === 'curves'
@@ -160,24 +192,52 @@ function createBuilder(bounds, course) {
     );
   }
 
-  function addBumper(px, py, radius = bumperR, color = '#6bffff') {
+  function addBumper(
+    px,
+    py,
+    radius = bumperR,
+    color = '#6bffff',
+    options = {}
+  ) {
     bumpers.push({
       x: laneX(px, py),
       y: y(py),
       r: radius,
       color,
       lit: 0,
+      active: true,
+      power: options.power || 0.85,
+      kick: options.kick || 0,
+      oneShot: options.oneShot || false,
     });
   }
 
-  function addSpinner(px, py, velocity, length = spinnerLen, angle = 0) {
+  function addSpinner(
+    px,
+    py,
+    velocity,
+    length = spinnerLen,
+    angle = 0,
+    options = {}
+  ) {
+    const cx = laneX(px, py);
+    const cy = y(py);
     spinners.push({
-      cx: laneX(px, py),
-      cy: y(py),
+      cx,
+      cy,
+      baseCx: cx,
+      baseCy: cy,
       angVel: velocity,
       ang: angle,
-      len: Math.min(length, laneWidth(py) * 0.36),
-      thick: pegThick,
+      len: Math.min(
+        length,
+        laneWidth(py) * (options.maxLengthRatio || 0.36)
+      ),
+      thick: pegThick * (options.thickScale || 1),
+      moveRangeX: laneWidth(py) * (options.moveX || 0),
+      moveRangeY: worldH * (options.moveY || 0),
+      moveSpeed: options.moveSpeed || 0,
+      phase: options.phase || 0,
       lit: 0,
       x1: 0,
       y1: 0,
@@ -186,8 +246,18 @@ function createBuilder(bounds, course) {
     });
   }
 
-  function addBooster(px, py, width, height, vx, vy, color = '#4ade80') {
+  function addBooster(
+    px,
+    py,
+    width,
+    height,
+    vx,
+    vy,
+    color = '#4ade80',
+    options = {}
+  ) {
     boosters.push({
+      id: boosters.length,
       x: laneX(px, py),
       y: y(py),
       w: laneWidth(py) * width,
@@ -196,6 +266,7 @@ function createBuilder(bounds, course) {
       vy,
       color,
       lit: 0,
+      oncePerBall: options.oncePerBall || false,
     });
   }
 
@@ -373,30 +444,34 @@ function buildFactory(builder, bounds) {
   } = builder;
   const { bumperR, spinnerLen } = bounds;
   addPegField({
-    rows: isMobile ? 9 : 12,
+    rows: isMobile ? 16 : 24,
     columns: isMobile ? 2 : 3,
     color: (row, column) =>
       (row + column) % 2 ? '#f6c453' : '#00e5ff',
   });
 
   [
-    [0.25, 0.13, '#ff4d6d'],
-    [0.72, 0.24, '#6bffff'],
-    [0.28, 0.36, '#ffe066'],
-    [0.70, 0.48, '#ff7ab8'],
-    [0.30, 0.60, '#6bffff'],
-    [0.72, 0.72, '#ffe066'],
-    [0.28, 0.84, '#ff4d6d'],
-    [0.68, 0.91, '#6bffff'],
+    [0.25, 0.08, '#ff4d6d'],
+    [0.72, 0.15, '#6bffff'],
+    [0.28, 0.22, '#ffe066'],
+    [0.70, 0.30, '#ff7ab8'],
+    [0.30, 0.38, '#6bffff'],
+    [0.72, 0.46, '#ffe066'],
+    [0.28, 0.54, '#ff4d6d'],
+    [0.68, 0.62, '#6bffff'],
+    [0.30, 0.70, '#ffe066'],
+    [0.72, 0.78, '#ff7ab8'],
+    [0.28, 0.86, '#6bffff'],
+    [0.68, 0.93, '#ffe066'],
   ]
     .filter((_, index) => !isMobile || index % 2 === 0)
     .forEach(([px, py, color]) => {
       addBumper(px, py, bumperR * 0.78, color);
     });
 
-  const spinnerRows = isMobile ? 6 : 10;
+  const spinnerRows = isMobile ? 10 : 16;
   for (let row = 0; row < spinnerRows; row++) {
-    const py = 0.09 + row * 0.085;
+    const py = 0.06 + row * 0.055;
     addSpinner(
       row % 2 ? 0.68 : 0.32,
       py,
@@ -406,10 +481,77 @@ function buildFactory(builder, bounds) {
     );
   }
 
-  [0.18, 0.40, 0.62, 0.82, 0.94]
+  const longSpinnerLayout = [
+    [0.50, 0.13, 0.019, 0.00],
+    [0.50, 0.27, -0.022, 0.04],
+    [0.50, 0.41, 0.018, 0.08],
+    [0.50, 0.56, -0.021, 0.12],
+    [0.50, 0.71, 0.020, 0.16],
+    [0.50, 0.85, -0.019, 0.20],
+  ];
+  longSpinnerLayout
     .filter((_, index) => !isMobile || index % 2 === 0)
-    .forEach((py) => {
-      addBooster(0.50, py, 0.32, 0.009, 0, 4.5);
+    .forEach(([px, py, velocity, phase]) => {
+      addSpinner(
+        px,
+        py,
+        velocity,
+        spinnerLen * 4,
+        phase * Math.PI,
+        {
+          maxLengthRatio: 0.76,
+          thickScale: 1.7,
+          moveX: 0.045,
+          moveY: 0.002,
+          moveSpeed: 0.018,
+          phase: phase * Math.PI * 2,
+        }
+      );
+    });
+
+  [
+    [0.26, 0.18],
+    [0.74, 0.34],
+    [0.28, 0.50],
+    [0.72, 0.66],
+    [0.30, 0.82],
+    [0.70, 0.90],
+  ]
+    .filter((_, index) => !isMobile || index % 2 === 0)
+    .forEach(([px, py]) => {
+      addBumper(
+        px,
+        py,
+        bumperR * 0.95,
+        '#ff335f',
+        { power: 1.7, kick: 11, oneShot: true }
+      );
+    });
+
+  [
+    [0.50, 0.11, -16, '#ff4d6d'],
+    [0.50, 0.20, 8, '#4ade80'],
+    [0.50, 0.37, -18, '#ff4d6d'],
+    [0.50, 0.48, 9, '#4ade80'],
+    [0.50, 0.64, -17, '#ff4d6d'],
+    [0.50, 0.76, 9, '#4ade80'],
+    [0.50, 0.88, -15, '#ff4d6d'],
+    [0.50, 0.96, 10, '#4ade80'],
+  ]
+    .filter((_, index) =>
+      !isMobile || [0, 3, 4, 7].includes(index)
+    )
+    .forEach(([px, py, vy, color]) => {
+      addBooster(
+        px,
+        py,
+        0.34,
+        0.006,
+        0,
+        vy,
+        color,
+        { oncePerBall: true }
+      );
     });
 }
 

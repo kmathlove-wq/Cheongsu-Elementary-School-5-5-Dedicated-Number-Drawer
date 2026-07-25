@@ -1,5 +1,5 @@
 import { resetGumballMode } from './gumball.js?v=large-pools-summary';
-import { stopPinballMode } from './pinball.js?v=twisted-pinball-courses';
+import { stopPinballMode } from './pinball.js?v=distinct-pinball-map-personalities';
 import {
   closeSongRequest,
   closeYouTubePlayer,

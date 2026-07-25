@@ -4,10 +4,11 @@ import {
 } from './motion.js';
 import {
   createPinballMap,
-} from './pinball-maps.js?v=twisted-pinball-courses';
+  getPinballWorldScale,
+} from './pinball-maps.js?v=distinct-pinball-map-personalities';
 import {
   getPinballMap,
-} from './settings.js?v=twisted-pinball-courses';
+} from './settings.js?v=distinct-pinball-map-personalities';
 
 let pinballRafId = null;
 
@@ -111,6 +112,7 @@ export function drawNumbersPinball({
   const H = canvas.height;
 
   let cameraY = 0;
+  const selectedPinballMap = getPinballMap();
 
   overlay.classList.add('show');
 
@@ -147,7 +149,8 @@ export function drawNumbersPinball({
   const DROP_ROWS = Math.ceil(
     remainingEntries.length / DROP_COLS
   );
-  const WORLD_H = H * (isMobilePinball ? 3.1 : 4);
+  const WORLD_H =
+    H * getPinballWorldScale(selectedPinballMap, isMobilePinball);
   const PLAY_BOT = WORLD_H * 0.95;
 
   // ── 미니맵 ──
@@ -218,6 +221,7 @@ export function drawNumbersPinball({
       noBallCollisionFrames: 0,
       sonicCooldown: 0,
       boosterCooldown: 0,
+      usedBoosters: new Set(),
       isTeacher,
       isForced,
     };
@@ -233,7 +237,7 @@ export function drawNumbersPinball({
   const BUMPER_R = Math.max(16, Math.floor(PLAY_W / 22));
 
   const SPINNER_LEN = PEG_LEN * 2.8;
-  const pinballMap = createPinballMap(getPinballMap(), {
+  const pinballMap = createPinballMap(selectedPinballMap, {
     playX: PLAY_X,
     playW: PLAY_W,
     worldH: WORLD_H,
@@ -307,6 +311,8 @@ export function drawNumbersPinball({
 
   function hitBumper(ball, bumper) {
 
+    if (!bumper.active) return;
+
     const dx = ball.x - bumper.x;
     const dy = ball.y - bumper.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -323,11 +329,22 @@ export function drawNumbersPinball({
       const dot = ball.vx * nx + ball.vy * ny;
 
       if (dot < 0) {
-        const R = 0.85;
+        const R = bumper.power;
         ball.vx -= (1 + R) * dot * nx;
         ball.vy -= (1 + R) * dot * ny;
+        ball.vx += nx * bumper.kick;
+        ball.vy += ny * bumper.kick;
         if (bumper.lit === 0) playBumperBeep();
         bumper.lit = 22;
+        if (bumper.oneShot) {
+          bumper.active = false;
+          sonicBooms.push({
+            x: bumper.x,
+            y: bumper.y,
+            r: bumper.r,
+            alpha: 1,
+          });
+        }
       }
     }
   }
@@ -338,10 +355,20 @@ export function drawNumbersPinball({
       Math.abs(ball.x - booster.x) <= booster.w / 2 + ball.r &&
       Math.abs(ball.y - booster.y) <= booster.h / 2 + ball.r;
 
-    if (!inside || ball.boosterCooldown > 0) return;
+    if (
+      !inside ||
+      ball.boosterCooldown > 0 ||
+      (
+        booster.oncePerBall &&
+        ball.usedBoosters.has(booster.id)
+      )
+    ) return;
 
     ball.vx += booster.vx;
     ball.vy += booster.vy;
+    if (booster.oncePerBall) {
+      ball.usedBoosters.add(booster.id);
+    }
     ball.boosterCooldown = 28;
     booster.lit = 18;
     playBumperBeep();
@@ -592,10 +619,31 @@ export function drawNumbersPinball({
 
     // 스피너 각도 갱신 (프레임당 1회)
     for (const sp of spinners) {
+      if (sp.moveSpeed) {
+        sp.phase += sp.moveSpeed * motionStep;
+        sp.cx = sp.baseCx + Math.sin(sp.phase) * sp.moveRangeX;
+        sp.cy = sp.baseCy + Math.cos(sp.phase * 0.73) * sp.moveRangeY;
+      }
       sp.ang += sp.angVel * motionStep;
-      const h = sp.len / 2;
       const cos = Math.cos(sp.ang);
       const sin = Math.sin(sp.ang);
+      let activeLength = sp.len;
+      for (let attempt = 0; attempt < 7; attempt++) {
+        const half = activeLength / 2;
+        const ends = [
+          [sp.cx - cos * half, sp.cy - sin * half],
+          [sp.cx + cos * half, sp.cy + sin * half],
+        ];
+        const inside = ends.every(([x, y]) => {
+          const lane = pinballMap.course.at(y);
+          const margin = sp.thick / 2 + 2;
+          return x >= lane.left + margin && x <= lane.right - margin;
+        });
+        if (inside) break;
+        activeLength *= 0.84;
+      }
+      sp.currentLen = activeLength;
+      const h = activeLength / 2;
       sp.x1 = sp.cx - cos * h;
       sp.y1 = sp.cy - sin * h;
       sp.x2 = sp.cx + cos * h;
@@ -619,7 +667,8 @@ export function drawNumbersPinball({
       const spd =
         Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
 
-      const maxSpeed = 14;
+      const maxSpeed =
+        selectedPinballMap === 'factory' ? 22 : 14;
 
       if (spd > maxSpeed) {
         ball.vx = ball.vx / spd * maxSpeed;
@@ -644,7 +693,10 @@ export function drawNumbersPinball({
         }
 
         for (const bumper of bumpers) {
-          if (Math.abs(bumper.y - ball.y) < bumper.r + ball.r) {
+          if (
+            bumper.active &&
+            Math.abs(bumper.y - ball.y) < bumper.r + ball.r
+          ) {
             hitBumper(ball, bumper);
           }
         }
@@ -919,13 +971,17 @@ export function drawNumbersPinball({
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(sp.ang);
-      const hw = Math.max(3, sp.len * MM_SCALE_X / 2);
+      const hw = Math.max(
+        3,
+        (sp.currentLen || sp.len) * MM_SCALE_X / 2
+      );
       ctx.fillRect(-hw, -0.75, hw * 2, 1.5);
       ctx.restore();
     }
 
     // 범퍼 (컬러 원)
     for (const b of bumpers) {
+      if (!b.active) continue;
       const px = mmX(b.x);
       const py = mmY(b.y);
       if (py < MM_Y || py > MM_Y + MM_H) continue;
@@ -1078,7 +1134,13 @@ export function drawNumbersPinball({
       ctx.shadowBlur = lit ? 30 : 14;
       ctx.shadowColor = lit ? '#ffffff' : '#ff9f43';
       ctx.fillStyle   = lit ? '#ffffff' : '#ff9f43';
-      drawBar(sp.cx, sp.cy, sp.len, sp.thick || PEG_THICK, sp.ang);
+      drawBar(
+        sp.cx,
+        sp.cy,
+        sp.currentLen || sp.len,
+        sp.thick || PEG_THICK,
+        sp.ang
+      );
       ctx.beginPath();
       ctx.arc(sp.cx, sp.cy, PEG_R * 1.8, 0, Math.PI * 2);
       ctx.fill();
@@ -1088,6 +1150,7 @@ export function drawNumbersPinball({
     // 원형 범퍼
     for (const bumper of bumpers) {
 
+      if (!bumper.active) continue;
       const lit = bumper.lit > 0;
 
       ctx.save();
@@ -1113,6 +1176,12 @@ export function drawNumbersPinball({
       ctx.lineTo(bumper.x + cs, bumper.y);
       ctx.moveTo(bumper.x, bumper.y - cs);
       ctx.lineTo(bumper.x, bumper.y + cs);
+      if (bumper.oneShot) {
+        ctx.moveTo(bumper.x - cs * 0.75, bumper.y - cs * 0.75);
+        ctx.lineTo(bumper.x + cs * 0.75, bumper.y + cs * 0.75);
+        ctx.moveTo(bumper.x + cs * 0.75, bumper.y - cs * 0.75);
+        ctx.lineTo(bumper.x - cs * 0.75, bumper.y + cs * 0.75);
+      }
       ctx.stroke();
       ctx.restore();
     }
