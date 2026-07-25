@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=route-bounds-summary-50';
+} from './pinball-maps.js?v=smooth-detour-camera-edge-pegs';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

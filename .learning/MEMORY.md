@@ -4,4 +4,4 @@
 - UI fixes reported as still broken require checking the actual geometry or event path, not only changing labels or nearby CSS.
 - A pinball section that makes the map itself travel upward must replace a real gap in the main course. The full detour should remain inside that gap and continue from its water ascent into a dry descending route before rejoining the main course at matching width.
 - Canvas animation changes need a frame-level runtime test in addition to syntax checks; drawing-only reference errors can freeze the first rendered frame while static smoke tests still pass.
-- Guided pinball detours must bypass the original y-based course clamp, snap entrants inside the detour width, and assert route containment in the frame-level runtime test.
+- Guided pinball detours must use a smooth non-crossing centerline, bypass the original y-based clamp, converge at exits without snapping, and cap camera movement; verify containment, motion, and camera deltas frame by frame.

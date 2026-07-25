@@ -30,6 +30,17 @@ const styleFiles = [
 
 const html = readFileSync('index.html', 'utf8');
 
+function segmentsCross(first, second) {
+  const cross = (a, b, c) =>
+    (b.x - a.x) * (c.y - a.y) -
+    (b.y - a.y) * (c.x - a.x);
+  const a = cross(first.start, first.end, second.start);
+  const b = cross(first.start, first.end, second.end);
+  const c = cross(second.start, second.end, first.start);
+  const d = cross(second.start, second.end, first.end);
+  return a * b < 0 && c * d < 0;
+}
+
 if (!/src="scripts\/main\.js(?:\?[^"\s]*)?"/.test(html)) {
   throw new Error('index.html must load scripts/main.js');
 }
@@ -152,6 +163,18 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     throw new Error(`Wrong pinball course geometry: ${id}`);
   }
 
+  if (id === 'classic') {
+    const edgePegs = map.pegs.filter((peg) => {
+      const lane = map.course.at(peg.cy);
+      const ratio =
+        (peg.cx - lane.left) / (lane.right - lane.left);
+      return ratio < 0.12 || ratio > 0.88;
+    });
+    if (edgePegs.length < 24) {
+      throw new Error('Classic map must keep dense pegs along both walls');
+    }
+  }
+
   if (
     id === 'factory' &&
     (
@@ -196,6 +219,41 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       .some((segment) => segment.end.y <= segment.start.y)
   )) {
     throw new Error(`Pinball water climb is invalid: ${id}`);
+  }
+
+  if (map.waterClimbs.some((climb) => {
+    for (let index = 1; index < climb.segments.length; index++) {
+      const before = climb.segments[index - 1];
+      const current = climb.segments[index];
+      const beforeAngle = Math.atan2(
+        before.end.y - before.start.y,
+        before.end.x - before.start.x
+      );
+      const currentAngle = Math.atan2(
+        current.end.y - current.start.y,
+        current.end.x - current.start.x
+      );
+      let turn = Math.abs(currentAngle - beforeAngle);
+      turn = Math.min(turn, Math.PI * 2 - turn);
+      if (turn > 0.55) return true;
+    }
+    for (let first = 0; first < climb.segments.length; first++) {
+      for (
+        let second = first + 3;
+        second < climb.segments.length;
+        second++
+      ) {
+        if (
+          segmentsCross(
+            climb.segments[first],
+            climb.segments[second]
+          )
+        ) return true;
+      }
+    }
+    return false;
+  })) {
+    throw new Error(`Pinball detour bends or crosses unnaturally: ${id}`);
   }
 
   if ((map.course.gaps || []).some((gap) => {

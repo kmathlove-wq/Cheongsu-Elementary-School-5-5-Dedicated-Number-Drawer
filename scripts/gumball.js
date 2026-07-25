@@ -1,5 +1,5 @@
 import { scaleMotionTime } from './motion.js';
-import { formatResultSummary, renderResultSummary } from './result-display.js?v=route-bounds-summary-50';
+import { formatResultSummary, renderResultSummary } from './result-display.js?v=smooth-detour-camera-edge-pegs';
 
 const gumballStage =
   document.getElementById('gumballStage');

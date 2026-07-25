@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=route-bounds-summary-50';
+} from './pinball-maps.js?v=smooth-detour-camera-edge-pegs';
 import {
   getPinballMap,
-} from './settings.js?v=route-bounds-summary-50';
+} from './settings.js?v=smooth-detour-camera-edge-pegs';
 
 let pinballRafId = null;
 
@@ -539,7 +539,11 @@ export function drawNumbersPinball({
     const activeClimb = ball.activeWaterClimb;
     if (!activeClimb) return false;
 
-    activeClimb.distance += activeClimb.climb.travelSpeed * motionStep;
+    activeClimb.distance = Math.min(
+      activeClimb.climb.totalLength,
+      activeClimb.distance +
+        activeClimb.climb.travelSpeed * motionStep
+    );
     const target = getWaterClimbPoint(
       activeClimb.climb,
       activeClimb.distance
@@ -554,10 +558,20 @@ export function drawNumbersPinball({
     ball.vx = 0;
     ball.vy = 0;
 
-    if (activeClimb.distance >= activeClimb.climb.totalLength) {
+    const targetX = target.x + offsetX;
+    const targetY = target.y + offsetY;
+    const remainingDistance = Math.hypot(
+      targetX - ball.x,
+      targetY - ball.y
+    );
+    if (
+      activeClimb.distance >= activeClimb.climb.totalLength &&
+      remainingDistance <= Math.max(
+        2,
+        activeClimb.climb.travelSpeed * 0.35
+      )
+    ) {
       const climb = activeClimb.climb;
-      ball.x = target.x + offsetX;
-      ball.y = target.y + offsetY;
       ball.usedWaterClimbs.add(climb.id);
       ball.activeWaterClimb = null;
       const exitSpeed = 7;
@@ -1066,28 +1080,41 @@ export function drawNumbersPinball({
     if (minimapHover) {
       cameraY += (minimapTargetCamY - cameraY) * 0.12;
     } else if (trackingBalls.length > 0) {
-      const maxY = Math.max(...trackingBalls.map((ball) => ball.y));
+      const activeClimbers = trackingBalls.filter(
+        (ball) => ball.activeWaterClimb
+      );
+      const focusBall = activeClimbers.reduce((leader, ball) => {
+        if (!leader) return ball;
+        const progress =
+          ball.activeWaterClimb.distance /
+          ball.activeWaterClimb.climb.totalLength;
+        const leaderProgress =
+          leader.activeWaterClimb.distance /
+          leader.activeWaterClimb.climb.totalLength;
+        return progress > leaderProgress ? ball : leader;
+      }, null);
+      const focusY = focusBall
+        ? focusBall.y
+        : Math.max(...trackingBalls.map((ball) => ball.y));
       const target = Math.max(
         0,
-        Math.min(maxY - H * 0.55, WORLD_H - H)
+        Math.min(focusY - H * 0.55, WORLD_H - H)
       );
-      const waterClimbActive =
-        trackingBalls.some((ball) => ball.activeWaterClimb);
+      const waterClimbActive = activeClimbers.length > 0;
       const cameraFollow = waterClimbActive
-        ? target < cameraY
-          ? 0.42
-          : 0.20
+        ? isMobilePinball ? 0.13 : 0.09
         : isMobilePinball
           ? 0.17
           : 0.04;
-      if (
-        waterClimbActive &&
-        Math.abs(target - cameraY) > H * 0.62
-      ) {
-        cameraY = target;
-      } else {
-        cameraY += (target - cameraY) * cameraFollow * frameScale;
-      }
+      const cameraDelta =
+        (target - cameraY) * cameraFollow * frameScale;
+      const maxCameraStep =
+        H * (waterClimbActive ? 0.035 : 0.025) *
+        Math.max(0.6, frameScale);
+      cameraY += Math.max(
+        -maxCameraStep,
+        Math.min(maxCameraStep, cameraDelta)
+      );
     }
 
     if (!Number.isFinite(cameraY)) cameraY = 0;
@@ -1098,9 +1125,15 @@ export function drawNumbersPinball({
       );
       if (!visibleBall) {
         const focusY = Math.max(...trackingBalls.map((ball) => ball.y));
-        cameraY = Math.max(
+        const recoveryTarget = Math.max(
           0,
           Math.min(focusY - H * 0.55, WORLD_H - H)
+        );
+        const recoveryDelta = recoveryTarget - cameraY;
+        const maxRecoveryStep = H * 0.06 * Math.max(0.6, frameScale);
+        cameraY += Math.max(
+          -maxRecoveryStep,
+          Math.min(maxRecoveryStep, recoveryDelta)
         );
       }
     }
@@ -1127,6 +1160,7 @@ export function drawNumbersPinball({
             )
             : 0;
           return {
+            key: ball.key,
             x: ball.x,
             y: ball.y,
             r: ball.r,

@@ -314,7 +314,7 @@ function createBuilder(bounds, course) {
   }
 
   function addWaterClimb(rawPoints, options = {}) {
-    const points = rawPoints.map(([px, py]) => ({
+    const keyPoints = rawPoints.map(([px, py]) => ({
       x: options.absoluteX
         ? playX + playW * px
         : laneX(px, py),
@@ -327,12 +327,41 @@ function createBuilder(bounds, course) {
     const resumeLane = course.at(resumeY);
     const resumeCenter = (resumeLane.left + resumeLane.right) / 2;
     if (options.attachToCourse) {
-      points[0].x = entryCenter;
+      keyPoints[0].x = entryCenter;
     }
     if (options.attachResume) {
-      points[points.length - 1].x = resumeCenter;
-      points[points.length - 1].y = resumeY;
+      keyPoints[keyPoints.length - 1].x = resumeCenter;
+      keyPoints[keyPoints.length - 1].y = resumeY;
     }
+
+    const smoothSteps = Math.max(1, options.smoothSteps || 1);
+    const points = [];
+    for (let index = 0; index < keyPoints.length - 1; index++) {
+      const p0 = keyPoints[Math.max(0, index - 1)];
+      const p1 = keyPoints[index];
+      const p2 = keyPoints[index + 1];
+      const p3 = keyPoints[Math.min(keyPoints.length - 1, index + 2)];
+      for (let step = 0; step < smoothSteps; step++) {
+        const t = step / smoothSteps;
+        const t2 = t * t;
+        const t3 = t2 * t;
+        points.push({
+          x: 0.5 * (
+            2 * p1.x +
+            (-p0.x + p2.x) * t +
+            (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+            (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+          ),
+          y: 0.5 * (
+            2 * p1.y +
+            (-p0.y + p2.y) * t +
+            (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+            (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+          ),
+        });
+      }
+    }
+    points.push({ ...keyPoints[keyPoints.length - 1] });
 
     function createPath(pathPoints) {
       let totalLength = 0;
@@ -353,9 +382,13 @@ function createBuilder(bounds, course) {
     }
 
     const route = createPath(points);
-    const waterStartIndex = options.waterStartIndex || 0;
+    const waterStartIndex =
+      (options.waterStartIndex || 0) * smoothSteps +
+      (options.waterStartOffset || 0);
     const waterEndIndex =
-      options.waterEndIndex ?? points.length - 1;
+      options.waterEndIndex === undefined
+        ? points.length - 1
+        : options.waterEndIndex * smoothSteps;
     const waterPath = createPath(
       points.slice(waterStartIndex, waterEndIndex + 1)
     );
@@ -405,13 +438,20 @@ function createBuilder(bounds, course) {
 
 function buildClassic(builder, bounds) {
   const {
-    addPegField, addBumper, addSpinner, isMobile,
+    addPeg, addPegField, addBumper, addSpinner, isMobile,
   } = builder;
-  const { bumperR, spinnerLen } = bounds;
+  const { bumperR, spinnerLen, pegLen } = bounds;
   addPegField({
     rows: isMobile ? 10 : 14,
     columns: isMobile ? 3 : 4,
   });
+  const edgeRows = isMobile ? 13 : 18;
+  for (let row = 0; row < edgeRows; row++) {
+    const py = 0.045 + 0.90 * (row + 0.5) / edgeRows;
+    const tilt = row % 2 ? Math.PI / 4 : -Math.PI / 4;
+    addPeg(0.07, py, pegLen * 0.58, tilt, '#00e5ff');
+    addPeg(0.93, py, pegLen * 0.58, -tilt, '#00e5ff');
+  }
 
   [
     [0.25, 0.20, 1, '#ff4d6d'],
@@ -659,18 +699,18 @@ function buildFactory(builder, bounds) {
   const waterClimbLayouts = [
     [
       [0.50, 0.24],
-      [0.30, 0.39],
-      [0.25, 0.49],
-      [0.30, 0.54],
-      [0.46, 0.51],
-      [0.58, 0.45],
-      [0.62, 0.37],
-      [0.60, 0.31],
-      [0.68, 0.27],
-      [0.78, 0.32],
-      [0.81, 0.41],
-      [0.78, 0.51],
-      [0.68, 0.58],
+      [0.34, 0.28],
+      [0.20, 0.36],
+      [0.19, 0.47],
+      [0.28, 0.54],
+      [0.42, 0.50],
+      [0.51, 0.42],
+      [0.58, 0.33],
+      [0.64, 0.27],
+      [0.76, 0.30],
+      [0.82, 0.39],
+      [0.81, 0.49],
+      [0.71, 0.57],
       [0.50, 0.62],
     ],
   ];
@@ -681,9 +721,11 @@ function buildFactory(builder, bounds) {
         attachToCourse: true,
         attachResume: true,
         resumeY: 0.62,
-        waterStartIndex: 3,
-        waterEndIndex: 7,
-        widthRatio: isMobile ? 0.34 : 0.36,
+        waterStartIndex: 4,
+        waterStartOffset: 1,
+        waterEndIndex: 8,
+        smoothSteps: isMobile ? 7 : 10,
+        widthRatio: isMobile ? 0.32 : 0.31,
         entryWidthRatio: 1,
         travelSpeed: 13 + index,
         dropSpeed: 22,

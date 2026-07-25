@@ -139,6 +139,7 @@ if (frames.length < 100) {
 
 let invisibleStreak = 0;
 let longestInvisibleStreak = 0;
+let previousFrame = null;
 for (const frame of frames) {
   if (
     !Number.isFinite(frame.cameraY) ||
@@ -152,6 +153,29 @@ for (const frame of frames) {
     ball.inDetour && !ball.insideDetour
   )) {
     throw new Error('A pinball escaped the continuous detour course');
+  }
+  if (
+    previousFrame &&
+    Math.abs(frame.cameraY - previousFrame.cameraY) >
+      frame.viewportHeight * 0.08
+  ) {
+    throw new Error('Pinball camera jumped instead of following smoothly');
+  }
+  if (previousFrame) {
+    const previousBalls = new Map(
+      previousFrame.balls.map((ball) => [ball.key, ball])
+    );
+    for (const ball of frame.balls) {
+      const previous = previousBalls.get(ball.key);
+      if (
+        previous?.inDetour &&
+        ball.inDetour &&
+        Math.hypot(ball.x - previous.x, ball.y - previous.y) >
+          frame.viewportHeight * 0.08
+      ) {
+        throw new Error('A pinball teleported along the detour course');
+      }
+    }
   }
   if (
     frame.balls.length > 0 &&
@@ -168,6 +192,7 @@ for (const frame of frames) {
   } else {
     invisibleStreak = 0;
   }
+  previousFrame = frame;
 }
 
 if (longestInvisibleStreak > 30) {

@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js?v=route-bounds-summary-50';
-import { stopPinballMode } from './pinball.js?v=route-bounds-summary-50';
+import { resetGumballMode } from './gumball.js?v=smooth-detour-camera-edge-pegs';
+import { stopPinballMode } from './pinball.js?v=smooth-detour-camera-edge-pegs';
 import {
   closeSongRequest,
   closeYouTubePlayer,

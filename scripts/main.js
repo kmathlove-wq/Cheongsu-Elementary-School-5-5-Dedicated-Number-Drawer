@@ -1,10 +1,10 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=route-bounds-summary-50';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=smooth-detour-camera-edge-pegs';
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=route-bounds-summary-50';
+} from './gumball.js?v=smooth-detour-camera-edge-pegs';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=route-bounds-summary-50';
+} from './settings.js?v=smooth-detour-camera-edge-pegs';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,11 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=route-bounds-summary-50';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=smooth-detour-camera-edge-pegs';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
-import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=route-bounds-summary-50';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=smooth-detour-camera-edge-pegs';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
