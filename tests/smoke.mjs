@@ -135,7 +135,7 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       map.spinners.filter((spinner) => spinner.moveSpeed).length < 4 ||
       map.spinners.filter((spinner) => spinner.len > 250).length < 4 ||
       map.waterLifts.length < 2 ||
-      map.waterClimbs.length < 2
+      map.waterClimbs.length < 1
     )
   ) {
     throw new Error('Chaos factory special obstacles are incomplete');
@@ -154,6 +154,7 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
   if (map.waterClimbs.some((climb) =>
     climb.totalLength <= 0 ||
     climb.width <= 0 ||
+    climb.width < climb.entryWidth * 0.65 ||
     climb.dropSpeed <= climb.travelSpeed ||
     !climb.segments.some((segment) => segment.end.y < segment.start.y)
   )) {

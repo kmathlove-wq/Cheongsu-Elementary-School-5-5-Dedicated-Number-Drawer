@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=factory-water-climb-sections';
+} from './pinball-maps.js?v=factory-water-course';
 import {
   getPinballMap,
-} from './settings.js?v=factory-water-climb-sections';
+} from './settings.js?v=factory-water-course';
 
 let pinballRafId = null;
 
@@ -510,9 +510,15 @@ export function drawNumbersPinball({
       });
 
       if (climb) {
+        const entry = climb.points[0];
+        const maxOffset = Math.max(0, climb.width / 2 - ball.r * 1.2);
         ball.activeWaterClimb = {
           climb,
           distance: 0,
+          laneOffset: Math.max(
+            -maxOffset,
+            Math.min(maxOffset, ball.x - entry.x)
+          ),
         };
         ball.noBallCollisionFrames = 60;
         ball.vx = 0;
@@ -529,17 +535,20 @@ export function drawNumbersPinball({
       activeClimb.climb,
       activeClimb.distance
     );
+    const offsetX =
+      -Math.sin(target.angle) * activeClimb.laneOffset;
+    const offsetY =
+      Math.cos(target.angle) * activeClimb.laneOffset;
     const follow = Math.min(1, 0.34 * motionStep);
-    ball.x += (target.x - ball.x) * follow;
-    ball.y += (target.y - ball.y) * follow;
+    ball.x += (target.x + offsetX - ball.x) * follow;
+    ball.y += (target.y + offsetY - ball.y) * follow;
     ball.vx = 0;
     ball.vy = 0;
 
     if (activeClimb.distance >= activeClimb.climb.totalLength) {
       const climb = activeClimb.climb;
-      const exit = climb.points[climb.points.length - 1];
-      ball.x = exit.x;
-      ball.y = exit.y;
+      ball.x = target.x + offsetX;
+      ball.y = target.y + offsetY;
       ball.usedWaterClimbs.add(climb.id);
       ball.activeWaterClimb = null;
       ball.vx = Math.cos(target.angle) * 5;
@@ -1169,45 +1178,94 @@ export function drawNumbersPinball({
     widthScale = 1
   ) {
 
-    const drawPath = () => {
-      ctx.beginPath();
-      ctx.moveTo(
-        getX(climb.points[0].x),
-        getY(climb.points[0].y)
-      );
-      for (const point of climb.points.slice(1)) {
-        ctx.lineTo(getX(point.x), getY(point.y));
+    const getCourseEdges = () => {
+      const lastIndex = climb.points.length - 1;
+      const left = [];
+      const right = [];
+      for (let index = 0; index <= lastIndex; index++) {
+        const point = climb.points[index];
+        const before = climb.points[Math.max(0, index - 1)];
+        const after = climb.points[Math.min(lastIndex, index + 1)];
+        const angle = Math.atan2(
+          after.y - before.y,
+          after.x - before.x
+        );
+        const entryBlend = index === 0 ? 1 : index === 1 ? 0.35 : 0;
+        const halfWidth = (
+          climb.width +
+          (climb.entryWidth - climb.width) * entryBlend
+        ) * widthScale / 2;
+        const nx = -Math.sin(angle);
+        const ny = Math.cos(angle);
+        left.push({
+          x: getX(point.x) + nx * halfWidth,
+          y: getY(point.y) + ny * halfWidth,
+        });
+        right.push({
+          x: getX(point.x) - nx * halfWidth,
+          y: getY(point.y) - ny * halfWidth,
+        });
       }
+      const entry = climb.points[0];
+      const entryLane = pinballMap.course.at(entry.y);
+      edges.left[0] = {
+        x: getX(entryLane.left),
+        y: getY(entry.y),
+      };
+      edges.right[0] = {
+        x: getX(entryLane.right),
+        y: getY(entry.y),
+      };
+      return { left, right };
+    };
+
+    const edges = getCourseEdges();
+    const drawCourseArea = () => {
+      ctx.beginPath();
+      ctx.moveTo(edges.left[0].x, edges.left[0].y);
+      for (const point of edges.left.slice(1)) {
+        ctx.lineTo(point.x, point.y);
+      }
+      for (let index = edges.right.length - 1; index >= 0; index--) {
+        const point = edges.right[index];
+        ctx.lineTo(point.x, point.y);
+      }
+      ctx.closePath();
     };
 
     ctx.save();
-    ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.shadowBlur = detailed ? 22 : 3;
     ctx.shadowColor = climb.color;
-    ctx.strokeStyle = pinballMap.course.color;
-    ctx.lineWidth =
-      climb.width * widthScale +
-      (detailed ? PEG_THICK * 1.5 : 2);
-    drawPath();
-    ctx.stroke();
-    ctx.strokeStyle = detailed
-      ? 'rgba(28, 167, 238, 0.70)'
-      : 'rgba(28, 167, 238, 0.88)';
-    ctx.lineWidth = climb.width * widthScale;
-    drawPath();
-    ctx.stroke();
+    ctx.fillStyle = detailed
+      ? 'rgba(18, 151, 222, 0.82)'
+      : 'rgba(28, 167, 238, 0.90)';
+    drawCourseArea();
+    ctx.fill();
 
-    const entry = climb.points[0];
-    const entryLane = pinballMap.course.at(entry.y);
-    ctx.strokeStyle = '#9af2ff';
-    ctx.lineWidth = detailed ? Math.max(7, PEG_THICK) : 2;
+    ctx.strokeStyle = pinballMap.course.color;
+    ctx.lineWidth = detailed ? Math.max(6, PEG_THICK) : 2;
+    for (const edge of [edges.left, edges.right]) {
+      ctx.beginPath();
+      ctx.moveTo(edge[0].x, edge[0].y);
+      for (const point of edge.slice(1)) {
+        ctx.lineTo(point.x, point.y);
+      }
+      ctx.stroke();
+    }
+
+    const exitLeft = edges.left[edges.left.length - 1];
+    const exitRight = edges.right[edges.right.length - 1];
+    ctx.strokeStyle = '#d9fbff';
+    ctx.lineWidth = detailed ? Math.max(5, PEG_THICK * 0.75) : 1.5;
     ctx.beginPath();
-    ctx.moveTo(getX(entryLane.left), getY(entry.y));
-    ctx.lineTo(getX(entryLane.right), getY(entry.y));
+    ctx.moveTo(exitLeft.x, exitLeft.y);
+    ctx.lineTo(exitRight.x, exitRight.y);
     ctx.stroke();
 
     if (detailed) {
+      drawCourseArea();
+      ctx.clip();
       const now = performance.now() * 0.001;
       ctx.fillStyle = 'rgba(220, 252, 255, 0.86)';
       for (let index = 0; index < 18; index++) {
@@ -1218,7 +1276,7 @@ export function drawNumbersPinball({
           climb.totalLength * progress
         );
         const offset =
-          Math.sin(now * 2.2 + index * 1.8) * climb.width * 0.28;
+          Math.sin(now * 2.2 + index * 1.8) * climb.width * 0.30;
         const nx = -Math.sin(point.angle);
         const ny = Math.cos(point.angle);
         ctx.beginPath();

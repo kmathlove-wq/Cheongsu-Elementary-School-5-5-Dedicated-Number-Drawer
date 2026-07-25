@@ -1,5 +1,5 @@
 import { resetGumballMode } from './gumball.js?v=large-pools-summary';
-import { stopPinballMode } from './pinball.js?v=factory-water-climb-sections';
+import { stopPinballMode } from './pinball.js?v=factory-water-course';
 import {
   closeSongRequest,
   closeYouTubePlayer,

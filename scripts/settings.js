@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=factory-water-climb-sections';
+} from './pinball-maps.js?v=factory-water-course';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

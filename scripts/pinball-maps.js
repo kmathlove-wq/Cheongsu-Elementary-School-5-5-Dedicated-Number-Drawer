@@ -332,12 +332,15 @@ function createBuilder(bounds, course) {
       totalLength += length;
     }
     const entryY = rawPoints[0][1];
+    const entryLane = course.at(y(entryY));
+    const entryWidth = entryLane.right - entryLane.left;
     waterClimbs.push({
       id: waterClimbs.length,
       points,
       segments,
       totalLength,
-      width: laneWidth(entryY) * (options.widthRatio || 0.34),
+      width: entryWidth * (options.widthRatio || 0.68),
+      entryWidth,
       entryWidthRatio: options.entryWidthRatio || 1,
       travelSpeed: options.travelSpeed || 9,
       dropSpeed: options.dropSpeed || 22,
@@ -618,25 +621,20 @@ function buildFactory(builder, bounds) {
 
   const waterClimbLayouts = [
     [
-      [0.50, 0.40],
-      [0.28, 0.37],
-      [0.20, 0.32],
-      [0.43, 0.26],
-      [0.72, 0.29],
-    ],
-    [
-      [0.50, 0.69],
-      [0.74, 0.66],
-      [0.80, 0.61],
-      [0.57, 0.55],
-      [0.28, 0.58],
+      [0.50, 0.48],
+      [0.72, 0.50],
+      [0.82, 0.45],
+      [0.74, 0.38],
+      [0.52, 0.32],
+      [0.27, 0.34],
+      [0.18, 0.28],
+      [0.38, 0.22],
     ],
   ];
   waterClimbLayouts
-    .filter((_, index) => !isMobile || index === 0)
     .forEach((points, index) => {
       addWaterClimb(points, {
-        widthRatio: 0.36,
+        widthRatio: isMobile ? 0.72 : 0.78,
         entryWidthRatio: 1,
         travelSpeed: 10.5 + index,
         dropSpeed: 22,
