@@ -77,6 +77,16 @@
   display: none;
 }
 
+.pinball-map-settings {
+
+  margin: 18px 0;
+}
+
+.pinball-map-settings[hidden] {
+
+  display: none;
+}
+
 .app-setting-title {
 
   margin: 0;

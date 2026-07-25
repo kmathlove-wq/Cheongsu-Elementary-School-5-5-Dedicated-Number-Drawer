@@ -1,4 +1,4 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=rank-scrollbar-admin-range';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=pinball-map-selection';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js';
+} from './settings.js?v=pinball-map-selection';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,7 +28,7 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=rank-scrollbar-admin-range';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-map-selection';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';

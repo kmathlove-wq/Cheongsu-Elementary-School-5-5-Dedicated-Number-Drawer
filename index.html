@@ -123,7 +123,7 @@
     </div>
 
     <footer class="build-info" aria-label="현재 수정 버전">
-      수정 버전: 에이전트 학습 루프 · 기억과 절차 분리 · 검증 후 반영
+      수정 버전: 핀볼 맵 선택 · 곡선/꺾임 코스 · 가속 게이트
     </footer>
 
   </main>
@@ -165,6 +165,19 @@
           </button>
         </div>
       </div>
+      <label
+        class="app-sound-select pinball-map-settings"
+        id="pinballMapSettings"
+        hidden
+      >
+        핀볼 맵
+        <select id="pinballMapSelect">
+          <option value="classic">기본 네온 보드</option>
+          <option value="zigzag">지그재그 협곡</option>
+          <option value="curves">곡선 슬라이드</option>
+          <option value="factory">혼돈 공장</option>
+        </select>
+      </label>
       <div class="app-setting-group manitto-settings" id="manittoSettings" hidden>
         <p class="app-setting-title">마니또 제외</p>
         <div class="manitto-exclude-list" id="manittoExcludeList"></div>
@@ -369,7 +382,7 @@
     </section>
   </div>
 
-<script type="module" src="scripts/main.js?v=rank-scrollbar-admin-range"></script>
+<script type="module" src="scripts/main.js?v=pinball-map-selection"></script>
 
 </body>
 </html>

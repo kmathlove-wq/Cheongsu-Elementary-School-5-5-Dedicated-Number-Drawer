@@ -13,6 +13,9 @@ import {
   scaleMotionTime,
   setMotionMode,
 } from './motion.js';
+import {
+  normalizePinballMap,
+} from './pinball-maps.js?v=pinball-map-selection';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');
@@ -35,8 +38,16 @@ const soundEnabledInput =
 const soundThemeSelect =
   document.getElementById('soundThemeSelect');
 
+const pinballMapSettings =
+  document.getElementById('pinballMapSettings');
+
+const pinballMapSelect =
+  document.getElementById('pinballMapSelect');
+
 let pendingDrawStyle = 'basic';
 let pendingMotionMode = 'normal';
+let selectedPinballMap = 'classic';
+let pendingPinballMap = 'classic';
 let appSettingsRequired = true;
 let getCurrentDrawStyle = () => 'basic';
 let setCurrentDrawStyle = () => {};
@@ -50,6 +61,8 @@ function updateAppModeOptions() {
 
   const locked = isDrawStyleLocked();
   drawStyleSettings.hidden = locked;
+  pinballMapSettings.hidden = pendingDrawStyle !== 'pinball';
+  pinballMapSelect.value = pendingPinballMap;
 
   document
     .querySelectorAll('.app-mode-option')
@@ -79,6 +92,11 @@ export function isAppSettingsOpen() {
   return appSettingsOverlay.classList.contains('show');
 }
 
+export function getPinballMap() {
+
+  return selectedPinballMap;
+}
+
 export function openAppSettings({ required = false } = {}) {
 
   if (!canOpenSettings()) return;
@@ -86,6 +104,7 @@ export function openAppSettings({ required = false } = {}) {
   appSettingsRequired = required;
   pendingDrawStyle = getCurrentDrawStyle();
   pendingMotionMode = getMotionMode();
+  pendingPinballMap = selectedPinballMap;
   soundEnabledInput.checked = isSoundEnabled();
   updateAppModeOptions();
   updateMotionModeOptions();
@@ -111,6 +130,8 @@ function applyAppSettings() {
   setSoundEnabled(soundEnabledInput.checked);
   setSoundTheme(soundThemeSelect.value);
   setMotionMode(pendingMotionMode, { toggle: false });
+  selectedPinballMap =
+    normalizePinballMap(pinballMapSelect.value);
   setCurrentDrawStyle(pendingDrawStyle);
 
   appSettingsOverlay.classList.remove('show');
@@ -173,6 +194,11 @@ export function setupAppSettings(options) {
         previewSound(button.dataset.previewSound);
       });
     });
+
+  pinballMapSelect.addEventListener('change', () => {
+    pendingPinballMap =
+      normalizePinballMap(pinballMapSelect.value);
+  });
 
   document
     .querySelectorAll('.motion-speed-button')

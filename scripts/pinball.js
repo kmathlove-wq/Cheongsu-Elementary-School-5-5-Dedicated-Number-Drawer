@@ -2,6 +2,12 @@ import {
   getMotionMultiplier,
   scaleMotionTime,
 } from './motion.js';
+import {
+  createPinballMap,
+} from './pinball-maps.js?v=pinball-map-selection';
+import {
+  getPinballMap,
+} from './settings.js?v=pinball-map-selection';
 
 let pinballRafId = null;
 
@@ -213,157 +219,35 @@ export function drawNumbersPinball({
       stuckSince: null,
       noBallCollisionFrames: 0,
       sonicCooldown: 0,
+      boosterCooldown: 0,
       isTeacher,
       isForced,
     };
   });
 
-  // ── 핀(대각선 바) ──
+  // ── 선택한 맵의 장애물 ──
   const PEG_LEN = PLAY_W / 10;
 
   const PEG_THICK = Math.max(6, Math.floor(BALL_R * 0.38));
 
   const PEG_R = PEG_THICK / 2;
 
-  const NUM_ROWS = isMobilePinball ? 10 : 14;
-
-  const PEGS_PER_ROW = isMobilePinball ? 3 : 4;
-
-  const pegTop = H * 0.12;
-
-  const pegBot = WORLD_H * 0.90;
-
-  const rowH = (pegBot - pegTop) / NUM_ROWS;
-
-  const colW = PLAY_W / PEGS_PER_ROW;
-
-  let pegs = [];
-
-  for (let row = 0; row < NUM_ROWS; row++) {
-
-    const cy = pegTop + rowH * (row + 0.5);
-
-    // 홀짝 행마다 각도 교차 (/ 와 \)
-    const ang =
-      row % 2 === 0
-        ? Math.PI / 5
-        : -Math.PI / 5;
-
-    const isOdd = row % 2 === 1;
-
-    const cnt = isOdd
-      ? PEGS_PER_ROW + 1
-      : PEGS_PER_ROW;
-
-    for (let col = 0; col < cnt; col++) {
-
-      const rawCx =
-        PLAY_X
-        + (isOdd ? -colW * 0.5 : 0)
-        + colW * col + colW * 0.5;
-
-      const cos = Math.cos(ang);
-
-      const sin = Math.sin(ang);
-
-      const h = PEG_LEN / 2;
-
-      const edgePad = Math.abs(cos * h) + PEG_R;
-
-      const cx =
-        Math.max(
-          PLAY_X + edgePad,
-          Math.min(PLAY_X2 - edgePad, rawCx)
-        );
-
-      pegs.push({
-        x1: cx - cos * h,
-        y1: cy - sin * h,
-        x2: cx + cos * h,
-        y2: cy + sin * h,
-        cx, cy, ang,
-        len: PEG_LEN,
-        thick: PEG_THICK,
-        lit: 0,
-      });
-    }
-  }
-
-  // ── 원형 범퍼 (추가 장애물) ──
   const BUMPER_R = Math.max(16, Math.floor(PLAY_W / 22));
 
-  const bumperLayout = [
-    {
-      x: PLAY_X + PLAY_W * 0.25,
-      y: WORLD_H * 0.20,
-      r: BUMPER_R,
-      lit: 0,
-      color: '#ff4d6d',
-    },
-    {
-      x: PLAY_X + PLAY_W * 0.75,
-      y: WORLD_H * 0.20,
-      r: BUMPER_R,
-      lit: 0,
-      color: '#ff4d6d',
-    },
-    {
-      x: PLAY_X + PLAY_W * 0.50,
-      y: WORLD_H * 0.42,
-      r: Math.floor(BUMPER_R * 1.2),
-      lit: 0,
-      color: '#ffe066',
-    },
-    {
-      x: PLAY_X + PLAY_W * 0.25,
-      y: WORLD_H * 0.65,
-      r: BUMPER_R,
-      lit: 0,
-      color: '#6bffff',
-    },
-    {
-      x: PLAY_X + PLAY_W * 0.75,
-      y: WORLD_H * 0.65,
-      r: BUMPER_R,
-      lit: 0,
-      color: '#6bffff',
-    },
-  ];
-
-  const bumpers = isMobilePinball
-    ? bumperLayout.filter((_, index) => index !== 1 && index !== 3)
-    : bumperLayout;
-
-  // ── 회전 핀 (스피너) ──
   const SPINNER_LEN = PEG_LEN * 2.8;
-
-  const spinnerLayout = [
-    { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.10, angVel:  0.030 },
-    { cx: PLAY_X + PLAY_W * 0.18, cy: WORLD_H * 0.30, angVel: -0.025 },
-    { cx: PLAY_X + PLAY_W * 0.82, cy: WORLD_H * 0.30, angVel:  0.025 },
-    { cx: PLAY_X + PLAY_W * 0.50, cy: WORLD_H * 0.52, angVel: -0.032 },
-    { cx: PLAY_X + PLAY_W * 0.22, cy: WORLD_H * 0.76, angVel:  0.028 },
-    { cx: PLAY_X + PLAY_W * 0.78, cy: WORLD_H * 0.76, angVel: -0.028 },
-  ];
-
-  const spinners = (isMobilePinball
-    ? spinnerLayout.filter((_, index) => index % 2 === 0)
-    : spinnerLayout
-  ).map((s, i) => ({
-    ...s,
-    ang: (Math.PI / 6) * i,
-    len: SPINNER_LEN,
-    lit: 0,
-    x1: 0, y1: 0, x2: 0, y2: 0,
-  }));
-
-  // 범퍼 안이나 가장자리에 핀이 겹치면 공이 부자연스럽게 끼인다.
-  pegs = pegs.filter((peg) => !bumpers.some((bumper) => {
-    const dx = peg.cx - bumper.x;
-    const dy = peg.cy - bumper.y;
-    const clearDistance = bumper.r + PEG_LEN * 0.62 + PEG_THICK;
-    return dx * dx + dy * dy < clearDistance * clearDistance;
-  }));
+  const pinballMap = createPinballMap(getPinballMap(), {
+    playX: PLAY_X,
+    playW: PLAY_W,
+    worldH: WORLD_H,
+    pegLen: PEG_LEN,
+    pegThick: PEG_THICK,
+    bumperR: BUMPER_R,
+    spinnerLen: SPINNER_LEN,
+    isMobile: isMobilePinball,
+  });
+  const {
+    pegs, bumpers, spinners, boosters,
+  } = pinballMap;
 
   // ── 충돌 함수들 ──
 
@@ -392,7 +276,8 @@ export function drawNumbersPinball({
     const dist =
       Math.sqrt(distX * distX + distY * distY);
 
-    const minD = ball.r + PEG_R;
+    const minD =
+      ball.r + (peg.thick || PEG_THICK) / 2;
 
     if (dist < minD && dist > 0.01) {
 
@@ -439,6 +324,21 @@ export function drawNumbersPinball({
         bumper.lit = 22;
       }
     }
+  }
+
+  function hitBooster(ball, booster) {
+
+    const inside =
+      Math.abs(ball.x - booster.x) <= booster.w / 2 + ball.r &&
+      Math.abs(ball.y - booster.y) <= booster.h / 2 + ball.r;
+
+    if (!inside || ball.boosterCooldown > 0) return;
+
+    ball.vx += booster.vx;
+    ball.vy += booster.vy;
+    ball.boosterCooldown = 28;
+    booster.lit = 18;
+    playBumperBeep();
   }
 
   function hitBall(a, b) {
@@ -686,6 +586,9 @@ export function drawNumbersPinball({
       if (ball.noBallCollisionFrames > 0) {
         ball.noBallCollisionFrames--;
       }
+      if (ball.boosterCooldown > 0) {
+        ball.boosterCooldown--;
+      }
 
       ball.vy += 0.28 * motionStep;
 
@@ -708,7 +611,10 @@ export function drawNumbersPinball({
 
       if (!ball.isForced) {
         for (const peg of pegs) {
-          if (Math.abs(peg.cy - ball.y) < PEG_LEN + ball.r) {
+          if (
+            Math.abs(peg.cy - ball.y) <
+            peg.len / 2 + ball.r + peg.thick
+          ) {
             hitPeg(ball, peg);
           }
         }
@@ -723,6 +629,10 @@ export function drawNumbersPinball({
           if (Math.abs(sp.cy - ball.y) < sp.len / 2 + ball.r) {
             hitPeg(ball, sp);
           }
+        }
+
+        for (const booster of boosters) {
+          hitBooster(ball, booster);
         }
       }
 
@@ -815,6 +725,10 @@ export function drawNumbersPinball({
       if (sp.lit > 0) sp.lit--;
     }
 
+    for (const booster of boosters) {
+      if (booster.lit > 0) booster.lit--;
+    }
+
     for (let i = sonicBooms.length - 1; i >= 0; i--) {
       sonicBooms[i].r += 7;
       sonicBooms[i].alpha -= 0.035;
@@ -859,6 +773,36 @@ export function drawNumbersPinball({
     ctx.arc(-h + r, 0, r, Math.PI / 2, -Math.PI / 2);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBooster(booster) {
+
+    const angle = Math.atan2(booster.vy, booster.vx);
+    const lit = booster.lit > 0;
+    const arrowSize = Math.max(7, booster.h * 0.55);
+
+    ctx.save();
+    ctx.shadowBlur = lit ? 28 : 14;
+    ctx.shadowColor = booster.color;
+    ctx.fillStyle = lit ? '#ffffff' : `${booster.color}55`;
+    ctx.strokeStyle = lit ? booster.color : '#ffffff';
+    ctx.lineWidth = Math.max(2, PEG_THICK * 0.28);
+    ctx.fillRect(
+      booster.x - booster.w / 2,
+      booster.y - booster.h / 2,
+      booster.w,
+      booster.h
+    );
+    ctx.translate(booster.x, booster.y);
+    ctx.rotate(angle);
+    for (let offset = -arrowSize; offset <= arrowSize; offset += arrowSize) {
+      ctx.beginPath();
+      ctx.moveTo(offset - arrowSize * 0.45, -arrowSize * 0.45);
+      ctx.lineTo(offset, 0);
+      ctx.lineTo(offset - arrowSize * 0.45, arrowSize * 0.45);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -932,6 +876,20 @@ export function drawNumbersPinball({
       ctx.beginPath();
       ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.stroke();
+    }
+
+    // 가속 게이트 (초록)
+    for (const booster of boosters) {
+      const px = mmX(booster.x);
+      const py = mmY(booster.y);
+      if (py < MM_Y || py > MM_Y + MM_H) continue;
+      ctx.fillStyle = booster.color;
+      ctx.fillRect(
+        px - booster.w * MM_SCALE_X / 2,
+        py - Math.max(1, booster.h * MM_SCALE_Y / 2),
+        booster.w * MM_SCALE_X,
+        Math.max(2, booster.h * MM_SCALE_Y)
+      );
     }
 
     // 공 (결승선 통과 공은 미니맵에서 제외)
@@ -1034,15 +992,21 @@ export function drawNumbersPinball({
     ctx.setLineDash([]);
     ctx.restore();
 
+    // 가속 게이트
+    for (const booster of boosters) {
+      drawBooster(booster);
+    }
+
     // 핀 (시안 네온 바)
     for (const peg of pegs) {
 
       const lit = peg.lit > 0;
+      const pegColor = peg.color || '#00e5ff';
 
       ctx.save();
       ctx.shadowBlur = lit ? 22 : 10;
-      ctx.shadowColor = lit ? '#ffffff' : '#00e5ff';
-      ctx.fillStyle = lit ? '#ffffff' : '#00e5ff';
+      ctx.shadowColor = lit ? '#ffffff' : pegColor;
+      ctx.fillStyle = lit ? '#ffffff' : pegColor;
       drawBar(peg.cx, peg.cy, peg.len, peg.thick, peg.ang);
       ctx.restore();
     }
@@ -1056,7 +1020,7 @@ export function drawNumbersPinball({
       ctx.shadowBlur = lit ? 30 : 14;
       ctx.shadowColor = lit ? '#ffffff' : '#ff9f43';
       ctx.fillStyle   = lit ? '#ffffff' : '#ff9f43';
-      drawBar(sp.cx, sp.cy, sp.len, PEG_THICK, sp.ang);
+      drawBar(sp.cx, sp.cy, sp.len, sp.thick || PEG_THICK, sp.ang);
       ctx.beginPath();
       ctx.arc(sp.cx, sp.cy, PEG_R * 1.8, 0, Math.PI * 2);
       ctx.fill();
@@ -1193,6 +1157,14 @@ export function drawNumbersPinball({
       ctx.fillText('순위', MOBILE_HUD_X + 8, 12);
       ctx.restore();
     }
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.font = `bold ${Math.max(11, Math.floor(W * 0.014))}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(pinballMap.label, PLAY_X + 10, 10);
+    ctx.restore();
 
     const cfsz = Math.max(18, Math.floor(W * 0.022));
 
