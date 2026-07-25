@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=regular-pegs-leader-camera';
+} from './pinball-maps.js?v=aligned-pegs-factory-branches';
 import {
   getPinballMap,
-} from './settings.js?v=regular-pegs-leader-camera';
+} from './settings.js?v=aligned-pegs-factory-branches';
 
 let pinballRafId = null;
 
@@ -497,14 +497,20 @@ export function drawNumbersPinball({
         if (ball.usedWaterClimbs.has(candidate.id)) return false;
         const entry = candidate.points[0];
         const lane = pinballMap.course.at(entry.y);
-        const inletWidth =
-          (lane.right - lane.left) * candidate.entryWidthRatio;
-        const inletLeft = (lane.left + lane.right - inletWidth) / 2;
+        const laneWidth = lane.right - lane.left;
+        const inletLeft =
+          lane.left + laneWidth * candidate.entryMinRatio;
+        const inletRight =
+          lane.left + laneWidth * candidate.entryMaxRatio;
+        const leftMargin =
+          candidate.entryMinRatio === 0 ? ball.r : 0;
+        const rightMargin =
+          candidate.entryMaxRatio === 1 ? ball.r : 0;
         return (
           ball.y >= entry.y - ball.r * 3 &&
           ball.y <= entry.y + ball.r * 2 &&
-          ball.x >= inletLeft + ball.r &&
-          ball.x <= inletLeft + inletWidth - ball.r
+          ball.x >= inletLeft + leftMargin &&
+          ball.x <= inletRight - rightMargin
         );
       });
 
@@ -1183,6 +1189,7 @@ export function drawNumbersPinball({
             r: ball.r,
             raceProgress: ball.raceProgress,
             inDetour: Boolean(detour),
+            routeKind: detour?.climb.kind || null,
             insideDetour: !detour ||
               routeDeviation <= detour.climb.width / 2 + ball.r,
             inWater: Boolean(
@@ -1390,22 +1397,30 @@ export function drawNumbersPinball({
       if (connectEnds) {
         const entry = climb.points[0];
         const entryLane = pinballMap.course.at(entry.y);
+        const entryCenter =
+          entryLane.left +
+          (entryLane.right - entryLane.left) *
+            climb.entryPosition;
         left[0] = {
-          x: getX(entryLane.left),
+          x: getX(entryCenter - climb.entryWidth / 2),
           y: getY(entry.y),
         };
         right[0] = {
-          x: getX(entryLane.right),
+          x: getX(entryCenter + climb.entryWidth / 2),
           y: getY(entry.y),
         };
         const exit = climb.resumePoint;
         const exitLane = pinballMap.course.at(exit.y);
+        const exitCenter =
+          exitLane.left +
+          (exitLane.right - exitLane.left) *
+            climb.resumePosition;
         left[lastIndex] = {
-          x: getX(exitLane.left),
+          x: getX(exitCenter - climb.entryWidth / 2),
           y: getY(exit.y),
         };
         right[lastIndex] = {
-          x: getX(exitLane.right),
+          x: getX(exitCenter + climb.entryWidth / 2),
           y: getY(exit.y),
         };
       }
@@ -1450,8 +1465,9 @@ export function drawNumbersPinball({
     };
 
     const routeEdges = getCourseEdges(climb.points, true);
-    const waterEdges =
-      getCourseEdges(climb.waterPath.points);
+    const waterEdges = climb.kind === 'water'
+      ? getCourseEdges(climb.waterPath.points)
+      : null;
     const connectorCount = Math.max(
       3,
       Math.floor((climb.points.length - 1) * 0.08)
@@ -1488,16 +1504,18 @@ export function drawNumbersPinball({
     traceCenterline(climb.points);
     ctx.stroke();
 
-    ctx.shadowBlur = detailed ? 22 : 3;
-    ctx.shadowColor = climb.color;
-    ctx.strokeStyle = detailed
-      ? 'rgba(18, 151, 222, 0.90)'
-      : 'rgba(28, 167, 238, 0.94)';
-    ctx.lineWidth = Math.max(2, routeWidth - borderWidth * 0.35);
-    traceCenterline(climb.waterPath.points);
-    ctx.stroke();
+    if (waterEdges) {
+      ctx.shadowBlur = detailed ? 22 : 3;
+      ctx.shadowColor = climb.color;
+      ctx.strokeStyle = detailed
+        ? 'rgba(18, 151, 222, 0.90)'
+        : 'rgba(28, 167, 238, 0.94)';
+      ctx.lineWidth = Math.max(2, routeWidth - borderWidth * 0.35);
+      traceCenterline(climb.waterPath.points);
+      ctx.stroke();
+    }
 
-    if (detailed) {
+    if (detailed && waterEdges) {
       ctx.save();
       drawCourseArea(waterEdges);
       ctx.clip();

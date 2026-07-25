@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js?v=regular-pegs-leader-camera';
-import { stopPinballMode } from './pinball.js?v=regular-pegs-leader-camera';
+import { resetGumballMode } from './gumball.js?v=aligned-pegs-factory-branches';
+import { stopPinballMode } from './pinball.js?v=aligned-pegs-factory-branches';
 import {
   closeSongRequest,
   closeYouTubePlayer,

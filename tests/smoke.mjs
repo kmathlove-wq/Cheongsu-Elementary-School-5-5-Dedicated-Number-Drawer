@@ -187,7 +187,7 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     const edgeAngles = new Set(
       edgePegs.map((peg) => Math.round(Math.abs(peg.ang) * 100))
     );
-    if (leftEdgePegs.length !== 18 || edgeAngles.size !== 1) {
+    if (leftEdgePegs.length !== 14 || edgeAngles.size !== 1) {
       throw new Error('Classic wall pegs must keep regular spacing and tilt');
     }
   }
@@ -199,7 +199,13 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       map.spinners.filter((spinner) => spinner.moveSpeed).length < 4 ||
       map.spinners.filter((spinner) => spinner.len > 250).length < 4 ||
       map.waterLifts.length < 2 ||
-      map.waterClimbs.length < 1
+      map.waterClimbs.length < 2 ||
+      !map.waterClimbs.some((climb) => climb.kind === 'water') ||
+      !map.waterClimbs.some((climb) => climb.kind === 'dry') ||
+      map.waterClimbs.some((climb) =>
+        !climb.constantWidth ||
+        Math.abs(climb.width - climb.entryWidth) > 0.01
+      )
     )
   ) {
     throw new Error('Chaos factory special obstacles are incomplete');
@@ -227,13 +233,20 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     climb.points.some((point) =>
       point.y < climb.gapTopY || point.y > climb.gapBottomY
     ) ||
-    climb.waterPath.totalLength <= 0 ||
-    climb.waterPath.segments.some((segment) =>
-      segment.end.y >= segment.start.y
-    ) ||
-    climb.segments
-      .slice(climb.waterEndIndex + 1)
-      .some((segment) => segment.end.y <= segment.start.y)
+    (
+      climb.kind === 'water'
+        ? climb.waterPath.totalLength <= 0 ||
+          climb.waterPath.segments.some((segment) =>
+            segment.end.y >= segment.start.y
+          ) ||
+          climb.segments
+            .slice(climb.waterEndIndex + 1)
+            .some((segment) => segment.end.y <= segment.start.y)
+        : climb.waterPath.totalLength !== 0 ||
+          climb.segments.some((segment) =>
+            segment.end.y <= segment.start.y
+          )
+    )
   )) {
     throw new Error(`Pinball water climb is invalid: ${id}`);
   }

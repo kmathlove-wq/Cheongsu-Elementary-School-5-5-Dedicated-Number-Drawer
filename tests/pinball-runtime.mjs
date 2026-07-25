@@ -140,6 +140,7 @@ if (frames.length < 100) {
 let invisibleStreak = 0;
 let longestInvisibleStreak = 0;
 let previousFrame = null;
+const visitedRouteKinds = new Set();
 for (const frame of frames) {
   if (
     !Number.isFinite(frame.cameraY) ||
@@ -154,6 +155,9 @@ for (const frame of frames) {
   )) {
     throw new Error('A pinball escaped the continuous detour course');
   }
+  frame.balls.forEach((ball) => {
+    if (ball.routeKind) visitedRouteKinds.add(ball.routeKind);
+  });
   if (
     previousFrame &&
     Math.abs(frame.cameraY - previousFrame.cameraY) >
@@ -206,6 +210,13 @@ for (const frame of frames) {
     invisibleStreak = 0;
   }
   previousFrame = frame;
+}
+
+if (
+  !visitedRouteKinds.has('water') ||
+  !visitedRouteKinds.has('dry')
+) {
+  throw new Error('Chaos factory balls did not use both branch routes');
 }
 
 if (longestInvisibleStreak > 30) {

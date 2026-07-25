@@ -322,10 +322,16 @@ function createBuilder(bounds, course) {
     }));
     const entryY = rawPoints[0][1];
     const entryLane = course.at(y(entryY));
-    const entryCenter = (entryLane.left + entryLane.right) / 2;
+    const entryPosition = options.entryPosition ?? 0.5;
+    const entryCenter =
+      entryLane.left +
+      (entryLane.right - entryLane.left) * entryPosition;
     const resumeY = y(options.resumeY || entryY + 0.14);
     const resumeLane = course.at(resumeY);
-    const resumeCenter = (resumeLane.left + resumeLane.right) / 2;
+    const resumePosition = options.resumePosition ?? entryPosition;
+    const resumeCenter =
+      resumeLane.left +
+      (resumeLane.right - resumeLane.left) * resumePosition;
     if (options.attachToCourse) {
       keyPoints[0].x = entryCenter;
     }
@@ -382,29 +388,49 @@ function createBuilder(bounds, course) {
     }
 
     const route = createPath(points);
-    const waterStartIndex =
-      (options.waterStartIndex || 0) * smoothSteps +
-      (options.waterStartOffset || 0);
-    const waterEndIndex =
-      options.waterEndIndex === undefined
+    const kind = options.kind || 'water';
+    const waterStartIndex = kind === 'water'
+      ? (options.waterStartIndex || 0) * smoothSteps +
+        (options.waterStartOffset || 0)
+      : -1;
+    const waterEndIndex = kind === 'water'
+      ? options.waterEndIndex === undefined
         ? points.length - 1
-        : options.waterEndIndex * smoothSteps;
-    const waterPath = createPath(
-      points.slice(waterStartIndex, waterEndIndex + 1)
-    );
-    const waterStartDistance =
-      route.segments[waterStartIndex]?.startDistance || 0;
-    const entryWidth = entryLane.right - entryLane.left;
+        : options.waterEndIndex * smoothSteps +
+          (options.waterEndOffset || 0)
+      : -1;
+    const waterPath = kind === 'water'
+      ? createPath(
+        points.slice(waterStartIndex, waterEndIndex + 1)
+      )
+      : createPath([]);
+    const waterStartDistance = kind === 'water'
+      ? route.segments[waterStartIndex]?.startDistance || 0
+      : -1;
+    const courseEntryWidth = entryLane.right - entryLane.left;
+    const width =
+      courseEntryWidth * (options.widthRatio || 0.68);
+    const entryWidth = options.constantWidth
+      ? width
+      : courseEntryWidth;
     waterClimbs.push({
       id: waterClimbs.length,
+      kind,
       ...route,
       waterPath,
       waterStartIndex,
       waterEndIndex,
       waterStartDistance,
-      waterEndDistance: waterStartDistance + waterPath.totalLength,
-      width: entryWidth * (options.widthRatio || 0.68),
+      waterEndDistance: kind === 'water'
+        ? waterStartDistance + waterPath.totalLength
+        : -1,
+      width,
       entryWidth,
+      constantWidth: Boolean(options.constantWidth),
+      entryPosition,
+      resumePosition,
+      entryMinRatio: options.entryMinRatio ?? 0,
+      entryMaxRatio: options.entryMaxRatio ?? 1,
       gapTopY: y(entryY),
       gapBottomY: resumeY,
       resumePoint: {
@@ -441,16 +467,16 @@ function buildClassic(builder, bounds) {
     addPeg, addPegField, addBumper, addSpinner, isMobile,
   } = builder;
   const { bumperR, spinnerLen, pegLen } = bounds;
+  const fieldRows = isMobile ? 10 : 14;
   addPegField({
-    rows: isMobile ? 10 : 14,
+    rows: fieldRows,
     columns: isMobile ? 3 : 4,
   });
-  const edgeRows = isMobile ? 13 : 18;
-  for (let row = 0; row < edgeRows; row++) {
-    const py = 0.045 + 0.90 * (row + 0.5) / edgeRows;
-    const tilt = row % 2 ? Math.PI / 4 : -Math.PI / 4;
+  for (let row = 0; row < fieldRows; row++) {
+    const py = 0.06 + 0.85 * (row + 0.5) / fieldRows;
+    const tilt = row % 2 ? -Math.PI / 4 : Math.PI / 4;
     addPeg(0.07, py, pegLen * 0.58, tilt, '#00e5ff');
-    addPeg(0.93, py, pegLen * 0.58, -tilt, '#00e5ff');
+    addPeg(0.93, py, pegLen * 0.58, tilt, '#00e5ff');
   }
 
   [
@@ -696,41 +722,67 @@ function buildFactory(builder, bounds) {
       });
     });
 
-  const waterClimbLayouts = [
-    [
-      [0.50, 0.24],
-      [0.34, 0.28],
-      [0.20, 0.36],
-      [0.19, 0.47],
-      [0.28, 0.54],
-      [0.42, 0.50],
-      [0.51, 0.42],
-      [0.58, 0.33],
-      [0.64, 0.27],
-      [0.76, 0.30],
-      [0.82, 0.39],
-      [0.81, 0.49],
-      [0.71, 0.57],
-      [0.50, 0.62],
-    ],
-  ];
-  waterClimbLayouts
-    .forEach((points, index) => {
-      addWaterClimb(points, {
-        absoluteX: true,
-        attachToCourse: true,
-        attachResume: true,
-        resumeY: 0.62,
-        waterStartIndex: 4,
-        waterStartOffset: 1,
-        waterEndIndex: 8,
-        smoothSteps: isMobile ? 7 : 10,
-        widthRatio: isMobile ? 0.32 : 0.31,
-        entryWidthRatio: 1,
-        travelSpeed: 13 + index,
-        dropSpeed: 22,
-      });
-    });
+  addWaterClimb([
+    [0.25, 0.24],
+    [0.08, 0.34],
+    [0.09, 0.46],
+    [0.14, 0.53],
+    [0.31, 0.52],
+    [0.36, 0.45],
+    [0.37, 0.34],
+    [0.38, 0.29],
+    [0.45, 0.26],
+    [0.53, 0.29],
+    [0.56, 0.36],
+    [0.57, 0.44],
+    [0.57, 0.52],
+    [0.55, 0.58],
+    [0.25, 0.62],
+  ], {
+    absoluteX: true,
+    attachToCourse: true,
+    attachResume: true,
+    entryPosition: 0.25,
+    resumePosition: 0.25,
+    entryMinRatio: 0,
+    entryMaxRatio: 0.5,
+    resumeY: 0.62,
+    waterStartIndex: 4,
+    waterEndIndex: 8,
+    smoothSteps: isMobile ? 12 : 16,
+    widthRatio: 0.31,
+    constantWidth: true,
+    travelSpeed: 13,
+    dropSpeed: 22,
+  });
+
+  addWaterClimb([
+    [0.79, 0.24],
+    [0.90, 0.29],
+    [0.77, 0.34],
+    [0.91, 0.39],
+    [0.76, 0.44],
+    [0.90, 0.49],
+    [0.76, 0.54],
+    [0.88, 0.58],
+    [0.79, 0.62],
+  ], {
+    kind: 'dry',
+    absoluteX: true,
+    attachToCourse: true,
+    attachResume: true,
+    entryPosition: 0.75,
+    resumePosition: 0.75,
+    entryMinRatio: 0.5,
+    entryMaxRatio: 1,
+    resumeY: 0.62,
+    smoothSteps: isMobile ? 12 : 16,
+    widthRatio: 0.27,
+    constantWidth: true,
+    travelSpeed: 11,
+    dropSpeed: 18,
+    color: '#ffcf66',
+  });
 }
 
 function distanceToSegment(pointX, pointY, peg) {
