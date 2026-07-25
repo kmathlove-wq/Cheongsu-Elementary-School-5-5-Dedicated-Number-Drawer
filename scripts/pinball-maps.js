@@ -149,6 +149,7 @@ function createBuilder(bounds, course) {
   const spinners = [];
   const boosters = [];
   const waterLifts = [];
+  const waterClimbs = [];
 
   function laneX(ratioX, ratioY) {
     const lane = course.at(y(ratioY));
@@ -311,18 +312,53 @@ function createBuilder(bounds, course) {
     });
   }
 
+  function addWaterClimb(rawPoints, options = {}) {
+    const points = rawPoints.map(([px, py]) => ({
+      x: laneX(px, py),
+      y: y(py),
+    }));
+    let totalLength = 0;
+    const segments = [];
+    for (let index = 1; index < points.length; index++) {
+      const start = points[index - 1];
+      const end = points[index];
+      const length = Math.hypot(end.x - start.x, end.y - start.y);
+      segments.push({
+        start,
+        end,
+        startDistance: totalLength,
+        length,
+      });
+      totalLength += length;
+    }
+    const entryY = rawPoints[0][1];
+    waterClimbs.push({
+      id: waterClimbs.length,
+      points,
+      segments,
+      totalLength,
+      width: laneWidth(entryY) * (options.widthRatio || 0.34),
+      entryWidthRatio: options.entryWidthRatio || 1,
+      travelSpeed: options.travelSpeed || 9,
+      dropSpeed: options.dropSpeed || 22,
+      color: options.color || '#25c9ff',
+    });
+  }
+
   return {
     pegs,
     bumpers,
     spinners,
     boosters,
     waterLifts,
+    waterClimbs,
     addPeg,
     addBumper,
     addSpinner,
     addBooster,
     addPegField,
     addWaterLift,
+    addWaterClimb,
     isMobile,
   };
 }
@@ -458,7 +494,7 @@ function buildCurves(builder, bounds) {
 function buildFactory(builder, bounds) {
   const {
     addPegField, addBumper, addSpinner,
-    addBooster, addWaterLift, isMobile,
+    addBooster, addWaterLift, addWaterClimb, isMobile,
   } = builder;
   const { bumperR, spinnerLen } = bounds;
   addPegField({
@@ -567,10 +603,9 @@ function buildFactory(builder, bounds) {
 
   [
     [0.12, 0.24, 10.5, 22, 0.24],
-    [0.42, 0.55, 11, 22, 0.76],
     [0.70, 0.84, 11.5, 22, 0.26],
   ]
-    .filter((_, index) => !isMobile || index !== 1)
+    .filter((_, index) => !isMobile || index === 0)
     .forEach(([top, bottom, riseSpeed, dropSpeed, position]) => {
       addWaterLift(top, bottom, {
         position,
@@ -578,6 +613,33 @@ function buildFactory(builder, bounds) {
         inletWidthRatio: 1,
         riseSpeed,
         dropSpeed,
+      });
+    });
+
+  const waterClimbLayouts = [
+    [
+      [0.50, 0.40],
+      [0.28, 0.37],
+      [0.20, 0.32],
+      [0.43, 0.26],
+      [0.72, 0.29],
+    ],
+    [
+      [0.50, 0.69],
+      [0.74, 0.66],
+      [0.80, 0.61],
+      [0.57, 0.55],
+      [0.28, 0.58],
+    ],
+  ];
+  waterClimbLayouts
+    .filter((_, index) => !isMobile || index === 0)
+    .forEach((points, index) => {
+      addWaterClimb(points, {
+        widthRatio: 0.36,
+        entryWidthRatio: 1,
+        travelSpeed: 10.5 + index,
+        dropSpeed: 22,
       });
     });
 }
@@ -611,7 +673,8 @@ export function createPinballMap(mapId, bounds) {
   else buildClassic(builder, bounds);
 
   const {
-    pegs, bumpers, spinners, boosters, waterLifts,
+    pegs, bumpers, spinners,
+    boosters, waterLifts, waterClimbs,
   } = builder;
   const filteredPegs = pegs.filter((peg) => !bumpers.some((bumper) => {
     const clearance = bumper.r + peg.thick / 2 + 4;
@@ -627,5 +690,6 @@ export function createPinballMap(mapId, bounds) {
     spinners,
     boosters,
     waterLifts,
+    waterClimbs,
   };
 }

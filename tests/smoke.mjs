@@ -134,7 +134,8 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
       map.bumpers.filter((bumper) => bumper.oneShot).length < 4 ||
       map.spinners.filter((spinner) => spinner.moveSpeed).length < 4 ||
       map.spinners.filter((spinner) => spinner.len > 250).length < 4 ||
-      map.waterLifts.length < 2
+      map.waterLifts.length < 2 ||
+      map.waterClimbs.length < 2
     )
   ) {
     throw new Error('Chaos factory special obstacles are incomplete');
@@ -148,6 +149,15 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
     lift.dropSpeed <= lift.riseSpeed
   )) {
     throw new Error(`Pinball water lift is invalid: ${id}`);
+  }
+
+  if (map.waterClimbs.some((climb) =>
+    climb.totalLength <= 0 ||
+    climb.width <= 0 ||
+    climb.dropSpeed <= climb.travelSpeed ||
+    !climb.segments.some((segment) => segment.end.y < segment.start.y)
+  )) {
+    throw new Error(`Pinball water climb is invalid: ${id}`);
   }
 }
 

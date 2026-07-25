@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=factory-water-lifts';
+} from './pinball-maps.js?v=factory-water-climb-sections';
 import {
   getPinballMap,
-} from './settings.js?v=factory-water-lifts';
+} from './settings.js?v=factory-water-climb-sections';
 
 let pinballRafId = null;
 
@@ -224,6 +224,8 @@ export function drawNumbersPinball({
       usedBoosters: new Set(),
       usedWaterLifts: new Set(),
       activeWaterLift: null,
+      usedWaterClimbs: new Set(),
+      activeWaterClimb: null,
       isTeacher,
       isForced,
     };
@@ -250,7 +252,8 @@ export function drawNumbersPinball({
     isMobile: isMobilePinball,
   });
   const {
-    pegs, bumpers, spinners, boosters, waterLifts,
+    pegs, bumpers, spinners,
+    boosters, waterLifts, waterClimbs,
   } = pinballMap;
   const startLane = pinballMap.course.at(0);
   for (const ball of balls) {
@@ -452,6 +455,96 @@ export function drawNumbersPinball({
       ball.vx = exitSide * (4 + Math.random() * 2);
       ball.vy = lift.dropSpeed;
       ball.noBallCollisionFrames = 55;
+      sonicBooms.push({
+        x: ball.x,
+        y: ball.y,
+        r: ball.r,
+        alpha: 1,
+      });
+      playBumperBeep();
+    }
+
+    return true;
+  }
+
+  function getWaterClimbPoint(climb, distance) {
+
+    const safeDistance = Math.max(
+      0,
+      Math.min(climb.totalLength, distance)
+    );
+    const segment =
+      climb.segments.find((candidate) =>
+        safeDistance <= candidate.startDistance + candidate.length
+      ) ||
+      climb.segments[climb.segments.length - 1];
+    const ratio = segment.length > 0
+      ? (safeDistance - segment.startDistance) / segment.length
+      : 1;
+    return {
+      x: segment.start.x + (segment.end.x - segment.start.x) * ratio,
+      y: segment.start.y + (segment.end.y - segment.start.y) * ratio,
+      angle: Math.atan2(
+        segment.end.y - segment.start.y,
+        segment.end.x - segment.start.x
+      ),
+    };
+  }
+
+  function updateWaterClimb(ball, motionStep) {
+
+    if (!ball.activeWaterClimb) {
+      const climb = waterClimbs.find((candidate) => {
+        if (ball.usedWaterClimbs.has(candidate.id)) return false;
+        const entry = candidate.points[0];
+        const lane = pinballMap.course.at(entry.y);
+        const inletWidth =
+          (lane.right - lane.left) * candidate.entryWidthRatio;
+        const inletLeft = (lane.left + lane.right - inletWidth) / 2;
+        return (
+          ball.y >= entry.y - ball.r * 3 &&
+          ball.y <= entry.y + ball.r * 2 &&
+          ball.x >= inletLeft + ball.r &&
+          ball.x <= inletLeft + inletWidth - ball.r
+        );
+      });
+
+      if (climb) {
+        ball.activeWaterClimb = {
+          climb,
+          distance: 0,
+        };
+        ball.noBallCollisionFrames = 60;
+        ball.vx = 0;
+        ball.vy = 0;
+        playBumperBeep();
+      }
+    }
+
+    const activeClimb = ball.activeWaterClimb;
+    if (!activeClimb) return false;
+
+    activeClimb.distance += activeClimb.climb.travelSpeed * motionStep;
+    const target = getWaterClimbPoint(
+      activeClimb.climb,
+      activeClimb.distance
+    );
+    const follow = Math.min(1, 0.34 * motionStep);
+    ball.x += (target.x - ball.x) * follow;
+    ball.y += (target.y - ball.y) * follow;
+    ball.vx = 0;
+    ball.vy = 0;
+
+    if (activeClimb.distance >= activeClimb.climb.totalLength) {
+      const climb = activeClimb.climb;
+      const exit = climb.points[climb.points.length - 1];
+      ball.x = exit.x;
+      ball.y = exit.y;
+      ball.usedWaterClimbs.add(climb.id);
+      ball.activeWaterClimb = null;
+      ball.vx = Math.cos(target.angle) * 5;
+      ball.vy = climb.dropSpeed;
+      ball.noBallCollisionFrames = 60;
       sonicBooms.push({
         x: ball.x,
         y: ball.y,
@@ -752,8 +845,11 @@ export function drawNumbersPinball({
         ball.boosterCooldown--;
       }
 
-      const waterMotion =
-        updateWaterLift(ball, motionStep);
+      const climbMotion =
+        updateWaterClimb(ball, motionStep);
+      const liftMotion =
+        !climbMotion && updateWaterLift(ball, motionStep);
+      const waterMotion = climbMotion || liftMotion;
 
       if (!waterMotion) {
         ball.vy += 0.28 * motionStep;
@@ -865,6 +961,7 @@ export function drawNumbersPinball({
         if (
           ball.isForced ||
           ball.activeWaterLift ||
+          ball.activeWaterClimb ||
           ball.noBallCollisionFrames > 0
         ) continue;
 
@@ -1064,6 +1161,99 @@ export function drawNumbersPinball({
     ctx.restore();
   }
 
+  function drawWaterClimb(
+    climb,
+    getX = (value) => value,
+    getY = (value) => value,
+    detailed = true,
+    widthScale = 1
+  ) {
+
+    const drawPath = () => {
+      ctx.beginPath();
+      ctx.moveTo(
+        getX(climb.points[0].x),
+        getY(climb.points[0].y)
+      );
+      for (const point of climb.points.slice(1)) {
+        ctx.lineTo(getX(point.x), getY(point.y));
+      }
+    };
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowBlur = detailed ? 22 : 3;
+    ctx.shadowColor = climb.color;
+    ctx.strokeStyle = pinballMap.course.color;
+    ctx.lineWidth =
+      climb.width * widthScale +
+      (detailed ? PEG_THICK * 1.5 : 2);
+    drawPath();
+    ctx.stroke();
+    ctx.strokeStyle = detailed
+      ? 'rgba(28, 167, 238, 0.70)'
+      : 'rgba(28, 167, 238, 0.88)';
+    ctx.lineWidth = climb.width * widthScale;
+    drawPath();
+    ctx.stroke();
+
+    const entry = climb.points[0];
+    const entryLane = pinballMap.course.at(entry.y);
+    ctx.strokeStyle = '#9af2ff';
+    ctx.lineWidth = detailed ? Math.max(7, PEG_THICK) : 2;
+    ctx.beginPath();
+    ctx.moveTo(getX(entryLane.left), getY(entry.y));
+    ctx.lineTo(getX(entryLane.right), getY(entry.y));
+    ctx.stroke();
+
+    if (detailed) {
+      const now = performance.now() * 0.001;
+      ctx.fillStyle = 'rgba(220, 252, 255, 0.86)';
+      for (let index = 0; index < 18; index++) {
+        const progress =
+          (now * (0.09 + index % 4 * 0.018) + index / 18) % 1;
+        const point = getWaterClimbPoint(
+          climb,
+          climb.totalLength * progress
+        );
+        const offset =
+          Math.sin(now * 2.2 + index * 1.8) * climb.width * 0.28;
+        const nx = -Math.sin(point.angle);
+        const ny = Math.cos(point.angle);
+        ctx.beginPath();
+        ctx.arc(
+          point.x + nx * offset,
+          point.y + ny * offset,
+          3 + index % 5,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = '#effdff';
+      ctx.lineWidth = 4;
+      for (let index = 1; index <= 5; index++) {
+        const point = getWaterClimbPoint(
+          climb,
+          climb.totalLength * index / 6
+        );
+        const size = Math.max(9, BALL_R * 0.5);
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(point.angle);
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.5, -size);
+        ctx.lineTo(size * 0.5, 0);
+        ctx.lineTo(-size * 0.5, size);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawCourse(getX = (value) => value, getY = (value) => value) {
 
     const samples = pinballMap.course.samples;
@@ -1118,6 +1308,15 @@ export function drawNumbersPinball({
 
     for (const lift of waterLifts) {
       drawWaterLift(lift, mmX, mmY, false);
+    }
+    for (const climb of waterClimbs) {
+      drawWaterClimb(
+        climb,
+        mmX,
+        mmY,
+        false,
+        MM_SCALE_X
+      );
     }
 
     // 결승선
@@ -1280,7 +1479,6 @@ export function drawNumbersPinball({
     for (const lift of waterLifts) {
       drawWaterLift(lift);
     }
-
     // 결승선 (노란 점선)
     const finishLane = pinballMap.course.at(PLAY_BOT);
     ctx.save();
@@ -1374,6 +1572,11 @@ export function drawNumbersPinball({
       }
       ctx.stroke();
       ctx.restore();
+    }
+
+    // 수중 상승 구간은 내부 장애물을 덮어 하나의 맵 통로처럼 보인다.
+    for (const climb of waterClimbs) {
+      drawWaterClimb(climb);
     }
 
     // 소닉붐 이펙트
