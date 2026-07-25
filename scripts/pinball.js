@@ -5,10 +5,10 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=factory-water-runtime-fix';
+} from './pinball-maps.js?v=factory-water-main-route';
 import {
   getPinballMap,
-} from './settings.js?v=factory-water-runtime-fix';
+} from './settings.js?v=factory-water-main-route';
 
 let pinballRafId = null;
 
@@ -518,6 +518,7 @@ export function drawNumbersPinball({
         ball.activeWaterClimb = {
           climb,
           distance: 0,
+          phase: 'ascent',
           laneOffset: Math.max(
             -maxOffset,
             Math.min(maxOffset, ball.x - entry.x)
@@ -532,6 +533,27 @@ export function drawNumbersPinball({
 
     const activeClimb = ball.activeWaterClimb;
     if (!activeClimb) return false;
+
+    if (activeClimb.phase === 'drop') {
+      const climb = activeClimb.climb;
+      const exit = climb.resumePoint;
+      const dropStep = climb.dropSpeed * motionStep;
+      ball.x += (exit.x - ball.x) * Math.min(1, 0.12 * motionStep);
+      ball.y = Math.min(exit.y, ball.y + dropStep);
+      ball.vx = 0;
+      ball.vy = dropStep;
+      if (ball.y >= exit.y) {
+        ball.x = exit.x;
+        ball.y = exit.y;
+        ball.usedWaterClimbs.add(climb.id);
+        ball.activeWaterClimb = null;
+        ball.vx = (Math.random() - 0.5) * 5;
+        ball.vy = climb.dropSpeed;
+        ball.noBallCollisionFrames = 60;
+        playBumperBeep();
+      }
+      return true;
+    }
 
     activeClimb.distance += activeClimb.climb.travelSpeed * motionStep;
     const target = getWaterClimbPoint(
@@ -549,13 +571,12 @@ export function drawNumbersPinball({
     ball.vy = 0;
 
     if (activeClimb.distance >= activeClimb.climb.totalLength) {
-      const climb = activeClimb.climb;
       ball.x = target.x + offsetX;
       ball.y = target.y + offsetY;
-      ball.usedWaterClimbs.add(climb.id);
-      ball.activeWaterClimb = null;
-      ball.vx = Math.cos(target.angle) * 5;
-      ball.vy = climb.dropSpeed;
+      activeClimb.phase = 'drop';
+      activeClimb.laneOffset = 0;
+      ball.vx = 0;
+      ball.vy = activeClimb.climb.dropSpeed;
       ball.noBallCollisionFrames = 60;
       sonicBooms.push({
         x: ball.x,
@@ -1094,6 +1115,8 @@ export function drawNumbersPinball({
         cameraY,
         viewportHeight: H,
         winners: winners.length,
+        winnerWaterCourses:
+          winners.map((ball) => ball.usedWaterClimbs.size),
         balls: trackingBalls.map((ball) => ({
           x: ball.x,
           y: ball.y,
@@ -1390,28 +1413,71 @@ export function drawNumbersPinball({
   function drawCourse(getX = (value) => value, getY = (value) => value) {
 
     const samples = pinballMap.course.samples;
-    const visible = samples.filter((sample) => sample.y <= PLAY_BOT);
-
-    ctx.beginPath();
-    ctx.moveTo(getX(visible[0].left), getY(visible[0].y));
-    for (const sample of visible) {
-      ctx.lineTo(getX(sample.left), getY(sample.y));
+    const gaps = pinballMap.course.gaps || [];
+    const ranges = [];
+    let start = 0;
+    for (const gap of gaps) {
+      if (gap.top > start) ranges.push([start, gap.top]);
+      start = Math.max(start, gap.bottom);
     }
-    for (let index = visible.length - 1; index >= 0; index--) {
-      const sample = visible[index];
-      ctx.lineTo(getX(sample.right), getY(sample.y));
-    }
-    ctx.closePath();
-    ctx.fill();
+    if (start < PLAY_BOT) ranges.push([start, PLAY_BOT]);
 
-    for (const side of ['left', 'right']) {
+    for (const [rangeStart, rangeEnd] of ranges) {
+      const startLane = pinballMap.course.at(rangeStart);
+      const endLane = pinballMap.course.at(rangeEnd);
+      const visible = [
+        { y: rangeStart, ...startLane },
+        ...samples.filter((sample) =>
+          sample.y > rangeStart &&
+          sample.y < rangeEnd &&
+          sample.y <= PLAY_BOT
+        ),
+        { y: rangeEnd, ...endLane },
+      ];
+
       ctx.beginPath();
-      ctx.moveTo(getX(visible[0][side]), getY(visible[0].y));
+      ctx.moveTo(getX(visible[0].left), getY(visible[0].y));
       for (const sample of visible) {
-        ctx.lineTo(getX(sample[side]), getY(sample.y));
+        ctx.lineTo(getX(sample.left), getY(sample.y));
       }
-      ctx.stroke();
+      for (let index = visible.length - 1; index >= 0; index--) {
+        const sample = visible[index];
+        ctx.lineTo(getX(sample.right), getY(sample.y));
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      for (const side of ['left', 'right']) {
+        ctx.beginPath();
+        ctx.moveTo(getX(visible[0][side]), getY(visible[0].y));
+        for (const sample of visible) {
+          ctx.lineTo(getX(sample[side]), getY(sample.y));
+        }
+        ctx.stroke();
+      }
     }
+  }
+
+  function drawWaterDrop(
+    climb,
+    getX = (value) => value,
+    getY = (value) => value,
+    detailed = true
+  ) {
+
+    const crest = climb.points[climb.points.length - 1];
+    const x = getX(crest.x);
+    const y = getY(crest.y);
+    const size = detailed ? Math.max(14, BALL_R * 0.8) : 3;
+    ctx.save();
+    ctx.strokeStyle = '#d9fbff';
+    ctx.lineWidth = detailed ? Math.max(4, PEG_THICK * 0.55) : 1;
+    ctx.beginPath();
+    ctx.moveTo(x - size, y - size * 0.6);
+    ctx.lineTo(x, y + size * 0.5);
+    ctx.lineTo(x + size, y - size * 0.6);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawMinimap() {
@@ -1450,6 +1516,7 @@ export function drawNumbersPinball({
         false,
         MM_SCALE_X
       );
+      drawWaterDrop(climb, mmX, mmY, false);
     }
 
     // 결승선
@@ -1710,6 +1777,7 @@ export function drawNumbersPinball({
     // 수중 상승 구간은 내부 장애물을 덮어 하나의 맵 통로처럼 보인다.
     for (const climb of waterClimbs) {
       drawWaterClimb(climb);
+      drawWaterDrop(climb);
     }
 
     // 소닉붐 이펙트

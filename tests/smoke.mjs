@@ -154,12 +154,27 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
   if (map.waterClimbs.some((climb) =>
     climb.totalLength <= 0 ||
     climb.width <= 0 ||
-    climb.width < climb.entryWidth * 0.65 ||
+    climb.width < climb.entryWidth * 0.3 ||
+    climb.gapTopY >= climb.gapBottomY ||
+    climb.resumePoint.y !== climb.gapBottomY ||
     climb.dropSpeed <= climb.travelSpeed ||
     !climb.segments.some((segment) => segment.end.y < segment.start.y) ||
     climb.segments.slice(2).some((segment) => segment.end.y >= segment.start.y)
   )) {
     throw new Error(`Pinball water climb is invalid: ${id}`);
+  }
+
+  if ((map.course.gaps || []).some((gap) => {
+    const inGap = (worldY) =>
+      worldY >= gap.top && worldY <= gap.bottom;
+    return [
+      ...map.pegs.map((peg) => peg.cy),
+      ...map.bumpers.map((bumper) => bumper.y),
+      ...map.spinners.map((spinner) => spinner.cy),
+      ...map.boosters.map((booster) => booster.y),
+    ].some(inGap);
+  })) {
+    throw new Error(`Hidden pinball course gap contains obstacles: ${id}`);
   }
 }
 

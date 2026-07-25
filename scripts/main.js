@@ -1,4 +1,4 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=factory-water-runtime-fix';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=factory-water-main-route';
 import {
   bindGumballHandle,
   drawNumbersGumball,
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=factory-water-runtime-fix';
+} from './settings.js?v=factory-water-main-route';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,7 +28,7 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=factory-water-runtime-fix';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=factory-water-main-route';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';

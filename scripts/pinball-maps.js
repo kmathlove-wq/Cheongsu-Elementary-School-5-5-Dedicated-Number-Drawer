@@ -142,6 +142,7 @@ function createBuilder(bounds, course) {
   const {
     worldH, pegLen, pegThick,
     bumperR, spinnerLen, isMobile,
+    playX, playW,
   } = bounds;
   const y = (ratio) => worldH * ratio;
   const pegs = [];
@@ -314,9 +315,18 @@ function createBuilder(bounds, course) {
 
   function addWaterClimb(rawPoints, options = {}) {
     const points = rawPoints.map(([px, py]) => ({
-      x: laneX(px, py),
+      x: options.absoluteX
+        ? playX + playW * px
+        : laneX(px, py),
       y: y(py),
     }));
+    const entryY = rawPoints[0][1];
+    const entryLane = course.at(y(entryY));
+    const entryCenter = (entryLane.left + entryLane.right) / 2;
+    if (options.attachToCourse) {
+      points[0].x = entryCenter;
+      if (points[1]) points[1].x = entryCenter;
+    }
     let totalLength = 0;
     const segments = [];
     for (let index = 1; index < points.length; index++) {
@@ -331,9 +341,9 @@ function createBuilder(bounds, course) {
       });
       totalLength += length;
     }
-    const entryY = rawPoints[0][1];
-    const entryLane = course.at(y(entryY));
     const entryWidth = entryLane.right - entryLane.left;
+    const resumeY = y(options.resumeY || entryY + 0.14);
+    const resumeLane = course.at(resumeY);
     waterClimbs.push({
       id: waterClimbs.length,
       points,
@@ -341,6 +351,12 @@ function createBuilder(bounds, course) {
       totalLength,
       width: entryWidth * (options.widthRatio || 0.68),
       entryWidth,
+      gapTopY: y(entryY),
+      gapBottomY: resumeY,
+      resumePoint: {
+        x: (resumeLane.left + resumeLane.right) / 2,
+        y: resumeY,
+      },
       entryWidthRatio: options.entryWidthRatio || 1,
       travelSpeed: options.travelSpeed || 9,
       dropSpeed: options.dropSpeed || 22,
@@ -621,20 +637,23 @@ function buildFactory(builder, bounds) {
 
   const waterClimbLayouts = [
     [
-      [0.50, 0.52],
-      [0.70, 0.50],
-      [0.79, 0.45],
-      [0.72, 0.39],
-      [0.57, 0.34],
-      [0.40, 0.29],
-      [0.25, 0.23],
-      [0.34, 0.17],
+      [0.50, 0.42],
+      [0.50, 0.47],
+      [0.68, 0.51],
+      [0.80, 0.47],
+      [0.86, 0.39],
+      [0.86, 0.30],
+      [0.84, 0.22],
+      [0.80, 0.16],
     ],
   ];
   waterClimbLayouts
     .forEach((points, index) => {
       addWaterClimb(points, {
-        widthRatio: isMobile ? 0.66 : 0.68,
+        absoluteX: true,
+        attachToCourse: true,
+        resumeY: 0.56,
+        widthRatio: isMobile ? 0.34 : 0.36,
         entryWidthRatio: 1,
         travelSpeed: 13 + index,
         dropSpeed: 22,
@@ -674,19 +693,42 @@ export function createPinballMap(mapId, bounds) {
     pegs, bumpers, spinners,
     boosters, waterLifts, waterClimbs,
   } = builder;
-  const filteredPegs = pegs.filter((peg) => !bumpers.some((bumper) => {
-    const clearance = bumper.r + peg.thick / 2 + 4;
-    return distanceToSegment(bumper.x, bumper.y, peg) < clearance;
+  const gaps = waterClimbs.map((climb) => ({
+    top: climb.gapTopY,
+    bottom: climb.gapBottomY,
   }));
+  course.gaps = gaps;
+  const isInsideGap = (worldY, margin = 0) =>
+    gaps.some((gap) =>
+      worldY >= gap.top - margin &&
+      worldY <= gap.bottom + margin
+    );
+  const filteredBumpers =
+    bumpers.filter((bumper) => !isInsideGap(bumper.y, bumper.r));
+  const filteredPegs = pegs.filter((peg) =>
+    !isInsideGap(peg.cy, peg.len / 2) &&
+    !filteredBumpers.some((bumper) => {
+      const clearance = bumper.r + peg.thick / 2 + 4;
+      return distanceToSegment(bumper.x, bumper.y, peg) < clearance;
+    })
+  );
+  const filteredSpinners =
+    spinners.filter((spinner) =>
+      !isInsideGap(spinner.cy, spinner.len / 2)
+    );
+  const filteredBoosters =
+    boosters.filter((booster) =>
+      !isInsideGap(booster.y, booster.h / 2)
+    );
 
   return {
     id: selected,
     label: PINBALL_MAPS.find((map) => map.id === selected).label,
     course,
     pegs: filteredPegs,
-    bumpers,
-    spinners,
-    boosters,
+    bumpers: filteredBumpers,
+    spinners: filteredSpinners,
+    boosters: filteredBoosters,
     waterLifts,
     waterClimbs,
   };

@@ -179,4 +179,8 @@ if (frames.at(-1).winners < 1) {
   throw new Error('Chaos factory did not produce a winner');
 }
 
+if (frames.at(-1).winnerWaterCourses.some((count) => count < 1)) {
+  throw new Error('A chaos factory winner bypassed the water ascent');
+}
+
 console.log(`Pinball runtime passed (${frames.length} frames).`);
