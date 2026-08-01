@@ -15,7 +15,7 @@ import {
 } from './motion.js';
 import {
   normalizePinballMap,
-} from './pinball-maps.js?v=pinball-renderer-split';
+} from './pinball-maps.js?v=pinball-fork-smooth-fix';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');

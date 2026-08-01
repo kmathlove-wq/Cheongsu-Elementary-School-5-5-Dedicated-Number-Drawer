@@ -5,13 +5,13 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=pinball-renderer-split';
+} from './pinball-maps.js?v=pinball-fork-smooth-fix';
 import {
   getPinballMap,
-} from './settings.js?v=pinball-renderer-split';
+} from './settings.js?v=pinball-fork-smooth-fix';
 import {
   createPinballWaterRenderer,
-} from './pinball-water-renderer.js?v=pinball-renderer-split';
+} from './pinball-water-renderer.js?v=pinball-fork-smooth-fix';
 let pinballRafId = null;
 let pinballFinalizeTimer = null;
 let stopPinball = false;
@@ -434,16 +434,13 @@ export function drawNumbersPinball({
           -maxOffset,
           Math.min(maxOffset, ball.x - entry.x)
         );
-        const routeStart = getWaterClimbPoint(climb, 0);
         ball.activeWaterClimb = {
           climb,
           distance: 0,
           laneOffset,
         };
-        ball.x =
-          routeStart.x - Math.sin(routeStart.angle) * laneOffset;
-        ball.y =
-          routeStart.y + Math.cos(routeStart.angle) * laneOffset;
+        // 진입 순간 ball.x/y를 강제로 옮기지 않는다. 낙하하던 실제 위치에서
+        // 시작해 아래 follow 보간으로 통로 중심선까지 부드럽게 붙는다.
         ball.noBallCollisionFrames = 60;
         ball.vx = 0;
         ball.vy = 0;

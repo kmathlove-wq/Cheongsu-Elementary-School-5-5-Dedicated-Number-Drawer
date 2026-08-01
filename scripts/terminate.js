@@ -1,5 +1,5 @@
-import { resetGumballMode } from './gumball.js?v=pinball-renderer-split';
-import { stopPinballMode } from './pinball.js?v=pinball-renderer-split';
+import { resetGumballMode } from './gumball.js?v=pinball-fork-smooth-fix';
+import { stopPinballMode } from './pinball.js?v=pinball-fork-smooth-fix';
 import {
   closeSongRequest,
   closeYouTubePlayer,
