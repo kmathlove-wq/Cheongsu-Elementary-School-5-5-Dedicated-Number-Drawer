@@ -204,7 +204,8 @@
 
 .app-mode-option,
 .sound-preview-button,
-.motion-speed-button {
+.motion-speed-button,
+.pinball-merge-count-button {
 
   min-height: 54px;
 
@@ -219,7 +220,8 @@
   font-size: 1rem;
 }
 
-.app-mode-option.active {
+.app-mode-option.active,
+.pinball-merge-count-button.active {
 
   background:
     linear-gradient(135deg, #5a5cff, #2ea6b2);
@@ -527,6 +529,65 @@
     );
 
   color: white;
+}
+
+.pinball-map-merge-button {
+
+  margin-top: 4px;
+
+  background: #eef0ff;
+
+  color: var(--text);
+}
+
+.pinball-merge-overlay {
+
+  z-index: 1500;
+}
+
+.pinball-merge-panel {
+
+  max-width: 520px;
+}
+
+.pinball-merge-slot-list {
+
+  display: grid;
+
+  gap: 10px;
+
+  margin: 14px 0;
+}
+
+.pinball-merge-slot {
+
+  display: grid;
+
+  grid-template-columns: 64px minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.pinball-merge-slot-index {
+
+  font-weight: 800;
+
+  color: var(--muted);
+
+  white-space: nowrap;
+}
+
+.pinball-merge-name-label {
+
+  display: grid;
+
+  gap: 6px;
+
+  margin: 14px 0 6px;
+
+  font-weight: 800;
 }
 
 .song-panel {

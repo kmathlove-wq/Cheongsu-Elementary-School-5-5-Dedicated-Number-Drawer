@@ -65,7 +65,7 @@ const manittoExcludeList = document.getElementById('manittoExcludeList');
 
 let currentMode = 'basic';
 let currentDrawStyle = 'basic';
-const modeDrawStyles = { 'pinball-teacher': 'pinball', 'song-pinball': 'pinball', 'eleven-song-pinball': 'pinball' };
+const modeDrawStyles = { 'pinball-teacher': 'pinball', 'song-pinball': 'pinball', 'eleven-song-pinball': 'pinball', 'nine-song-pinball': 'pinball' };
 
 const ADMIN_PASSWORD = '1+1=1';
 const MOBILE_ADMIN_TAP_WINDOW = 900;
@@ -81,6 +81,7 @@ const MODE_LABELS = {
   mystery: '???', 'twenty-six': '26번', manitto: '마니또',
   gumball: '공 뽑기', pinball: '핀볼', 'pinball-teacher': '핀볼(선생님)',
   'song-pinball': '노래추첨 핀볼', 'eleven-song-pinball': '11번 노래추첨 핀볼',
+  'nine-song-pinball': '9번 노래추첨 핀볼',
 };
 
 const baseNumbers =
@@ -109,6 +110,7 @@ const DEFAULT_MODE_POOLS = {
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
   'eleven-song-pinball': Array.from({ length: 26 }, () => '11'),
+  'nine-song-pinball': Array.from({ length: 26 }, () => '9'),
 };
 
 const DEFAULT_MODE_OPTIONS =
@@ -158,7 +160,7 @@ function cloneDefaultModeOptions() {
 }
 
 function allowDuplicateItems(mode) {
-  return isElevenOnlyMode(mode) || modeOptions[mode].allowDuplicates;
+  return Boolean(getLockedDigit(mode)) || modeOptions[mode].allowDuplicates;
 }
 
 function isPinballMode(mode) {
@@ -168,9 +170,10 @@ function isPinballMode(mode) {
     isSongDrawMode(mode);
 }
 
-function isSongDrawMode(mode = currentMode) { return mode === 'song-pinball' || mode === 'eleven-song-pinball'; }
+function isSongDrawMode(mode = currentMode) { return mode === 'song-pinball' || mode === 'eleven-song-pinball' || mode === 'nine-song-pinball'; }
 
-function isElevenOnlyMode(mode = currentMode) { return mode === 'eleven-song-pinball'; }
+const DIGIT_LOCKED_MODES = { 'eleven-song-pinball': '11', 'nine-song-pinball': '9' };
+function getLockedDigit(mode = currentMode) { return DIGIT_LOCKED_MODES[mode] || null; }
 
 function isDrawStyleLockedMode(mode = currentMode) {
 
@@ -616,6 +619,9 @@ function updateDescription() {
   } else if (currentMode === 'eleven-song-pinball') {
     descriptionEl.textContent =
       '11번 노래추첨 핀볼 모드: 모든 항목이 11번이며, 11번이 듣고 싶은 노래를 찾아 재생합니다.';
+  } else if (currentMode === 'nine-song-pinball') {
+    descriptionEl.textContent =
+      '9번 노래추첨 핀볼 모드: 모든 항목이 9번이며, 9번이 듣고 싶은 노래를 찾아 재생합니다.';
 
   } else {
     descriptionEl.textContent =
@@ -949,7 +955,7 @@ function renderAdminOptions() {
 
   adminOptions.innerHTML = '';
 
-  if (isElevenOnlyMode(mode)) return;
+  if (getLockedDigit(mode)) return;
 
   const duplicateLabel =
     document.createElement('label');
@@ -1010,6 +1016,7 @@ function validateAdminItems(items, mode) {
 
   const seen = new Set();
   const allowDuplicates = allowDuplicateItems(mode);
+  const lockedDigit = getLockedDigit(mode);
 
   for (const item of items) {
 
@@ -1017,8 +1024,8 @@ function validateAdminItems(items, mode) {
       return '빈 값으로 변경할 수 없습니다.';
     }
 
-    if (isElevenOnlyMode(mode) && item !== '11') {
-      return '이 모드에는 11번만 넣을 수 있습니다.';
+    if (lockedDigit && item !== lockedDigit) {
+      return `이 모드에는 ${lockedDigit}번만 넣을 수 있습니다.`;
     }
 
     if (!allowDuplicates && seen.has(item)) {
@@ -1206,8 +1213,9 @@ function addAdminItem(value) {
     return;
   }
 
-  if (isElevenOnlyMode(mode) && item !== '11') {
-    setAdminManageError('이 모드에는 11번만 추가할 수 있습니다.');
+  const lockedDigit = getLockedDigit(mode);
+  if (lockedDigit && item !== lockedDigit) {
+    setAdminManageError(`이 모드에는 ${lockedDigit}번만 추가할 수 있습니다.`);
     return;
   }
 
@@ -1231,8 +1239,9 @@ function addAdminItem(value) {
 function addAdminItemsBulk(item, count) {
   const mode = adminModeSelect.value;
   if (!saveAdminListInputs(adminEditingMode)) return false;
-  if (isElevenOnlyMode(mode) && item !== '11') {
-    setAdminManageError('이 모드에는 11번만 추가할 수 있습니다.');
+  const lockedDigit = getLockedDigit(mode);
+  if (lockedDigit && item !== lockedDigit) {
+    setAdminManageError(`이 모드에는 ${lockedDigit}번만 추가할 수 있습니다.`);
     return false;
   }
   modeOptions[mode].allowDuplicates = true;
@@ -1276,8 +1285,9 @@ function renameAdminItem(index, value) {
     return;
   }
 
-  if (isElevenOnlyMode(mode) && item !== '11') {
-    setAdminManageError('이 모드에는 11번만 넣을 수 있습니다.');
+  const lockedDigit = getLockedDigit(mode);
+  if (lockedDigit && item !== lockedDigit) {
+    setAdminManageError(`이 모드에는 ${lockedDigit}번만 넣을 수 있습니다.`);
     renderAdminList();
     return;
   }

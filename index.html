@@ -29,6 +29,7 @@
       <button class="mode-btn" data-mode="pinball">핀볼</button>
       <button class="mode-btn" data-mode="song-pinball">노래추첨 핀볼</button>
       <button class="mode-btn" data-mode="eleven-song-pinball">11번 노래추첨 핀볼</button>
+      <button class="mode-btn" data-mode="nine-song-pinball">9번 노래추첨 핀볼</button>
       <div class="more-modes">
         <button class="more-mode-toggle" type="button" aria-label="더보기 모드" aria-expanded="false">
           ⋯
@@ -123,7 +124,7 @@
     </div>
 
     <footer class="build-info" aria-label="현재 수정 버전">
-      수정 버전: 자연스러운 분기·속도 균형 · 핀볼 렌더링 모듈 분리
+      수정 버전: 9번 노래추첨 핀볼 추가 · 핀볼 맵 합치기 기능 추가
     </footer>
 
   </main>
@@ -165,19 +166,26 @@
           </button>
         </div>
       </div>
-      <label
-        class="app-sound-select pinball-map-settings"
+      <div
+        class="app-setting-group pinball-map-settings"
         id="pinballMapSettings"
         hidden
       >
-        핀볼 맵
+        <p class="app-setting-title">핀볼 맵</p>
         <select id="pinballMapSelect">
           <option value="classic">기본 네온 보드</option>
           <option value="zigzag">지그재그 협곡</option>
           <option value="curves">곡선 슬라이드</option>
           <option value="factory">혼돈 공장</option>
         </select>
-      </label>
+        <button
+          type="button"
+          class="secondary pinball-map-merge-button"
+          id="pinballMapMergeButton"
+        >
+          맵 합치기
+        </button>
+      </div>
       <div class="app-setting-group manitto-settings" id="manittoSettings" hidden>
         <p class="app-setting-title">마니또 제외</p>
         <div class="manitto-exclude-list" id="manittoExcludeList"></div>
@@ -225,6 +233,52 @@
       <button id="appSettingsApply" type="button">
         적용
       </button>
+    </section>
+  </div>
+
+  <div class="admin-overlay pinball-merge-overlay" id="pinballMergeOverlay" aria-hidden="true">
+    <section class="admin-panel pinball-merge-panel" role="dialog" aria-modal="true">
+      <button
+        class="admin-close"
+        id="pinballMergeClose"
+        type="button"
+        aria-label="맵 합치기 닫기"
+      >
+        ×
+      </button>
+      <h2>핀볼 맵 합치기</h2>
+
+      <div class="pinball-merge-step" id="pinballMergeCountStep">
+        <p class="app-setting-title">몇 개를 합칠까요?</p>
+        <div class="app-mode-options">
+          <button type="button" class="pinball-merge-count-button" data-merge-count="2">2개</button>
+          <button type="button" class="pinball-merge-count-button" data-merge-count="3">3개</button>
+          <button type="button" class="pinball-merge-count-button" data-merge-count="4">4개</button>
+        </div>
+      </div>
+
+      <div class="pinball-merge-step" id="pinballMergeOrderStep" hidden>
+        <p class="app-setting-title">순서대로 맵을 골라주세요</p>
+        <div class="pinball-merge-slot-list" id="pinballMergeSlotList"></div>
+
+        <label class="pinball-merge-name-label" for="pinballMergeNameInput">
+          합친 맵 이름
+          <input
+            id="pinballMergeNameInput"
+            type="text"
+            maxlength="20"
+            placeholder="예: 나만의 맵"
+            autocomplete="off"
+          />
+        </label>
+
+        <p class="admin-error" id="pinballMergeError"></p>
+
+        <div class="admin-bulk-actions">
+          <button type="button" id="pinballMergeConfirm">확인</button>
+          <button type="button" class="secondary" id="pinballMergeBack">뒤로</button>
+        </div>
+      </div>
     </section>
   </div>
 

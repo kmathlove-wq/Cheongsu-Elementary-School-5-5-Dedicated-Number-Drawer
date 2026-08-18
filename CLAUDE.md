@@ -67,6 +67,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 | `pinball-teacher` | 핀볼 + 선생님 공 포함, 금색 렌더링 |
 | `song-pinball` | 핀볼 당첨 후 노래 입력, YouTube 검색/재생 |
 | `eleven-song-pinball` | 11번 항목 26개로 진행하는 노래추첨 핀볼 |
+| `nine-song-pinball` | 9번 항목 26개로 진행하는 노래추첨 핀볼 |
 
 ## 관리자 모드
 - 일반 UI에는 표시하지 않는다.
@@ -112,7 +113,8 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - 핀볼 방식에서는 기본 네온 보드, 지그재그 협곡, 곡선 슬라이드, 혼돈 공장 중 맵을 고르며 선택은 현재 접속 중에만 유지한다.
 - `pinball-teacher`와 `song-pinball` 모드는 뽑기 방식 기본값이 핀볼이며, 설정창에서 다른 방식으로 바꿀 수 있다.
 - `song-pinball` 계열 모드는 어떤 뽑기 방식이든 결과 표시 전 노래 입력창을 띄운다.
-- `eleven-song-pinball` 모드는 기본 항목이 11번 26개이고, 관리자에서 11번만 추가/이름 변경할 수 있으며 중복 허용 옵션은 숨긴다.
+- `eleven-song-pinball`(11번)·`nine-song-pinball`(9번) 모드는 기본 항목이 해당 번호 26개이고, 관리자에서 그 번호만 추가/이름 변경할 수 있으며 중복 허용 옵션은 숨긴다.
+- 핀볼 맵 select 아래 `맵 합치기` 버튼으로 2~4개의 기존 맵을 순서대로 골라 이름 붙이면 새 맵이 select에 추가되며, 접속 중에만 유지된다.
 
 ## 주요 파일별 책임
 - `index.html`: 모드 버튼, 뽑기 설정, 번호 표시, 결과 기록, 오버레이, 공 뽑기 기계, 핀볼 캔버스.
@@ -123,7 +125,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - `motion.js`: Shift/Alt 5연타 토글과 설정창의 동작 속도 선택을 관리한다.
 - `pinball.js`: 핀볼 모드 상태, 물리 시뮬레이션, 공통 캔버스 렌더링, 중단 처리.
 - `pinball-water-renderer.js`: 수중 리프트와 분기 통로의 캔버스 렌더링.
-- `pinball-maps.js`: 맵별로 휘고 꺾이는 좌우 코스 벽과 내부 핀, 범퍼, 스피너, 가속 게이트를 생성한다.
+- `pinball-maps.js`: 맵별로 휘고 꺾이는 좌우 코스 벽과 내부 핀, 범퍼, 스피너, 가속 게이트를 생성하고, 여러 맵을 순서대로 이어 붙인 합체 맵도 만든다.
 - `settings.js`: 접속 중 뽑기 방식과 효과음 설정, 미리듣기 처리.
 - `song.js`: 노래추첨 핀볼의 노래 입력, YouTube 후보 검색/필터링, 후보 선택, 재생창.
 - `sound.js`: 일반 뽑기, 핀볼, 공 뽑기에서 쓰는 Web Audio 효과음.
@@ -162,6 +164,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 - `pegs`, `bumpers`, `spinners`, `balls`, `winners`, `sonicBooms`가 핵심 상태다.
 - 결승선(`PLAY_BOT`)을 통과한 순서대로 `winners`에 들어가고 목표 인원 달성 후 `finalize()`가 결과를 반영한다.
 - 미니맵 상수는 `PLAY_BOT` 선언 이후에 둔다. TDZ 오류 방지를 위해 순서를 바꾸지 않는다.
+- 합체 맵은 각 조각을 원래 맵과 같은 worldH로 그대로 만든 뒤 y좌표만 이어 붙이므로 조각별 장애물 배치가 단독 플레이와 동일하다.
 
 ## UI/스타일 메모
 - CSS 변수: `--bg`, `--card`, `--accent`, `--text`, `--muted`, `--border`.

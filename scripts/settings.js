@@ -14,7 +14,10 @@ import {
   setMotionMode,
 } from './motion.js';
 import {
+  getPinballMapOptions,
   normalizePinballMap,
+  PINBALL_MAPS,
+  registerMergedPinballMap,
 } from './pinball-maps.js?v=pinball-fork-smooth-fix';
 
 const appSettingsButton =
@@ -44,6 +47,27 @@ const pinballMapSettings =
 const pinballMapSelect =
   document.getElementById('pinballMapSelect');
 
+const pinballMapMergeButton =
+  document.getElementById('pinballMapMergeButton');
+const pinballMergeOverlay =
+  document.getElementById('pinballMergeOverlay');
+const pinballMergeClose =
+  document.getElementById('pinballMergeClose');
+const pinballMergeCountStep =
+  document.getElementById('pinballMergeCountStep');
+const pinballMergeOrderStep =
+  document.getElementById('pinballMergeOrderStep');
+const pinballMergeSlotList =
+  document.getElementById('pinballMergeSlotList');
+const pinballMergeNameInput =
+  document.getElementById('pinballMergeNameInput');
+const pinballMergeError =
+  document.getElementById('pinballMergeError');
+const pinballMergeConfirm =
+  document.getElementById('pinballMergeConfirm');
+const pinballMergeBack =
+  document.getElementById('pinballMergeBack');
+
 let pendingDrawStyle = 'basic';
 let pendingMotionMode = 'normal';
 let selectedPinballMap = 'classic';
@@ -56,6 +80,102 @@ let canOpenSettings = () => true;
 let isDrawStyleLocked = () => false;
 let beforeOpen = () => {};
 let beforeApply = () => true;
+
+function refreshPinballMapOptions(selectValue) {
+
+  const keep = selectValue ?? pinballMapSelect.value;
+
+  pinballMapSelect.innerHTML = '';
+
+  getPinballMapOptions().forEach(({ id, label }) => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = label;
+    pinballMapSelect.appendChild(option);
+  });
+
+  pinballMapSelect.value = normalizePinballMap(keep);
+}
+
+function openPinballMergeDialog() {
+
+  pinballMergeCountStep.hidden = false;
+  pinballMergeOrderStep.hidden = true;
+  pinballMergeError.textContent = '';
+  pinballMergeNameInput.value = '';
+  pinballMergeSlotList.innerHTML = '';
+
+  document
+    .querySelectorAll('.pinball-merge-count-button')
+    .forEach((button) => button.classList.remove('active'));
+
+  pinballMergeOverlay.classList.add('show');
+  pinballMergeOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function closePinballMergeDialog() {
+
+  pinballMergeOverlay.classList.remove('show');
+  pinballMergeOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function renderPinballMergeSlots(count) {
+
+  pinballMergeSlotList.innerHTML = '';
+
+  for (let i = 0; i < count; i++) {
+
+    const row = document.createElement('div');
+    row.className = 'pinball-merge-slot';
+
+    const label = document.createElement('span');
+    label.className = 'pinball-merge-slot-index';
+    label.textContent = `${i + 1}번째`;
+
+    const select = document.createElement('select');
+    select.className = 'pinball-merge-slot-select';
+
+    PINBALL_MAPS.forEach((map) => {
+      const option = document.createElement('option');
+      option.value = map.id;
+      option.textContent = map.label;
+      select.appendChild(option);
+    });
+
+    row.append(label, select);
+    pinballMergeSlotList.appendChild(row);
+  }
+
+  pinballMergeCountStep.hidden = true;
+  pinballMergeOrderStep.hidden = false;
+  pinballMergeError.textContent = '';
+}
+
+function confirmPinballMerge() {
+
+  const sequence =
+    Array.from(
+      pinballMergeSlotList.querySelectorAll('.pinball-merge-slot-select')
+    ).map((select) => select.value);
+
+  const name = pinballMergeNameInput.value.trim();
+
+  if (!name) {
+    pinballMergeError.textContent = '합친 맵 이름을 입력해 주세요.';
+    return;
+  }
+
+  const newId = registerMergedPinballMap(sequence, name);
+
+  if (!newId) {
+    pinballMergeError.textContent = '맵을 2~4개 골라주세요.';
+    return;
+  }
+
+  refreshPinballMapOptions(newId);
+  pendingPinballMap = newId;
+  closePinballMergeDialog();
+}
 
 function updateAppModeOptions() {
 
@@ -198,6 +318,36 @@ export function setupAppSettings(options) {
   pinballMapSelect.addEventListener('change', () => {
     pendingPinballMap =
       normalizePinballMap(pinballMapSelect.value);
+  });
+
+  refreshPinballMapOptions();
+
+  pinballMapMergeButton.addEventListener('click', openPinballMergeDialog);
+
+  document
+    .querySelectorAll('.pinball-merge-count-button')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        document
+          .querySelectorAll('.pinball-merge-count-button')
+          .forEach((btn) => btn.classList.toggle('active', btn === button));
+        renderPinballMergeSlots(Number(button.dataset.mergeCount));
+      });
+    });
+
+  pinballMergeConfirm.addEventListener('click', confirmPinballMerge);
+
+  pinballMergeBack.addEventListener('click', () => {
+    pinballMergeOrderStep.hidden = true;
+    pinballMergeCountStep.hidden = false;
+  });
+
+  pinballMergeClose.addEventListener('click', closePinballMergeDialog);
+
+  pinballMergeOverlay.addEventListener('click', (event) => {
+    if (event.target === pinballMergeOverlay) {
+      closePinballMergeDialog();
+    }
   });
 
   document

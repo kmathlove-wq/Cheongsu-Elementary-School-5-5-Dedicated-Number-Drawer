@@ -35,7 +35,8 @@
 }
 
 .mode-btn[data-mode="song-pinball"].active,
-.mode-btn[data-mode="eleven-song-pinball"].active {
+.mode-btn[data-mode="eleven-song-pinball"].active,
+.mode-btn[data-mode="nine-song-pinball"].active {
 
   background:
     linear-gradient(

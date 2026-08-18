@@ -7,6 +7,31 @@ export const PINBALL_MAPS = [
 
 const MAP_IDS = new Set(PINBALL_MAPS.map((map) => map.id));
 
+const customMergedMaps = [];
+let mergedMapCounter = 0;
+
+function findMergedMap(id) {
+  return customMergedMaps.find((map) => map.id === id) || null;
+}
+
+export function registerMergedPinballMap(sequenceIds, label) {
+  const sequence = (sequenceIds || []).filter((id) => MAP_IDS.has(id));
+  if (sequence.length < 2 || sequence.length > 4) return null;
+  mergedMapCounter += 1;
+  const trimmedLabel =
+    String(label || '').trim() || `합체 맵 ${mergedMapCounter}`;
+  const id = `merged-${mergedMapCounter}`;
+  customMergedMaps.push({ id, label: trimmedLabel, sequence });
+  return id;
+}
+
+export function getPinballMapOptions() {
+  return [
+    ...PINBALL_MAPS,
+    ...customMergedMaps.map(({ id, label }) => ({ id, label })),
+  ];
+}
+
 const COURSE_SHAPES = {
   classic: [
     [0, 0.50, 1.00],
@@ -59,10 +84,18 @@ const COURSE_SHAPES = {
 };
 
 export function normalizePinballMap(value) {
-  return MAP_IDS.has(value) ? value : 'classic';
+  if (MAP_IDS.has(value)) return value;
+  return findMergedMap(value) ? value : 'classic';
 }
 
 export function getPinballWorldScale(mapId, isMobile) {
+  const merged = findMergedMap(mapId);
+  if (merged) {
+    return merged.sequence.reduce(
+      (sum, subId) => sum + getPinballWorldScale(subId, isMobile),
+      0
+    );
+  }
   const selected = normalizePinballMap(mapId);
   if (selected === 'factory') return isMobile ? 6.8 : 8.5;
   if (selected === 'curves') return isMobile ? 3.8 : 4.8;
@@ -841,7 +874,112 @@ function distanceToSegment(pointX, pointY, peg) {
   );
 }
 
+function offsetMapObstacles(map, offsetY) {
+  map.pegs.forEach((peg) => {
+    peg.y1 += offsetY;
+    peg.y2 += offsetY;
+    peg.cy += offsetY;
+  });
+  map.bumpers.forEach((bumper) => { bumper.y += offsetY; });
+  map.spinners.forEach((spinner) => {
+    spinner.cy += offsetY;
+    spinner.baseCy += offsetY;
+  });
+  map.boosters.forEach((booster) => { booster.y += offsetY; });
+  map.waterLifts.forEach((lift) => {
+    lift.topY += offsetY;
+    lift.bottomY += offsetY;
+  });
+  map.waterClimbs.forEach((climb) => {
+    climb.points.forEach((point) => { point.y += offsetY; });
+    climb.gapTopY += offsetY;
+    climb.gapBottomY += offsetY;
+    climb.resumePoint.y += offsetY;
+  });
+}
+
+// 여러 맵을 세로로 이어 붙인다. 각 조각은 원래 맵과 같은 크기(worldH)로
+// 그대로 만든 뒤 y좌표만 밀어서 붙이므로 장애물 배치가 원본과 동일하다.
+function createMergedPinballMap(merged, bounds) {
+  const { isMobile } = bounds;
+  const scales =
+    merged.sequence.map((id) => getPinballWorldScale(id, isMobile));
+  const totalScale = scales.reduce((sum, scale) => sum + scale, 0) || 1;
+  const baseH = bounds.worldH / totalScale;
+
+  const pegs = [];
+  const bumpers = [];
+  const spinners = [];
+  const boosters = [];
+  const waterLifts = [];
+  const waterClimbs = [];
+  const samples = [];
+  const gaps = [];
+  const segments = [];
+
+  let offsetY = 0;
+
+  merged.sequence.forEach((subId, index) => {
+    const segWorldH = baseH * scales[index];
+    const segMap = createPinballMap(subId, { ...bounds, worldH: segWorldH });
+
+    offsetMapObstacles(segMap, offsetY);
+
+    pegs.push(...segMap.pegs);
+    bumpers.push(...segMap.bumpers);
+    spinners.push(...segMap.spinners);
+    boosters.push(...segMap.boosters);
+    waterLifts.push(...segMap.waterLifts);
+    waterClimbs.push(...segMap.waterClimbs);
+
+    segMap.course.samples.forEach((sample) => {
+      samples.push({ ...sample, y: sample.y + offsetY });
+    });
+
+    (segMap.course.gaps || []).forEach((gap) => {
+      gaps.push({ top: gap.top + offsetY, bottom: gap.bottom + offsetY });
+    });
+
+    segments.push({
+      startY: offsetY,
+      endY: offsetY + segWorldH,
+      at: segMap.course.at,
+    });
+
+    offsetY += segWorldH;
+  });
+
+  boosters.forEach((booster, index) => { booster.id = index; });
+  waterLifts.forEach((lift, index) => { lift.id = index; });
+  waterClimbs.forEach((climb, index) => { climb.id = index; });
+
+  const totalWorldH = offsetY;
+
+  function at(worldY) {
+    const clamped = Math.max(0, Math.min(totalWorldH, worldY));
+    const segment =
+      segments.find((seg) => clamped >= seg.startY && clamped <= seg.endY) ||
+      segments[segments.length - 1];
+    return segment.at(clamped - segment.startY);
+  }
+
+  return {
+    id: merged.id,
+    label: merged.label,
+    course: { at, samples, gaps, geometry: 'merged', color: '#8fd7ff' },
+    pegs,
+    bumpers,
+    spinners,
+    boosters,
+    waterLifts,
+    waterClimbs,
+  };
+}
+
 export function createPinballMap(mapId, bounds) {
+  const merged = findMergedMap(mapId);
+  if (merged) return createMergedPinballMap(merged, bounds);
+
   const selected = normalizePinballMap(mapId);
   const course = createCourse(selected, bounds);
   const builder = createBuilder(bounds, course);

@@ -369,6 +369,89 @@ for (const { id } of pinballMapModule.PINBALL_MAPS) {
   }
 }
 
+const mergedId =
+  pinballMapModule.registerMergedPinballMap(['classic', 'curves'], '테스트 합체');
+
+if (!mergedId) {
+  throw new Error('registerMergedPinballMap must create a merged map id');
+}
+
+const mergedScale = pinballMapModule.getPinballWorldScale(mergedId, false);
+const expectedScale =
+  pinballMapModule.getPinballWorldScale('classic', false) +
+  pinballMapModule.getPinballWorldScale('curves', false);
+
+if (Math.abs(mergedScale - expectedScale) > 0.0001) {
+  throw new Error('Merged pinball map scale must equal the sum of its parts');
+}
+
+const worldUnitH =
+  mapBounds.worldH / pinballMapModule.getPinballWorldScale('classic', false);
+const mergedWorldH = worldUnitH * mergedScale;
+const mergedMap = pinballMapModule.createPinballMap(mergedId, {
+  ...mapBounds,
+  worldH: mergedWorldH,
+});
+
+const mergedObstacles = [
+  ...mergedMap.pegs,
+  ...mergedMap.bumpers,
+  ...mergedMap.spinners,
+  ...mergedMap.boosters,
+];
+
+if (mergedObstacles.length === 0) {
+  throw new Error('Merged pinball map has no obstacles');
+}
+
+if (mergedObstacles.some((obstacle) =>
+  Object.values(obstacle)
+    .some((value) => typeof value === 'number' && !Number.isFinite(value))
+)) {
+  throw new Error('Merged pinball map has invalid coordinates');
+}
+
+const hasUniqueIds = (list) => {
+  const seen = new Set();
+  for (const item of list) {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+  }
+  return true;
+};
+
+if (
+  !hasUniqueIds(mergedMap.boosters) ||
+  !hasUniqueIds(mergedMap.waterLifts) ||
+  !hasUniqueIds(mergedMap.waterClimbs)
+) {
+  throw new Error('Merged pinball map must reassign unique obstacle ids');
+}
+
+for (let step = 0; step <= 20; step++) {
+  const lane = mergedMap.course.at(mergedWorldH * step / 20);
+  if (
+    !Number.isFinite(lane.left) ||
+    !Number.isFinite(lane.right) ||
+    lane.left >= lane.right
+  ) {
+    throw new Error('Merged pinball course produced an invalid lane');
+  }
+}
+
+if (pinballMapModule.normalizePinballMap(mergedId) !== mergedId) {
+  throw new Error('normalizePinballMap must accept a registered merged map id');
+}
+
+if (
+  !pinballMapModule.getPinballMapOptions()
+    .some((option) => option.id === mergedId)
+) {
+  throw new Error('getPinballMapOptions must include the merged map');
+}
+
+console.log('Merged pinball map checks passed.');
+
 const appCss = readFileSync('styles/app.css', 'utf8');
 
 for (const file of styleFiles) {
