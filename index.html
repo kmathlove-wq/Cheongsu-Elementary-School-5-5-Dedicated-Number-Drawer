@@ -28,8 +28,6 @@
       <button class="mode-btn" data-mode="gumball">공 뽑기</button>
       <button class="mode-btn" data-mode="pinball">핀볼</button>
       <button class="mode-btn" data-mode="song-pinball">노래추첨 핀볼</button>
-      <button class="mode-btn" data-mode="eleven-song-pinball">11번 노래추첨 핀볼</button>
-      <button class="mode-btn" data-mode="nine-song-pinball">9번 노래추첨 핀볼</button>
       <div class="more-modes">
         <button class="more-mode-toggle" type="button" aria-label="더보기 모드" aria-expanded="false">
           ⋯
@@ -40,6 +38,8 @@
           <button class="mode-btn" data-mode="mystery">???</button>
           <button class="mode-btn" data-mode="twenty-six">26번</button>
           <button class="mode-btn" data-mode="pinball-teacher">핀볼(선생님)</button>
+          <button class="mode-btn" data-mode="eleven-song-pinball">11번 노래추첨 핀볼</button>
+          <button class="mode-btn" data-mode="nine-song-pinball">9번 노래추첨 핀볼</button>
         </div>
       </div>
     </div>
@@ -124,7 +124,7 @@
     </div>
 
     <footer class="build-info" aria-label="현재 수정 버전">
-      수정 버전: 9번 노래추첨 핀볼 추가 · 핀볼 맵 합치기 기능 추가
+      수정 버전: 합친 핀볼 맵 저장/삭제 지원 · 9번·11번 노래추첨 핀볼을 더보기 메뉴로 이동
     </footer>
 
   </main>
@@ -178,13 +178,23 @@
           <option value="curves">곡선 슬라이드</option>
           <option value="factory">혼돈 공장</option>
         </select>
-        <button
-          type="button"
-          class="secondary pinball-map-merge-button"
-          id="pinballMapMergeButton"
-        >
-          맵 합치기
-        </button>
+        <div class="pinball-map-buttons">
+          <button
+            type="button"
+            class="secondary pinball-map-merge-button"
+            id="pinballMapMergeButton"
+          >
+            맵 합치기
+          </button>
+          <button
+            type="button"
+            class="danger pinball-map-delete-button"
+            id="pinballMapDeleteButton"
+            hidden
+          >
+            이 맵 삭제
+          </button>
+        </div>
       </div>
       <div class="app-setting-group manitto-settings" id="manittoSettings" hidden>
         <p class="app-setting-title">마니또 제외</p>

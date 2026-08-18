@@ -14,7 +14,9 @@ import {
   setMotionMode,
 } from './motion.js';
 import {
+  deleteMergedPinballMap,
   getPinballMapOptions,
+  isMergedPinballMap,
   normalizePinballMap,
   PINBALL_MAPS,
   registerMergedPinballMap,
@@ -49,6 +51,8 @@ const pinballMapSelect =
 
 const pinballMapMergeButton =
   document.getElementById('pinballMapMergeButton');
+const pinballMapDeleteButton =
+  document.getElementById('pinballMapDeleteButton');
 const pinballMergeOverlay =
   document.getElementById('pinballMergeOverlay');
 const pinballMergeClose =
@@ -81,6 +85,12 @@ let isDrawStyleLocked = () => false;
 let beforeOpen = () => {};
 let beforeApply = () => true;
 
+function updatePinballMapDeleteButton() {
+
+  pinballMapDeleteButton.hidden =
+    !isMergedPinballMap(pinballMapSelect.value);
+}
+
 function refreshPinballMapOptions(selectValue) {
 
   const keep = selectValue ?? pinballMapSelect.value;
@@ -95,6 +105,23 @@ function refreshPinballMapOptions(selectValue) {
   });
 
   pinballMapSelect.value = normalizePinballMap(keep);
+
+  updatePinballMapDeleteButton();
+}
+
+function deleteSelectedPinballMap() {
+
+  const id = pinballMapSelect.value;
+
+  if (!isMergedPinballMap(id)) return;
+
+  if (!confirm('정말 이 합친 맵을 삭제할까요?')) return;
+
+  deleteMergedPinballMap(id);
+
+  refreshPinballMapOptions('classic');
+
+  pendingPinballMap = pinballMapSelect.value;
 }
 
 function openPinballMergeDialog() {
@@ -183,6 +210,7 @@ function updateAppModeOptions() {
   drawStyleSettings.hidden = locked;
   pinballMapSettings.hidden = pendingDrawStyle !== 'pinball';
   pinballMapSelect.value = pendingPinballMap;
+  updatePinballMapDeleteButton();
 
   document
     .querySelectorAll('.app-mode-option')
@@ -318,11 +346,14 @@ export function setupAppSettings(options) {
   pinballMapSelect.addEventListener('change', () => {
     pendingPinballMap =
       normalizePinballMap(pinballMapSelect.value);
+    updatePinballMapDeleteButton();
   });
 
   refreshPinballMapOptions();
 
   pinballMapMergeButton.addEventListener('click', openPinballMergeDialog);
+
+  pinballMapDeleteButton.addEventListener('click', deleteSelectedPinballMap);
 
   document
     .querySelectorAll('.pinball-merge-count-button')

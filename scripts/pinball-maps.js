@@ -7,12 +7,59 @@ export const PINBALL_MAPS = [
 
 const MAP_IDS = new Set(PINBALL_MAPS.map((map) => map.id));
 
+const MERGED_MAPS_STORAGE_KEY = 'pinball-merged-maps';
+
 const customMergedMaps = [];
 let mergedMapCounter = 0;
 
 function findMergedMap(id) {
   return customMergedMaps.find((map) => map.id === id) || null;
 }
+
+function isValidStoredMergedMap(entry) {
+  return Boolean(entry) &&
+    typeof entry.id === 'string' &&
+    typeof entry.label === 'string' &&
+    Array.isArray(entry.sequence) &&
+    entry.sequence.length >= 2 &&
+    entry.sequence.length <= 4 &&
+    entry.sequence.every((subId) => MAP_IDS.has(subId));
+}
+
+function loadMergedMapsFromStorage() {
+  try {
+    const raw = localStorage.getItem(MERGED_MAPS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return;
+    parsed.filter(isValidStoredMergedMap).forEach((entry) => {
+      customMergedMaps.push({
+        id: entry.id,
+        label: entry.label,
+        sequence: entry.sequence,
+      });
+      const counterMatch = /^merged-(\d+)$/.exec(entry.id);
+      if (counterMatch) {
+        mergedMapCounter =
+          Math.max(mergedMapCounter, Number(counterMatch[1]));
+      }
+    });
+  } catch {
+    // 저장 공간을 못 읽으면 이번 접속에서는 빈 목록으로 시작한다.
+  }
+}
+
+function saveMergedMapsToStorage() {
+  try {
+    localStorage.setItem(
+      MERGED_MAPS_STORAGE_KEY,
+      JSON.stringify(customMergedMaps)
+    );
+  } catch {
+    // 저장 공간이 꽉 찼거나 막혀 있으면 이번 접속 동안만 유지된다.
+  }
+}
+
+loadMergedMapsFromStorage();
 
 export function registerMergedPinballMap(sequenceIds, label) {
   const sequence = (sequenceIds || []).filter((id) => MAP_IDS.has(id));
@@ -22,7 +69,20 @@ export function registerMergedPinballMap(sequenceIds, label) {
     String(label || '').trim() || `합체 맵 ${mergedMapCounter}`;
   const id = `merged-${mergedMapCounter}`;
   customMergedMaps.push({ id, label: trimmedLabel, sequence });
+  saveMergedMapsToStorage();
   return id;
+}
+
+export function deleteMergedPinballMap(id) {
+  const index = customMergedMaps.findIndex((map) => map.id === id);
+  if (index === -1) return false;
+  customMergedMaps.splice(index, 1);
+  saveMergedMapsToStorage();
+  return true;
+}
+
+export function isMergedPinballMap(id) {
+  return Boolean(findMergedMap(id));
 }
 
 export function getPinballMapOptions() {

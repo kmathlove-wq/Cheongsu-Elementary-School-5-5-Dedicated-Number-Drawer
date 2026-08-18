@@ -531,13 +531,34 @@
   color: white;
 }
 
-.pinball-map-merge-button {
+.pinball-map-buttons {
+
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
 
   margin-top: 4px;
+}
+
+.pinball-map-merge-button {
 
   background: #eef0ff;
 
   color: var(--text);
+}
+
+.pinball-map-delete-button {
+
+  background: #ffe7e7;
+
+  color: #b4232a;
+}
+
+.pinball-map-delete-button[hidden] {
+
+  display: none;
 }
 
 .pinball-merge-overlay {
