@@ -5,13 +5,13 @@ import {
 import {
   createPinballMap,
   getPinballWorldScale,
-} from './pinball-maps.js?v=pinball-fork-smooth-fix';
+} from './pinball-maps.js?v=pinball-map-store-1';
 import {
   getPinballMap,
-} from './settings.js?v=pinball-fork-smooth-fix';
+} from './settings.js?v=pinball-map-store-1';
 import {
   createPinballWaterRenderer,
-} from './pinball-water-renderer.js?v=pinball-fork-smooth-fix';
+} from './pinball-water-renderer.js?v=pinball-map-store-1';
 let pinballRafId = null;
 let pinballFinalizeTimer = null;
 let stopPinball = false;

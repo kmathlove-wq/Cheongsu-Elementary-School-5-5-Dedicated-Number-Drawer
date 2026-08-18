@@ -1,10 +1,10 @@
-import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=pinball-fork-smooth-fix';
+import { drawNumbersPinball, stopPinballMode } from './pinball.js?v=pinball-map-store-1';
 import {
   bindGumballHandle,
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=pinball-fork-smooth-fix';
+} from './gumball.js?v=pinball-map-store-1';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -20,7 +20,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=pinball-fork-smooth-fix';
+} from './settings.js?v=pinball-map-store-1';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -28,11 +28,11 @@ import {
   isYouTubePlayerOpen,
   requestSongForResult,
 } from './song.js';
-import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-fork-smooth-fix';
+import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-map-store-1';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
-import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=pinball-fork-smooth-fix';
+import { formatResultSummary, renderPickedSummary, renderResultSummary } from './result-display.js?v=pinball-map-store-1';
 
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');

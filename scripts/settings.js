@@ -20,7 +20,7 @@ import {
   normalizePinballMap,
   PINBALL_MAPS,
   registerMergedPinballMap,
-} from './pinball-maps.js?v=pinball-fork-smooth-fix';
+} from './pinball-maps.js?v=pinball-map-store-1';
 
 const appSettingsButton =
   document.getElementById('appSettingsButton');
