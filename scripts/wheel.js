@@ -3,7 +3,6 @@ import { formatResultSummary, renderResultSummary } from './result-display.js?v=
 
 const wheelStage = document.getElementById('wheelStage');
 const wheelDisc = document.getElementById('wheelDisc');
-const wheelResult = document.getElementById('wheelResult');
 
 const WHEEL_COLORS = [
   '#ff6b81', '#5ee7df', '#ffd166', '#8ec5fc',
@@ -34,15 +33,16 @@ function colorForEntry(entry, index) {
 
 function labelFontSize(count) {
 
-  if (count <= 8) return 27;
-  if (count <= 14) return 22;
-  if (count <= 22) return 18;
+  const sliceAngle = 360 / count;
+  const size = 4.3 * Math.pow(sliceAngle, 0.48);
 
-  return 15;
+  return Math.round(Math.min(80, Math.max(12, size)));
 }
 
 function labelMaxChars(count) {
 
+  if (count <= 2) return 10;
+  if (count <= 4) return 8;
   if (count <= 8) return 6;
   if (count <= 14) return 5;
   if (count <= 22) return 4;
@@ -77,19 +77,27 @@ export function renderWheelDisc(entries, { getDisplayLabel } = {}) {
 
   const fontSize = labelFontSize(entries.length);
   const maxChars = labelMaxChars(entries.length);
+  const labelDistance = (wheelDisc.clientWidth / 2) * 0.66;
 
   entries.forEach((entry, index) => {
 
-    const angle = index * slice + slice / 2 - 90;
+    const angle = index * slice + slice / 2;
+    const isUpsideDown = angle > 90 && angle < 270;
 
-    const label = document.createElement('span');
+    const arm = document.createElement('span');
 
-    label.className = 'wheel-label';
-    label.style.transform = `rotate(${angle}deg)`;
-    label.style.fontSize = `${fontSize}px`;
-    label.textContent = getDisplayLabel(entry.item, maxChars);
+    arm.className = 'wheel-label-arm';
+    arm.style.transform = `rotate(${angle}deg) translateY(-${labelDistance}px)`;
 
-    wheelDisc.appendChild(label);
+    const text = document.createElement('span');
+
+    text.className = 'wheel-label-text';
+    text.style.fontSize = `${fontSize}px`;
+    text.style.transform = `translate(-50%, -50%) rotate(${isUpsideDown ? 180 : 0}deg)`;
+    text.textContent = getDisplayLabel(entry.item, maxChars);
+
+    arm.appendChild(text);
+    wheelDisc.appendChild(arm);
   });
 }
 
@@ -104,10 +112,6 @@ export function updateWheelPanel({
   if (!isVisible) return;
 
   renderWheelDisc(entries, { getDisplayLabel });
-
-  wheelResult.classList.remove('show', 'teacher-result');
-  wheelResult.textContent = '';
-  wheelResult.title = '';
 }
 
 function selectWheelEntries({
@@ -172,7 +176,7 @@ function spinDiscToIndex(winnerIndex, total) {
 
   while (delta < 0) delta += 360;
 
-  const extraSpins = 4 + Math.floor(Math.random() * 3);
+  const extraSpins = 10 + Math.floor(Math.random() * 5);
 
   currentRotation += delta + extraSpins * 360;
 
@@ -296,7 +300,6 @@ export function drawNumbersWheel({
     const winnerIndex = pool.findIndex((candidate) => candidate.key === entry.key);
 
     renderWheelDisc(pool, { getDisplayLabel });
-    wheelResult.classList.remove('show', 'teacher-result');
 
     const spinDuration = scaleMotionTime(5500 + index * 250);
 
@@ -313,10 +316,7 @@ export function drawNumbersWheel({
       pool = pool.filter((candidate) => candidate.key !== entry.key);
       removeEntry(entry);
 
-      wheelResult.textContent = getDisplayLabel(entry.item);
-      wheelResult.title = entry.item;
-      wheelResult.classList.toggle('teacher-result', entry.item === '선생님');
-      wheelResult.classList.add('show');
+      renderWheelDisc(pool, { getDisplayLabel });
 
       playTickSound();
 
@@ -341,8 +341,4 @@ export function resetWheelMode() {
 
   wheelDisc.style.transitionDuration = '0s';
   wheelDisc.style.transform = 'rotate(0deg)';
-
-  wheelResult.classList.remove('show', 'teacher-result');
-  wheelResult.textContent = '';
-  wheelResult.title = '';
 }

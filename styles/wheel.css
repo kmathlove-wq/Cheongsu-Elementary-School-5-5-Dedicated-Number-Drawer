@@ -4,11 +4,11 @@
 
   place-items: center;
 
-  min-height: 480px;
+  min-height: 460px;
 
   margin-top: 18px;
 
-  padding: 18px 8px 40px;
+  padding: 18px 8px 8px;
 }
 
 .wheel-stage[hidden] {
@@ -73,7 +73,7 @@
   transform: rotate(0deg);
 }
 
-.wheel-label {
+.wheel-label-arm {
 
   position: absolute;
 
@@ -81,27 +81,26 @@
 
   left: 50%;
 
-  width: 50%;
+  width: 0;
 
-  height: 1.4em;
+  height: 0;
+}
 
-  margin-top: -0.7em;
+.wheel-label-text {
 
-  padding-left: 12%;
+  position: absolute;
 
-  overflow: hidden;
+  top: 0;
 
-  transform-origin: 0 50%;
+  left: 0;
 
   color: #10162e;
 
   font-weight: 800;
 
-  line-height: 1.4em;
+  text-align: center;
 
   white-space: nowrap;
-
-  text-overflow: ellipsis;
 
   text-shadow: 0 1px 2px rgba(255,255,255,0.6);
 
@@ -134,58 +133,11 @@
   z-index: 2;
 }
 
-.wheel-result {
-
-  position: absolute;
-
-  bottom: -52px;
-
-  left: 50%;
-
-  max-width: 240px;
-
-  padding: 6px 16px;
-
-  overflow: hidden;
-
-  border-radius: 999px;
-
-  background:
-    linear-gradient(145deg, #8ec5fc, #e0c3fc);
-
-  color: #10162e;
-
-  font-weight: 900;
-
-  opacity: 0;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-
-  transform: translateX(-50%) scale(0.7);
-
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.wheel-result.show {
-
-  opacity: 1;
-
-  transform: translateX(-50%) scale(1);
-}
-
-.wheel-result.teacher-result {
-
-  background:
-    linear-gradient(145deg, #ffe58a, #ffad33);
-}
-
 @media (max-width: 600px) {
 
   .wheel-stage {
 
-    min-height: 400px;
+    min-height: 380px;
   }
 
   .wheel-wrap {

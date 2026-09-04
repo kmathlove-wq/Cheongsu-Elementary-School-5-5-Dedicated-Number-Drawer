@@ -9,7 +9,7 @@ import {
   drawNumbersWheel,
   resetWheelMode,
   updateWheelPanel,
-} from './wheel.js?v=wheel-mode-3';
+} from './wheel.js?v=wheel-mode-5';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
