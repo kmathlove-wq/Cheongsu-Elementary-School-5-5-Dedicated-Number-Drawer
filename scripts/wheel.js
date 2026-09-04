@@ -82,7 +82,6 @@ export function renderWheelDisc(entries, { getDisplayLabel } = {}) {
   entries.forEach((entry, index) => {
 
     const angle = index * slice + slice / 2;
-    const isUpsideDown = angle > 90 && angle < 270;
 
     const arm = document.createElement('span');
 
@@ -93,7 +92,7 @@ export function renderWheelDisc(entries, { getDisplayLabel } = {}) {
 
     text.className = 'wheel-label-text';
     text.style.fontSize = `${fontSize}px`;
-    text.style.transform = `translate(-50%, -50%) rotate(${isUpsideDown ? 180 : 0}deg)`;
+    text.style.transform = `translate(-50%, -50%) rotate(${-angle}deg)`;
     text.textContent = getDisplayLabel(entry.item, maxChars);
 
     arm.appendChild(text);
@@ -315,6 +314,10 @@ export function drawNumbersWheel({
 
       pool = pool.filter((candidate) => candidate.key !== entry.key);
       removeEntry(entry);
+
+      currentRotation = 0;
+      wheelDisc.style.transitionDuration = '0s';
+      wheelDisc.style.transform = 'rotate(0deg)';
 
       renderWheelDisc(pool, { getDisplayLabel });
 
