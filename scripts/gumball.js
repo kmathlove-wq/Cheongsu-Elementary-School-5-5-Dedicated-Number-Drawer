@@ -173,10 +173,8 @@ export function updateGumballPanel({
   isVisible,
   entries,
   getDisplayLabel,
-  numberGrid,
 }) {
 
-  numberGrid.hidden = isVisible;
   gumballStage.hidden = !isVisible;
 
   if (isVisible) {
@@ -251,7 +249,7 @@ export function drawNumbersGumball({
   getDisplayLabel,
   adjustFontSize,
   compareItems,
-  isGumballMode,
+  isModeActive,
   removeEntry,
   addPickedNumbers,
   updatePickedNumbers,
@@ -355,7 +353,7 @@ export function drawNumbersGumball({
 
     gumballDrawTimer = setTimeout(() => {
 
-      if (!isGumballMode()) {
+      if (!isModeActive()) {
         drawButton.disabled = false;
         gumballDrawTimer = null;
         return;

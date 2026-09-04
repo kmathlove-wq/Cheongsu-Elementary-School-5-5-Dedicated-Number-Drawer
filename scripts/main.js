@@ -4,7 +4,12 @@ import {
   drawNumbersGumball,
   resetGumballMode,
   updateGumballPanel,
-} from './gumball.js?v=pinball-map-store-1';
+} from './gumball.js?v=wheel-mode-1';
+import {
+  drawNumbersWheel,
+  resetWheelMode,
+  updateWheelPanel,
+} from './wheel.js?v=wheel-mode-1';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -20,7 +25,7 @@ import {
   isAppSettingsOpen,
   openAppSettings,
   setupAppSettings,
-} from './settings.js?v=pinball-map-store-1';
+} from './settings.js?v=wheel-mode-1';
 import {
   closeSongRequest,
   closeYouTubePlayer,
@@ -29,6 +34,7 @@ import {
   requestSongForResult,
 } from './song.js';
 import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-map-store-1';
+import { getModeDescription } from './mode-descriptions.js';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
@@ -79,7 +85,7 @@ let activeDrawInterval = null;
 const MODE_LABELS = {
   basic: '기본', teacher: '선생님', 'teacher-mystery': '선생님(?)',
   mystery: '???', 'twenty-six': '26번', manitto: '마니또',
-  gumball: '공 뽑기', pinball: '핀볼', 'pinball-teacher': '핀볼(선생님)',
+  gumball: '공 뽑기', wheel: '돌림판', pinball: '핀볼', 'pinball-teacher': '핀볼(선생님)',
   'song-pinball': '노래추첨 핀볼', 'eleven-song-pinball': '11번 노래추첨 핀볼',
   'nine-song-pinball': '9번 노래추첨 핀볼',
 };
@@ -106,7 +112,7 @@ const DEFAULT_MODE_POOLS = {
   basic: [...baseNumbers], teacher: ['선생님', ...baseNumbers],
   'teacher-mystery': ['선생님', ...baseNumbers], mystery: getMysteryNumbers(),
   'twenty-six': [...baseNumbers], manitto: [...baseNumbers],
-  gumball: [...baseNumbers], pinball: [...baseNumbers],
+  gumball: [...baseNumbers], wheel: [...baseNumbers], pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
   'eleven-song-pinball': Array.from({ length: 26 }, () => '11'),
@@ -180,6 +186,7 @@ function isDrawStyleLockedMode(mode = currentMode) {
   return mode === 'basic' ||
     mode === 'manitto' ||
     mode === 'gumball' ||
+    mode === 'wheel' ||
     mode === 'pinball';
 }
 
@@ -189,6 +196,8 @@ function getEffectiveDrawStyle() {
 
   if (currentMode === 'gumball') return 'gumball';
 
+  if (currentMode === 'wheel') return 'wheel';
+
   if (currentMode === 'pinball') return 'pinball';
 
   if (currentMode === 'manitto') return 'basic';
@@ -197,6 +206,8 @@ function getEffectiveDrawStyle() {
 }
 
 function isGumballMode() { return getEffectiveDrawStyle() === 'gumball'; }
+
+function isWheelMode() { return getEffectiveDrawStyle() === 'wheel'; }
 
 function isPinballDrawStyle() { return getEffectiveDrawStyle() === 'pinball'; }
 
@@ -475,8 +486,14 @@ function updateModePanels() {
     isVisible: isGumballMode(),
     entries: remainingEntries,
     getDisplayLabel,
-    numberGrid,
   });
+
+  updateWheelPanel({
+    isVisible: isWheelMode(),
+    entries: remainingEntries,
+  });
+
+  numberGrid.hidden = isGumballMode() || isWheelMode();
 
   const manittoMode = isManittoMode();
 
@@ -522,111 +539,22 @@ renderGrid();
 
 function updateDescription() {
 
-  if (!isDefaultModePool(currentMode)) {
+  const items = getValidItems();
 
-    const items = getValidItems();
-
-    let text =
-      `${MODE_LABELS[currentMode]} 모드: 관리자 설정 항목 ${items.length}개 중 뽑습니다.`;
-
-    if (
-      !isManittoMode() &&
-      modeOptions[currentMode].forcedItems.length > 0
-    ) {
-      text += ' 무조건 뽑힘 항목이 적용됩니다.';
-    }
-
-    if (
-      !isPinballMode(currentMode) &&
-      modeOptions[currentMode].blockedItems.length > 0
-    ) {
-      text += ' 제외 항목은 뽑지 않습니다.';
-    }
-
-    if (
-      currentMode === 'teacher-mystery' &&
-      items.includes('선생님')
-    ) {
-      text += ' 선생님은 남아있으면 무조건 포함됩니다.';
-    }
-
-    if (
-      currentMode === 'mystery' &&
-      items.includes(getTodayNumber())
-    ) {
-      text += ` 단, ${getTodayNumber()}번이 나오면...?`;
-    }
-
-    if (
-      currentMode === 'twenty-six' &&
-      items.includes('26')
-    ) {
-      text += ' 단, 26번이 나오면...?';
-    }
-
-    if (isPinballMode(currentMode)) {
-      text += ' 핀볼 방식으로 진행됩니다.';
-    }
-
-    if (isManittoMode()) {
-      text += ' 자기 자신을 제외하고 서로 한 명씩 비밀 친구를 배정합니다.';
-    }
-
-    descriptionEl.textContent = text;
-
-    return;
-  }
-
-  if (currentMode === 'basic') {
-
-    descriptionEl.textContent =
-      '1번부터 26번까지 중 랜덤 번호를 뽑습니다. 19번은 제외됩니다.';
-
-  } else if (currentMode === 'teacher') {
-
-    descriptionEl.textContent =
-      '선생님 + 1번~26번 중 랜덤으로 뽑습니다. 19번은 제외됩니다.';
-
-  } else if (currentMode === 'teacher-mystery') {
-
-    descriptionEl.textContent =
-      '선생님 + 1번~26번 중 뽑습니다. 19번 제외. 선생님에겐 조금 특별한 무언가가 있을지도...?';
-
-  } else if (currentMode === 'twenty-six') {
-    descriptionEl.textContent =
-      '1번~26번 중 뽑습니다. 19번 제외. 26번에겐 조금 특별한 무언가가 있을지도...? 그리고, 26번이 나오면...?';
-
-  } else if (currentMode === 'manitto') {
-    descriptionEl.textContent =
-      '마니또 모드: 자기 자신이 나오지 않도록 전체를 섞어 서로 한 명씩 비밀 친구를 배정합니다.';
-
-  } else if (currentMode === 'gumball') {
-    descriptionEl.textContent =
-      '공 뽑기 모드: 통 안의 공들이 돌아가다가 무작위로 하나가 나옵니다.';
-
-  } else if (currentMode === 'pinball') {
-    descriptionEl.textContent =
-      '핀볼! 공이 번호 범퍼를 튕기다가 선택된 번호가 뽑힙니다.';
-
-  } else if (currentMode === 'pinball-teacher') {
-    descriptionEl.textContent =
-      '핀볼(선생님) 모드: 선생님 공 포함! 선생님이 당첨될 수도?';
-
-  } else if (currentMode === 'song-pinball') {
-    descriptionEl.textContent =
-      '노래추첨 핀볼 모드: 당첨 번호가 듣고 싶은 노래를 입력하면 YouTube에서 찾아 재생합니다.';
-
-  } else if (currentMode === 'eleven-song-pinball') {
-    descriptionEl.textContent =
-      '11번 노래추첨 핀볼 모드: 모든 항목이 11번이며, 11번이 듣고 싶은 노래를 찾아 재생합니다.';
-  } else if (currentMode === 'nine-song-pinball') {
-    descriptionEl.textContent =
-      '9번 노래추첨 핀볼 모드: 모든 항목이 9번이며, 9번이 듣고 싶은 노래를 찾아 재생합니다.';
-
-  } else {
-    descriptionEl.textContent =
-      `1번~26번 중 랜덤 번호를 뽑습니다. 19번 제외. 단, ${getTodayNumber()}번이 나오면...?`;
-  }
+  descriptionEl.textContent = getModeDescription({
+    mode: currentMode,
+    label: MODE_LABELS[currentMode],
+    isDefaultPool: isDefaultModePool(currentMode),
+    itemCount: items.length,
+    hasForced: modeOptions[currentMode].forcedItems.length > 0,
+    hasBlocked: modeOptions[currentMode].blockedItems.length > 0,
+    hasTeacher: items.includes('선생님'),
+    hasTodayNumber: items.includes(getTodayNumber()),
+    hasTwentySix: items.includes('26'),
+    isPinball: isPinballMode(currentMode),
+    isManitto: isManittoMode(),
+    todayNumber: getTodayNumber(),
+  });
 }
 
 function switchMode(mode) {
@@ -1370,6 +1298,54 @@ function stopBasicDrawAnimation() {
   drawButton.disabled = false;
 }
 
+function buildSequentialDrawParams() {
+
+  return {
+    remainingEntries,
+    options: {
+      ...modeOptions[currentMode],
+      forcedItems: getStyleForcedItems(),
+    },
+    drawCountSelect,
+    drawButton,
+    numberDisplay,
+    bigNumber,
+    bigOverlay,
+    getDisplayLabel,
+    adjustFontSize,
+    compareItems,
+    removeEntry(entry) {
+      const idx =
+        remainingEntries.findIndex((remaining) =>
+          remaining.key === entry.key
+        );
+
+      if (idx !== -1) {
+        remainingEntries.splice(idx, 1);
+        remainingNumbers =
+          remainingEntries.map((remaining) => remaining.item);
+      }
+    },
+    addPickedNumbers(items) {
+      pickedNumbers.push(...items);
+    },
+    updatePickedNumbers,
+    terminateProgram,
+    shouldTerminate: shouldTerminateSelection,
+    beforeShowResult(entries) {
+      if (!isSongDrawMode()) {
+        return Promise.resolve();
+      }
+
+      return requestSongForResult(entries, {
+        getEntryItem,
+        getResultLabel,
+      });
+    },
+    playFinalSound: playSound,
+  };
+}
+
 function drawNumbers() {
   if (isBlockingDialogOpen()) return;
   stopBasicDrawAnimation();
@@ -1395,51 +1371,20 @@ function drawNumbers() {
     gumballHandleReady = false;
 
     drawNumbersGumball({
-      remainingEntries,
-      options: {
-        ...modeOptions[currentMode],
-        forcedItems: getStyleForcedItems(),
-      },
-      drawCountSelect,
-      drawButton,
-      numberDisplay,
-      bigNumber,
-      bigOverlay,
-      getDisplayLabel,
-      adjustFontSize,
-      compareItems,
-      isGumballMode,
-      removeEntry(entry) {
-        const idx =
-          remainingEntries.findIndex((remaining) =>
-            remaining.key === entry.key
-          );
-
-        if (idx !== -1) {
-          remainingEntries.splice(idx, 1);
-          remainingNumbers =
-            remainingEntries.map((remaining) => remaining.item);
-        }
-      },
-      addPickedNumbers(items) {
-        pickedNumbers.push(...items);
-      },
-      updatePickedNumbers,
-      terminateProgram,
-      shouldTerminate: shouldTerminateSelection,
-      beforeShowResult(entries) {
-        if (!isSongDrawMode()) {
-          return Promise.resolve();
-        }
-
-        return requestSongForResult(entries, {
-          getEntryItem,
-          getResultLabel,
-        });
-      },
-      playFinalSound: playSound,
+      ...buildSequentialDrawParams(),
+      isModeActive: isGumballMode,
       playTurnSound: playGumballTurnSound,
       playDropSound: playGumballDropSound,
+    });
+    return;
+  }
+
+  if (isWheelMode()) {
+
+    drawNumbersWheel({
+      ...buildSequentialDrawParams(),
+      isModeActive: isWheelMode,
+      playTickSound: playDrawTick,
     });
     return;
   }
@@ -1788,6 +1733,7 @@ function resetDraw(options = {}) {
   closeSongRequest();
 
   resetGumballMode();
+  resetWheelMode();
   resetManittoMode();
   gumballHandleReady = false;
 

@@ -71,3 +71,21 @@
     0 0 14px
     rgba(213, 29, 63, 0.38);
 }
+
+.mode-btn[data-mode="wheel"].active {
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff6b81,
+      #ffd166
+    );
+
+  color: #3d2000;
+
+  border-color: transparent;
+
+  box-shadow:
+    0 0 14px
+    rgba(255, 209, 102, 0.5);
+}

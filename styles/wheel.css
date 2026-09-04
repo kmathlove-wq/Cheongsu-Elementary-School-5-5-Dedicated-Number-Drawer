@@ -1,0 +1,158 @@
+.wheel-stage {
+
+  display: grid;
+
+  place-items: center;
+
+  min-height: 380px;
+
+  margin-top: 18px;
+
+  padding: 18px 8px 40px;
+}
+
+.wheel-stage[hidden] {
+
+  display: none;
+}
+
+.wheel-wrap {
+
+  position: relative;
+
+  width: min(300px, 78vw);
+
+  height: min(300px, 78vw);
+}
+
+.wheel-pointer {
+
+  position: absolute;
+
+  top: -16px;
+
+  left: 50%;
+
+  width: 0;
+
+  height: 0;
+
+  border-left: 16px solid transparent;
+
+  border-right: 16px solid transparent;
+
+  border-top: 26px solid #ffd23f;
+
+  transform: translateX(-50%);
+
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));
+
+  z-index: 3;
+}
+
+.wheel-disc {
+
+  width: 100%;
+
+  height: 100%;
+
+  border-radius: 50%;
+
+  border: 6px solid #1c2136;
+
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,0.15),
+    0 18px 34px rgba(10,14,30,0.35);
+
+  transition: transform 3s cubic-bezier(0.15, 0.7, 0.2, 1);
+
+  transform: rotate(0deg);
+}
+
+.wheel-hub {
+
+  position: absolute;
+
+  top: 50%;
+
+  left: 50%;
+
+  width: 52px;
+
+  height: 52px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(circle at 32% 28%, #ffffff, #cdd3ea 60%, #9aa3c9);
+
+  border: 4px solid #1c2136;
+
+  transform: translate(-50%, -50%);
+
+  box-shadow: 0 6px 10px rgba(10,14,30,0.35);
+
+  z-index: 2;
+}
+
+.wheel-result {
+
+  position: absolute;
+
+  bottom: -48px;
+
+  left: 50%;
+
+  max-width: 240px;
+
+  padding: 6px 16px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(145deg, #8ec5fc, #e0c3fc);
+
+  color: #10162e;
+
+  font-weight: 900;
+
+  opacity: 0;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  transform: translateX(-50%) scale(0.7);
+
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.wheel-result.show {
+
+  opacity: 1;
+
+  transform: translateX(-50%) scale(1);
+}
+
+.wheel-result.teacher-result {
+
+  background:
+    linear-gradient(145deg, #ffe58a, #ffad33);
+}
+
+@media (max-width: 600px) {
+
+  .wheel-stage {
+
+    min-height: 320px;
+  }
+
+  .wheel-wrap {
+
+    width: min(260px, 82vw);
+
+    height: min(260px, 82vw);
+  }
+}

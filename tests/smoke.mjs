@@ -6,6 +6,7 @@ const files = [
   'scripts/main.js',
   'scripts/gumball.js',
   'scripts/manitto.js',
+  'scripts/mode-descriptions.js',
   'scripts/mode-menu.js',
   'scripts/pinball.js',
   'scripts/pinball-maps.js',
@@ -15,6 +16,7 @@ const files = [
   'scripts/song.js',
   'scripts/sound.js',
   'scripts/terminate.js',
+  'scripts/wheel.js',
 ];
 
 const styleFiles = [
@@ -27,6 +29,7 @@ const styleFiles = [
   'styles/responsive.css',
   'styles/terminate.css',
   'styles/mode-themes.css',
+  'styles/wheel.css',
 ];
 
 const html = readFileSync('index.html', 'utf8');

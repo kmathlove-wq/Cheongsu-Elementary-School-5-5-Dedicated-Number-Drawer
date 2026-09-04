@@ -26,6 +26,7 @@
       <button class="mode-btn active" data-mode="basic">기본</button>
       <button class="mode-btn" data-mode="manitto">마니또</button>
       <button class="mode-btn" data-mode="gumball">공 뽑기</button>
+      <button class="mode-btn" data-mode="wheel">돌림판</button>
       <button class="mode-btn" data-mode="pinball">핀볼</button>
       <button class="mode-btn" data-mode="song-pinball">노래추첨 핀볼</button>
       <div class="more-modes">
@@ -97,6 +98,15 @@
         </div>
       </section>
 
+      <section class="wheel-stage" id="wheelStage" hidden>
+        <div class="wheel-wrap" aria-label="돌림판">
+          <div class="wheel-pointer"></div>
+          <div class="wheel-disc" id="wheelDisc"></div>
+          <div class="wheel-hub"></div>
+          <div class="wheel-result" id="wheelResult"></div>
+        </div>
+      </section>
+
       <button id="drawButton">
         번호 뽑기
       </button>
@@ -124,7 +134,7 @@
     </div>
 
     <footer class="build-info" aria-label="현재 수정 버전">
-      수정 버전: 합친 핀볼 맵 저장/삭제 지원 · 9번·11번 노래추첨 핀볼을 더보기 메뉴로 이동
+      수정 버전: 새 뽑기 방식 '돌림판' 추가 (원판을 돌려 화살표가 가리키는 번호 뽑기)
     </footer>
 
   </main>
@@ -160,6 +170,9 @@
           </button>
           <button type="button" class="app-mode-option" data-app-mode="gumball">
             공 뽑기
+          </button>
+          <button type="button" class="app-mode-option" data-app-mode="wheel">
+            돌림판
           </button>
           <button type="button" class="app-mode-option" data-app-mode="pinball">
             핀볼
@@ -234,6 +247,9 @@
           </button>
           <button type="button" class="sound-preview-button" data-preview-sound="gumball">
             공 뽑기
+          </button>
+          <button type="button" class="sound-preview-button" data-preview-sound="wheel">
+            돌림판
           </button>
           <button type="button" class="sound-preview-button" data-preview-sound="pinball">
             핀볼
@@ -446,7 +462,7 @@
     </section>
   </div>
 
-<script type="module" src="scripts/main.js?v=pinball-map-store-1"></script>
+<script type="module" src="scripts/main.js?v=wheel-mode-1"></script>
 
 </body>
 </html>

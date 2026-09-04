@@ -299,6 +299,10 @@ function previewSound(kind) {
   if (kind === 'gumball') {
     playGumballTurnSound();
     setTimeout(playGumballDropSound, scaleMotionTime(280));
+  } else if (kind === 'wheel') {
+    playDrawTick();
+    setTimeout(playDrawTick, scaleMotionTime(160));
+    setTimeout(playSound, scaleMotionTime(520));
   } else if (kind === 'pinball') {
     playBumperBeep();
     setTimeout(playBumperBeep, scaleMotionTime(120));
