@@ -9,7 +9,7 @@ import {
   drawNumbersWheel,
   resetWheelMode,
   updateWheelPanel,
-} from './wheel.js?v=wheel-mode-1';
+} from './wheel.js?v=wheel-mode-3';
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
@@ -491,6 +491,7 @@ function updateModePanels() {
   updateWheelPanel({
     isVisible: isWheelMode(),
     entries: remainingEntries,
+    getDisplayLabel,
   });
 
   numberGrid.hidden = isGumballMode() || isWheelMode();

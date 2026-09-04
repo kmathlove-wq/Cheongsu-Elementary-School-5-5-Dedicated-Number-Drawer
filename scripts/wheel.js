@@ -12,6 +12,8 @@ const WHEEL_COLORS = [
 
 const TEACHER_COLOR = '#ffad33';
 
+const MAX_LABELED_ENTRIES = 32;
+
 let currentRotation = 0;
 let wheelDrawTimer = null;
 
@@ -30,7 +32,27 @@ function colorForEntry(entry, index) {
     : WHEEL_COLORS[index % WHEEL_COLORS.length];
 }
 
-export function renderWheelDisc(entries) {
+function labelFontSize(count) {
+
+  if (count <= 8) return 27;
+  if (count <= 14) return 22;
+  if (count <= 22) return 18;
+
+  return 15;
+}
+
+function labelMaxChars(count) {
+
+  if (count <= 8) return 6;
+  if (count <= 14) return 5;
+  if (count <= 22) return 4;
+
+  return 3;
+}
+
+export function renderWheelDisc(entries, { getDisplayLabel } = {}) {
+
+  wheelDisc.innerHTML = '';
 
   if (entries.length === 0) {
     wheelDisc.style.background = '#2a2f45';
@@ -50,18 +72,38 @@ export function renderWheelDisc(entries) {
     });
 
   wheelDisc.style.background = `conic-gradient(${stops.join(', ')})`;
+
+  if (!getDisplayLabel || entries.length > MAX_LABELED_ENTRIES) return;
+
+  const fontSize = labelFontSize(entries.length);
+  const maxChars = labelMaxChars(entries.length);
+
+  entries.forEach((entry, index) => {
+
+    const angle = index * slice + slice / 2 - 90;
+
+    const label = document.createElement('span');
+
+    label.className = 'wheel-label';
+    label.style.transform = `rotate(${angle}deg)`;
+    label.style.fontSize = `${fontSize}px`;
+    label.textContent = getDisplayLabel(entry.item, maxChars);
+
+    wheelDisc.appendChild(label);
+  });
 }
 
 export function updateWheelPanel({
   isVisible,
   entries,
+  getDisplayLabel,
 }) {
 
   wheelStage.hidden = !isVisible;
 
   if (!isVisible) return;
 
-  renderWheelDisc(entries);
+  renderWheelDisc(entries, { getDisplayLabel });
 
   wheelResult.classList.remove('show', 'teacher-result');
   wheelResult.textContent = '';
@@ -253,10 +295,10 @@ export function drawNumbersWheel({
     const entry = selectedEntries[index];
     const winnerIndex = pool.findIndex((candidate) => candidate.key === entry.key);
 
-    renderWheelDisc(pool);
+    renderWheelDisc(pool, { getDisplayLabel });
     wheelResult.classList.remove('show', 'teacher-result');
 
-    const spinDuration = scaleMotionTime(3000 + index * 150);
+    const spinDuration = scaleMotionTime(5500 + index * 250);
 
     wheelDisc.style.transitionDuration = `${spinDuration}ms`;
 
