@@ -70,6 +70,7 @@ const adminResetButton = document.getElementById('adminResetButton');
 const youtubePlayerClose = document.getElementById('youtubePlayerClose');
 const manittoSettings = document.getElementById('manittoSettings');
 const manittoExcludeList = document.getElementById('manittoExcludeList');
+const excludeSettingsTitle = document.getElementById('excludeSettingsTitle');
 
 let currentMode = 'basic';
 let currentDrawStyle = 'basic';
@@ -627,13 +628,20 @@ function updatePickedNumbers() {
   renderPickedSummary(pickedNumbersContainer, pickedNumbers);
 }
 
+function getExcludeSettingsMode() {
+  if (isManittoMode()) return 'manitto';
+  if (isPairingMode()) return 'pairing';
+  return null;
+}
+
 function renderManittoSettings() {
-  const manittoMode = isManittoMode();
-  manittoSettings.hidden = !manittoMode;
+  const mode = getExcludeSettingsMode();
+  manittoSettings.hidden = !mode;
   manittoExcludeList.innerHTML = '';
-  if (!manittoMode) return;
-  const blocked = new Set(modeOptions.manitto.blockedItems);
-  getSortedAdminEntries('manitto').forEach(({ item, key }) => {
+  if (!mode) return;
+  excludeSettingsTitle.textContent = `${MODE_LABELS[mode]} 제외`;
+  const blocked = new Set(modeOptions[mode].blockedItems);
+  getSortedAdminEntries(mode).forEach(({ item, key }) => {
     const label = document.createElement('label');
     label.className = 'manitto-exclude-item';
     const input = document.createElement('input');
@@ -646,13 +654,14 @@ function renderManittoSettings() {
 }
 
 function saveManittoSettings() {
-  if (!isManittoMode()) return true;
-  modeOptions.manitto.blockedItems =
+  const mode = getExcludeSettingsMode();
+  if (!mode) return true;
+  modeOptions[mode].blockedItems =
     Array.from(
       manittoExcludeList.querySelectorAll('input:checked')
     ).map((input) => input.dataset.key);
-  modeOptions.manitto.forcedItems = [];
-  syncModeOptions('manitto');
+  modeOptions[mode].forcedItems = [];
+  syncModeOptions(mode);
   saveModePools();
   return true;
 }
