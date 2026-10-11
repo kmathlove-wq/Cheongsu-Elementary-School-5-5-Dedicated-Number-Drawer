@@ -8,6 +8,7 @@ const files = [
   'scripts/manitto.js',
   'scripts/mode-descriptions.js',
   'scripts/mode-menu.js',
+  'scripts/pairing.js',
   'scripts/pinball.js',
   'scripts/pinball-maps.js',
   'scripts/pinball-water-renderer.js',
@@ -30,6 +31,7 @@ const styleFiles = [
   'styles/terminate.css',
   'styles/mode-themes.css',
   'styles/wheel.css',
+  'styles/pairing.css',
 ];
 
 const html = readFileSync('index.html', 'utf8');
@@ -49,7 +51,7 @@ if (!/src="scripts\/main\.js(?:\?[^"\s]*)?"/.test(html)) {
   throw new Error('index.html must load scripts/main.js');
 }
 
-if (!html.includes('href="styles/app.css"')) {
+if (!/href="styles\/app\.css(?:\?[^"\s]*)?"/.test(html)) {
   throw new Error('index.html must load styles/app.css');
 }
 
@@ -484,3 +486,23 @@ for (const file of files) {
 }
 
 console.log('Smoke checks passed.');
+
+const pairingSource = readFileSync('scripts/pairing.js', 'utf8')
+  .replace(/^import .*$/m, 'const scaleMotionTime = (ms) => ms;');
+const { makeGroups } = await import(
+  `data:text/javascript;base64,${Buffer.from(pairingSource).toString('base64')}`
+);
+const pairEntries = Array.from({ length: 26 }, (_, i) => ({ key: String(i), item: String(i + 1) }));
+
+for (let size = 2; size <= 10; size++) {
+  const { groups, leftovers } = makeGroups(pairEntries, size);
+  const used = [...groups.flat(), ...leftovers].map((entry) => entry.key);
+  if (
+    groups.length !== Math.floor(26 / size) ||
+    groups.some((group) => group.length !== size) ||
+    leftovers.length !== 26 % size ||
+    new Set(used).size !== 26
+  ) {
+    throw new Error(`Pairing groups are wrong for size ${size}`);
+  }
+}

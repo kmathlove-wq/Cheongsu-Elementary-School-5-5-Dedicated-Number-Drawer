@@ -8,7 +8,7 @@
 
   <link rel="icon" type="image/png" href="사진/logo.png" />
 
-  <link rel="stylesheet" href="styles/app.css" />
+  <link rel="stylesheet" href="styles/app.css?v=pairing-mode-1" />
 </head>
 
 <body>
@@ -25,6 +25,7 @@
     <div class="mode-selector">
       <button class="mode-btn active" data-mode="basic">기본</button>
       <button class="mode-btn" data-mode="manitto">마니또</button>
+      <button class="mode-btn" data-mode="pairing">짝 짓기</button>
       <button class="mode-btn" data-mode="gumball">공 뽑기</button>
       <button class="mode-btn" data-mode="wheel">돌림판</button>
       <button class="mode-btn" data-mode="pinball">핀볼</button>
@@ -59,7 +60,7 @@
           ⚙
         </button>
 
-        <label for="drawCount">
+        <label for="drawCount" id="drawCountLabel">
           한 번에 뽑을 인원 수
         </label>
 
@@ -133,7 +134,7 @@
     </div>
 
     <footer class="build-info" aria-label="현재 수정 버전">
-      수정 버전: 새 뽑기 방식 '돌림판' 추가 (원판을 돌려 화살표가 가리키는 번호 뽑기)
+      수정 버전: 새 모드 '짝 짓기' 추가 (번호를 무작위로 2~10명씩 짝 짓기)
     </footer>
 
   </main>
@@ -461,7 +462,7 @@
     </section>
   </div>
 
-<script type="module" src="scripts/main.js?v=wheel-mode-6"></script>
+<script type="module" src="scripts/main.js?v=pairing-mode-1"></script>
 
 </body>
 </html>

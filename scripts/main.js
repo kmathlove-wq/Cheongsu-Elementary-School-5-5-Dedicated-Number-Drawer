@@ -13,6 +13,7 @@ import {
 import {
   drawManitto, resetManittoMode, setupManittoMode,
 } from './manitto.js';
+import { drawPairing, resetPairingMode, setupPairingMode } from './pairing.js?v=pairing-mode-1';
 import {
   playBumperBeep,
   playDrawTick,
@@ -34,7 +35,7 @@ import {
   requestSongForResult,
 } from './song.js';
 import { setupMemeTerminateShortcut, terminateProgram } from './terminate.js?v=pinball-map-store-1';
-import { getModeDescription } from './mode-descriptions.js';
+import { getModeDescription } from './mode-descriptions.js?v=pairing-mode-1';
 import { scaleMotionTime } from './motion.js';
 import { closeMoreModes, setupModeMenu } from './mode-menu.js';
 import { createRangeDeletion, setupAdminBulkMode } from './admin-bulk.js?v=rank-scrollbar-admin-range';
@@ -43,6 +44,7 @@ import { formatResultSummary, renderPickedSummary, renderResultSummary } from '.
 const drawButton = document.getElementById('drawButton');
 const resetButton = document.getElementById('resetButton');
 const drawCountSelect = document.getElementById('drawCount');
+const drawCountLabel = document.getElementById('drawCountLabel');
 const drawSettings = document.getElementById('drawSettings');
 const numberDisplay = document.getElementById('numberDisplay');
 const pickedNumbersContainer = document.getElementById('pickedNumbers');
@@ -84,7 +86,7 @@ let activeDrawInterval = null;
 
 const MODE_LABELS = {
   basic: '기본', teacher: '선생님', 'teacher-mystery': '선생님(?)',
-  mystery: '???', 'twenty-six': '26번', manitto: '마니또',
+  mystery: '???', 'twenty-six': '26번', manitto: '마니또', pairing: '짝 짓기',
   gumball: '공 뽑기', wheel: '돌림판', pinball: '핀볼', 'pinball-teacher': '핀볼(선생님)',
   'song-pinball': '노래추첨 핀볼', 'eleven-song-pinball': '11번 노래추첨 핀볼',
   'nine-song-pinball': '9번 노래추첨 핀볼',
@@ -111,7 +113,7 @@ function getMysteryNumbers() {
 const DEFAULT_MODE_POOLS = {
   basic: [...baseNumbers], teacher: ['선생님', ...baseNumbers],
   'teacher-mystery': ['선생님', ...baseNumbers], mystery: getMysteryNumbers(),
-  'twenty-six': [...baseNumbers], manitto: [...baseNumbers],
+  'twenty-six': [...baseNumbers], manitto: [...baseNumbers], pairing: [...baseNumbers],
   gumball: [...baseNumbers], wheel: [...baseNumbers], pinball: [...baseNumbers],
   'pinball-teacher': ['선생님', ...baseNumbers],
   'song-pinball': [...baseNumbers],
@@ -185,6 +187,7 @@ function isDrawStyleLockedMode(mode = currentMode) {
 
   return mode === 'basic' ||
     mode === 'manitto' ||
+    mode === 'pairing' ||
     mode === 'gumball' ||
     mode === 'wheel' ||
     mode === 'pinball';
@@ -200,7 +203,7 @@ function getEffectiveDrawStyle() {
 
   if (currentMode === 'pinball') return 'pinball';
 
-  if (currentMode === 'manitto') return 'basic';
+  if (currentMode === 'manitto' || currentMode === 'pairing') return 'basic';
 
   return modeDrawStyles[currentMode] || currentDrawStyle;
 }
@@ -217,6 +220,10 @@ function isTwentySixMode(mode = currentMode) {
 
 function isManittoMode(mode = currentMode) {
   return mode === 'manitto';
+}
+
+function isPairingMode(mode = currentMode) {
+  return mode === 'pairing';
 }
 
 function getStyleForcedItems() {
@@ -465,6 +472,18 @@ function buildDrawCountOptions() {
 
   drawCountSelect.innerHTML = '';
 
+  const pairingMode = isPairingMode();
+  drawCountLabel.textContent = pairingMode
+    ? '몇 명씩 짝 지을까요?'
+    : '한 번에 뽑을 인원 수';
+
+  if (pairingMode) {
+    for (let i = 2; i <= 10; i++) {
+      drawCountSelect.appendChild(new Option(`${i}명씩`, i));
+    }
+    return;
+  }
+
   for (let i = 1; i <= validItems.length; i++) {
 
     const option =
@@ -499,10 +518,10 @@ function updateModePanels() {
   const manittoMode = isManittoMode();
 
   drawSettings.classList.toggle('manitto-draw-settings', manittoMode);
-  historyCard.hidden = manittoMode;
+  historyCard.hidden = manittoMode || isPairingMode();
   drawButton.textContent = manittoMode
     ? '마니또 배정하기'
-    : '번호 뽑기';
+    : isPairingMode() ? '짝 짓기' : '번호 뽑기';
 }
 
 function renderGrid() {
@@ -735,7 +754,7 @@ function renderAdminList() {
   const forced = new Set(options.forcedItems);
   const blocked = new Set(options.blockedItems);
   const pinballMode = isPinballMode(mode);
-  const manittoMode = isManittoMode(mode);
+  const noForcedMode = isManittoMode(mode) || isPairingMode(mode);
 
   adminEditingMode = mode;
 
@@ -783,11 +802,11 @@ function renderAdminList() {
     forcedInput.className = 'admin-force-input';
 
     forcedInput.checked = forced.has(key);
-    forcedInput.disabled = manittoMode;
+    forcedInput.disabled = noForcedMode;
 
     forcedLabel.append(forcedInput, '무조건');
 
-    if (manittoMode) {
+    if (noForcedMode) {
       forcedLabel.hidden = true;
     }
 
@@ -970,7 +989,7 @@ function validateAdminItems(items, mode) {
 function syncModeOptions(mode) {
 
   modeOptions[mode].forcedItems =
-    isManittoMode(mode)
+    isManittoMode(mode) || isPairingMode(mode)
       ? []
       : normalizeOptionItems(
         modeOptions[mode].forcedItems,
@@ -1350,6 +1369,15 @@ function buildSequentialDrawParams() {
 function drawNumbers() {
   if (isBlockingDialogOpen()) return;
   stopBasicDrawAnimation();
+
+  if (isPairingMode()) {
+    drawPairing({
+      entries: remainingEntries,
+      blockedItems: modeOptions[currentMode].blockedItems,
+      groupSize: Number(drawCountSelect.value),
+    });
+    return;
+  }
 
   if (isManittoMode()) {
     drawManitto({
@@ -1736,6 +1764,7 @@ function resetDraw(options = {}) {
   resetGumballMode();
   resetWheelMode();
   resetManittoMode();
+  resetPairingMode();
   gumballHandleReady = false;
 
   validEntries = getValidEntries();
@@ -1933,6 +1962,11 @@ setupAppSettings({
 });
 
 setupManittoMode({ numberGrid, bigOverlay, bigNumber, getResultLabel, adjustFontSize, playSound });
+
+setupPairingMode({
+  numberGrid, numberDisplay, bigOverlay, bigNumber, drawButton,
+  getResultLabel, playSound, playDrawTick,
+});
 
 setupMemeTerminateShortcut();
 

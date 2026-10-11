@@ -1,0 +1,88 @@
+.mode-btn[data-mode="pairing"].active {
+  background: linear-gradient(135deg, #ff8a3d, #ffc93c);
+  color: #3d2000;
+  border-color: transparent;
+  box-shadow: 0 0 14px rgba(255, 170, 60, 0.4);
+}
+
+.number-cell.pair-grouped {
+  color: white;
+  background: var(--pair-color);
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pair-result-list {
+  display: block;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.number-display.pair-result-list {
+  max-height: 420px;
+}
+
+.pair-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.pair-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--pair-color);
+  color: white;
+  text-align: center;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pair-card strong {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.pair-members {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.35em;
+}
+
+.pair-member {
+  white-space: nowrap;
+}
+
+.pair-card .pair-members {
+  font-size: clamp(1.3rem, 3.5vw, 2rem);
+  font-weight: 900;
+}
+
+.big-number.pair-result-list .pair-cards {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.big-number.pair-result-list .pair-card {
+  border: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+.big-number.pair-result-list .pair-members {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.35em;
+}
+
+.pair-member {
+  white-space: nowrap;
+}
+
+.pair-card .pair-members {
+  font-size: clamp(1.6rem, 4.5vw, 2.8rem);
+}
