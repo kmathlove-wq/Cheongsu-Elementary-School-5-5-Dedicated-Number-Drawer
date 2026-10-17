@@ -14,7 +14,7 @@ GitHub Pages로 배포 중이며 커스텀 도메인은 `xn--ok0bu1tf0b2m58iiool
 │   ├── gumball.js  # 공 뽑기 모드 렌더링/애니메이션
 │   ├── manitto.js  # 마니또 순환 배정 로직
 │   ├── mode-menu.js # 모드 버튼/더보기 메뉴
-│   ├── pairing.js  # 짝 짓기(2~10명씩 무작위 모둠) 로직
+│   ├── pairing.js  # 짝 정하기(2~10명씩 무작위 모둠) 로직
 │   ├── motion.js   # 느림/빠름 동작 속도 배율
 │   ├── pinball.js  # 핀볼 모드 물리/렌더링
 │   ├── pinball-maps.js # 핀볼 맵별 장애물 정의

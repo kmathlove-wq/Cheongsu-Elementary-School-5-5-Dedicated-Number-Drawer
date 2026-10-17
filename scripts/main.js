@@ -87,7 +87,7 @@ let activeDrawInterval = null;
 
 const MODE_LABELS = {
   basic: '기본', teacher: '선생님', 'teacher-mystery': '선생님(?)',
-  mystery: '???', 'twenty-six': '26번', manitto: '마니또', pairing: '짝 짓기',
+  mystery: '???', 'twenty-six': '26번', manitto: '마니또', pairing: '짝 정하기',
   gumball: '공 뽑기', wheel: '돌림판', pinball: '핀볼', 'pinball-teacher': '핀볼(선생님)',
   'song-pinball': '노래추첨 핀볼', 'eleven-song-pinball': '11번 노래추첨 핀볼',
   'nine-song-pinball': '9번 노래추첨 핀볼',
@@ -522,7 +522,7 @@ function updateModePanels() {
   historyCard.hidden = manittoMode || isPairingMode();
   drawButton.textContent = manittoMode
     ? '마니또 배정하기'
-    : isPairingMode() ? '짝 짓기' : '번호 뽑기';
+    : isPairingMode() ? '짝 정하기' : '번호 뽑기';
 }
 
 function renderGrid() {
